@@ -60,7 +60,39 @@ function startWorker({identity = true} = {}) {
   const notifications = [];
   const tabs = [];
   const badge = {};
-  const server = {gmail: ['m1', 'm2'], graph: ['o1'], graphUnread: 5, jmap: ['e1'], microsoftRefreshes: 0};
+  const server = {
+    gmail: ['m1', 'm2'],
+    gmailRead: new Set(),
+    gmailStarred: new Set(),
+    graph: ['o1'],
+    graphUnread: 5,
+    jmap: ['e1'],
+    jmapSeen: new Set(),
+    microsoftRefreshes: 0,
+  };
+  /** Gmail metadata for a message ID. */
+  const gmailMessage = id => ({
+    id,
+    threadId: `t-${id}`,
+    labelIds: [
+      'INBOX',
+      ...(server.gmailRead.has(id) ? [] : ['UNREAD']),
+      ...(server.gmailStarred.has(id) ? ['STARRED'] : []),
+    ],
+    snippet: 'Hi &amp; bye',
+    internalDate: String(Date.now()),
+    payload: {
+      mimeType: 'multipart/alternative',
+      headers: [
+        {name: 'From', value: '"Bob" <bob@example.com>'},
+        {name: 'Subject', value: `Subject ${id}`},
+      ],
+      parts: [
+        {mimeType: 'text/plain', body: {data: Buffer.from('plain').toString('base64url')}},
+        {mimeType: 'text/html', body: {data: Buffer.from('<p>Привет, <b>мир</b></p>').toString('base64url')}},
+      ],
+    },
+  });
 
   const area = name => ({
     async get(keys) {
@@ -87,25 +119,26 @@ function startWorker({identity = true} = {}) {
       assert.equal(auth, 'Bearer google-token');
       const path = url.pathname.replace('/gmail/v1/users/me', '');
       if (path === '/profile') return json({emailAddress: 'me@company.com'});
-      if (path === '/labels/INBOX') return json({messagesUnread: server.gmail.length});
-      if (path === '/messages') return json({messages: server.gmail.map(id => ({id}))});
-      const [, id, action] = path.match(/^\/messages\/([^/]+)(?:\/(\w+))?$/);
-      if (action) {
-        server.gmail = server.gmail.filter(item => item !== id);
-        return json({});
+      if (path === '/labels/INBOX')
+        return json({messagesUnread: server.gmail.filter(id => !server.gmailRead.has(id)).length});
+      if (path === '/messages') {
+        const ids = url.searchParams.get('q') === 'in:inbox' ? server.gmail : ['m1'];
+        return json({messages: ids.map(id => ({id}))});
       }
-      return json({
-        id,
-        threadId: `t-${id}`,
-        snippet: 'Hi &amp; bye',
-        internalDate: String(Date.now()),
-        payload: {
-          headers: [
-            {name: 'From', value: '"Bob" <bob@example.com>'},
-            {name: 'Subject', value: `Subject ${id}`},
-          ],
-        },
-      });
+      const thread = path.match(/^\/threads\/t-([^/]+)$/);
+      if (thread) return json({id: `t-${thread[1]}`, messages: [gmailMessage(thread[1])]});
+      const [, id, action] = path.match(/^\/messages\/([^/]+)(?:\/(\w+))?$/);
+      if (action === 'trash') server.gmail = server.gmail.filter(item => item !== id);
+      if (action === 'modify') {
+        const {addLabelIds = [], removeLabelIds = []} = JSON.parse(init.body);
+        if (removeLabelIds.includes('INBOX')) server.gmail = server.gmail.filter(item => item !== id);
+        if (removeLabelIds.includes('UNREAD')) server.gmailRead.add(id);
+        if (addLabelIds.includes('UNREAD')) server.gmailRead.delete(id);
+        if (addLabelIds.includes('STARRED')) server.gmailStarred.add(id);
+        if (removeLabelIds.includes('STARRED')) server.gmailStarred.delete(id);
+      }
+      if (action) return json({});
+      return json(gmailMessage(id));
     }
     if (url.host === 'login.microsoftonline.com') {
       const body = new URLSearchParams(init.body);
@@ -127,6 +160,7 @@ function startWorker({identity = true} = {}) {
             from: {emailAddress: {name: 'Ann', address: 'ann@corp.example'}},
             receivedDateTime: new Date().toISOString(),
             bodyPreview: 'Preview',
+            isRead: false,
             webLink: `https://outlook.office.com/mail/${id}`,
           })),
         });
@@ -149,13 +183,14 @@ function startWorker({identity = true} = {}) {
               name,
               {
                 list: [
-                  {id: 'IN', role: 'inbox', unreadEmails: server.jmap.length},
+                  {id: 'IN', role: 'inbox', unreadEmails: server.jmap.filter(id => !server.jmapSeen.has(id)).length},
+                  {id: 'AR', role: 'archive'},
                   {id: 'TR', role: 'trash'},
                 ],
               },
               tag,
             ];
-          if (name === 'Email/query') return [name, {ids: server.jmap}, tag];
+          if (name === 'Email/query') return [name, {ids: args.filter.text ? ['e1'] : server.jmap}, tag];
           if (name === 'Email/get')
             return [
               name,
@@ -167,12 +202,16 @@ function startWorker({identity = true} = {}) {
                   preview: 'p',
                   receivedAt: new Date().toISOString(),
                   from: [{name: 'Zed', email: 'zed@example.com'}],
+                  keywords: server.jmapSeen.has(id) ? {$seen: true} : {},
                 })),
               },
               tag,
             ];
           if (name === 'Email/set') {
-            server.jmap = server.jmap.filter(id => !Object.hasOwn(args.update, id));
+            for (const [id, change] of Object.entries(args.update)) {
+              if (change.mailboxIds) server.jmap = server.jmap.filter(item => item !== id);
+              if (change['keywords/$seen']) server.jmapSeen.add(id);
+            }
             return [name, {updated: args.update}, tag];
           }
           return ['error', {type: 'unknownMethod'}, tag];
@@ -231,6 +270,7 @@ function startWorker({identity = true} = {}) {
     AbortSignal,
     crypto: globalThis.crypto,
     btoa,
+    atob,
     structuredClone,
     console,
     setTimeout,
@@ -279,7 +319,7 @@ test('notifies only about messages that are new since the last check', async () 
   assert.equal(w.notifications[0].message, 'Subject m3');
 });
 
-test('mark read, trash and open act on listed messages', async () => {
+test('message actions update the provider, the list and the badge', async () => {
   const w = startWorker();
   await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
   const {accounts} = await w
@@ -290,15 +330,54 @@ test('mark read, trash and open act on listed messages', async () => {
     })
     .then(value => value.state);
   const [gmail, jmap] = accounts;
-  const state = await w.ok({type: 'MARK_READ', account: gmail.id, message: 'm1'}, 'popup');
-  assert.equal(state.mailboxes[gmail.id].messages.map(item => item.id).join(), 'm2');
-  await w.ok({type: 'TRASH', account: jmap.id, message: 'e1'}, 'popup');
+  assert.equal(w.badge.text, '3');
+  let state = await w.ok({type: 'ACT', account: gmail.id, message: 'm1', action: 'read'}, 'popup');
+  assert.equal(state.mailboxes[gmail.id].messages.map(item => `${item.id}:${item.unread}`).join(), 'm1:false,m2:true');
+  assert.equal(w.badge.text, '2');
+  state = await w.ok({type: 'ACT', account: gmail.id, message: 'm1', action: 'pin'}, 'app');
+  assert.equal(state.mailboxes[gmail.id].messages[0].pinned, true);
+  assert.ok(w.server.gmailStarred.has('m1'));
+  state = await w.ok({type: 'ACT', account: gmail.id, message: 'm2', action: 'archive'}, 'popup');
+  assert.equal(state.mailboxes[gmail.id].messages.map(item => item.id).join(), 'm1');
+  assert.equal(w.server.gmail.join(), 'm1');
+  await w.ok({type: 'ACT', account: jmap.id, message: 'e1', action: 'trash'}, 'popup');
   assert.ok(w.calls.some(call => call.body?.includes('"TR":true')));
-  assert.equal(w.badge.text, '1');
-  await w.ok({type: 'OPEN', account: gmail.id, message: 'm2'}, 'popup');
-  assert.equal(w.tabs.at(-1), 'https://mail.google.com/mail/?authuser=me%40company.com#inbox/t-m2');
-  const missing = await w.send({type: 'TRASH', account: gmail.id, message: 'm1'}, 'popup');
-  assert.equal(missing.ok, false);
+  assert.equal(w.badge.text, '');
+  await w.ok({type: 'OPEN', account: gmail.id, message: 'm1'}, 'popup');
+  assert.equal(w.tabs.at(-1), 'https://mail.google.com/mail/?authuser=me%40company.com#all/t-m1');
+  const invalid = await w.send({type: 'ACT', account: gmail.id, message: 'm1', action: 'explode'}, 'popup');
+  assert.equal(invalid.ok, false);
+});
+
+test('opening a conversation returns decoded bodies and marks it read', async () => {
+  const w = startWorker();
+  const {state} = await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  const account = state.accounts[0].id;
+  const messages = await w.ok({type: 'THREAD', account, message: 'm1', thread: 't-m1'}, 'popup');
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].html, '<p>Привет, <b>мир</b></p>');
+  assert.equal(messages[0].text, 'plain');
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.ok(w.server.gmailRead.has('m1'), 'opening marks the message read');
+});
+
+test('search merges hits from every account', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  await w.ok({
+    type: 'ADD_ACCOUNT',
+    provider: 'jmap',
+    input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+  });
+  const hits = await w.ok({type: 'SEARCH', query: 'report'}, 'app');
+  assert.equal(
+    hits
+      .map(hit => hit.message.id)
+      .sort()
+      .join(),
+    'e1,m1',
+  );
+  assert.ok(w.calls.some(call => call.url.includes('q=report')));
 });
 
 test('expired Microsoft tokens are refreshed once', async () => {
@@ -330,6 +409,12 @@ test('the broker rejects foreign senders and popup account management', async ()
   assert.equal((await w.send({type: 'STATE'}, 'other-page')).ok, false);
   assert.equal((await w.send({type: 'ADD_ACCOUNT', provider: 'gmail'}, 'popup')).ok, false);
   assert.equal((await w.send({type: 'ADD_ACCOUNT', provider: 'unknown'})).ok, false);
+  assert.equal(
+    (await w.send({type: 'ACT', account: 'x', message: 'y', action: 'read'})).ok,
+    false,
+    'Settings cannot act',
+  );
+  assert.equal((await w.send({type: 'STATE'}, 'app')).ok, true, 'the full-tab client is allowed');
 });
 
 test('OAuth accounts need the optional identity permission', async () => {

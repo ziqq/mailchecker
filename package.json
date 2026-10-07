@@ -1,7 +1,7 @@
 {
   "name": "mail-checker",
   "description": "Chrome extension: unread counter, message list and notifications for Gmail, Microsoft 365 and JMAP mailboxes. Development, bundling and packaging tools; the extension has no runtime dependencies.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "author": "Anton Ustinoff <a.a.ustinoff@gmail.com>",
@@ -15,7 +15,8 @@
     "icons": "node scripts/icons.mjs",
     "package": "npm run build && python scripts/package.py",
     "verify": "npm run check && npm run package",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "build:safari": "node scripts/build.mjs --target safari"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24"
@@ -33,11 +34,15 @@
     "@eslint/js": "10.0.1",
     "@types/chrome": "0.3.4",
     "esbuild": "0.28.2",
+    "esbuild-plugin-solid": "0.6.0",
     "eslint": "10.11.0",
     "globals": "17.13.0",
     "prettier": "3.9.9",
     "sass": "1.105.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.71.1"
+  },
+  "dependencies": {
+    "solid-js": "1.9.17"
   }
 }

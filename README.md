@@ -1,6 +1,6 @@
 # Mail Checker
 
-A Chrome extension in the spirit of Checker Plus for Gmail, for mailboxes on **any domain**: an unread counter on the toolbar, a popup with unread messages and system notifications for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP servers such as Fastmail. It runs entirely in the browser: no backend and no companion app.
+A Spark-like mail client that lives in the browser toolbar, for mailboxes on **any domain**: Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP servers such as Fastmail. It runs entirely in the browser: no backend and no companion app (Safari adds a native containing app; see below).
 
 | Provider        | Mailboxes                                                           | Connection        |
 | --------------- | ------------------------------------------------------------------- | ----------------- |
@@ -12,10 +12,14 @@ IMAP-only services (Yandex, Mail.ru and similar) are not supported: an extension
 
 ## Features
 
-- Total unread count on the badge, `!` when a mailbox needs attention.
-- Popup: big unread summary, account filter, per-mailbox cards, mark read, move to trash, open in webmail.
-- Notifications for new messages since the previous check.
-- Settings: mailboxes, check interval, list size, notifications, theme (auto/light/dark) and palette: orange accent or neutral graphite.
+- **Opens like Checker Plus:** click the toolbar icon for a full client (780×600): list, reader and actions without leaving the page. ⤢ opens the same client full screen in a tab.
+- **Unified Inbox** across all accounts, with an account switcher and per-account colours.
+- **Smart Inbox:** people, notifications and newsletters; pinned messages first; repeated notifications (CI failures, alerts) stacked into one `×N` item.
+- **Safe reading:** conversations with collapsed history, sanitized HTML in a script-free sandbox, remote images and trackers blocked until you allow them.
+- **Actions** synced with the provider: archive, trash, read/unread, pin; search across all accounts; keyboard shortcuts.
+- **Responsive:** three columns in a wide tab, two in the popup, one with back navigation on narrow screens and iPhone.
+- **Badge and notifications** for new mail; theme (auto/light/dark) and palette (orange accent or neutral).
+- **Chromium and Safari** from one codebase — see [Safari](docs/SAFARI.md).
 
 ## Development
 
@@ -25,7 +29,8 @@ Requires Node.js 20.19+ (24 recommended) and Python 3.
 npm ci
 npm run build      # build/ → chrome://extensions → Load unpacked
 npm run check      # format, lint, typecheck, tests, repository checks
+npm run build:safari  # build-safari/ → xcrun safari-web-extension-converter
 npm run package    # dist/mail-checker-<version>.zip
 ```
 
-Gmail and Outlook need OAuth client IDs: see [OAuth setup](docs/OAUTH.md). See [Architecture](docs/ARCHITECTURE.md) and [Privacy](PRIVACY.md).
+Gmail and Outlook need OAuth client IDs: see [OAuth setup](docs/OAUTH.md). See [Architecture](docs/ARCHITECTURE.md), [Safari](docs/SAFARI.md) and [Privacy](PRIVACY.md). Mockups are in `design/`.

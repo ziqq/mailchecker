@@ -27,6 +27,16 @@ const paths: Readonly<Record<string, string>> = Object.freeze({
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m0 4v5l3 3',
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
   shield: 'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6z',
+  archive: 'M3 4h18v4H3zm2 4v12h14V8M10 12h4',
+  pin: 'm8 3 8 0-1 6 4 4H5l4-4zm4 10v8',
+  expand: 'M14 3h7v7M21 3l-7 7M10 21H3v-7M3 21l7-7',
+  search: 'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14m5 12 6 6',
+  back: 'm15 5-7 7 7 7',
+  chevron: 'm6 9 6 6 6-6',
+  unread: 'M3 5h13M3 5v14h18v-7M3 6l9 7 4-3M19 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4',
+  clip: 'm21 11-9 9a6 6 0 0 1-8-8l9-9a4 4 0 0 1 6 6l-9 9a2 2 0 0 1-3-3l8-8',
+  image: 'M3 3h18v18H3zm0 15 6-6 4 4 3-3 5 5M15 7h1',
+  layers: 'm12 3 9 5-9 5-9-5zm-9 9 9 5 9-5m-18 4 9 5 9-5',
 });
 
 /** Filled provider marks: `[path, colour]` pairs. */

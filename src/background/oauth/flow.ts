@@ -12,6 +12,7 @@
  */
 import type {Credentials} from '../../shared/types';
 import {AuthError, HttpError, requestJSON} from '../http';
+import {hasIdentity} from '../platform';
 import {oauthConfig as config} from './config';
 
 /** OAuth providers. */
@@ -28,16 +29,20 @@ const MICROSOFT = 'https://login.microsoftonline.com/common/oauth2/v2.0';
 
 /** Returns whether a provider has a client ID in this build. */
 export function available(provider: OAuthProvider): boolean {
-  return /^[\w.-]{8,256}$/.test(config[provider]);
+  return hasIdentity() && /^[\w.-]{8,256}$/.test(config[provider]);
 }
 
 /** Returns the callback URL registered for a provider: `https://<extension-id>.chromiumapp.org/<provider>`. */
 export function redirectUri(provider: OAuthProvider): string {
-  return chrome.identity.getRedirectURL(provider);
+  return hasIdentity() ? chrome.identity.getRedirectURL(provider) : '';
 }
 
 /** Returns the client ID or throws a user-facing error. */
 function clientId(provider: OAuthProvider): string {
+  if (!hasIdentity())
+    throw new Error(
+      'В этом браузере вход выполняется через приложение Mail Checker (Safari). Используйте JMAP или Chrome.',
+    );
   if (!available(provider))
     throw new Error('Вход не настроен в этой сборке: укажите OAuth Client ID в src/background/oauth/config.ts.');
   return config[provider];

@@ -6,10 +6,15 @@ export default tseslint.config(
   {ignores: ['build/**', 'dist/**', 'node_modules/**']},
   js.configs.recommended,
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
     extends: [tseslint.configs.recommended],
     languageOptions: {globals: {...globals.browser, ...globals.webextensions}},
     rules: {'no-eval': 'error', 'no-implied-eval': 'error', 'no-new-func': 'error'},
+  },
+  {
+    // Solid assigns `let element!: T` through `ref={element}`.
+    files: ['src/**/*.tsx'],
+    rules: {'no-unassigned-vars': 'off'},
   },
   {
     files: ['src/background/**/*.ts'],
