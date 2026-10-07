@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="ru" data-theme="dark" data-palette="accent">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mail Client · Popup Mockup</title>
+    <!--
+      Main entry point: the toolbar popup (Chrome allows up to 800×600).
+      List + reading pane, AI digest, grouped notifications, quick actions.
+      The browser chrome around it is a backdrop only.
+    -->
+    <link rel="stylesheet" href="mockup.css" />
+    <style>
+      body {
+        overflow: auto;
+        background: #1b1c1f;
+      }
+      :root:not([data-theme='dark']) body {
+        background: #dfe3e8;
+      }
+
+      /* Fake browser backdrop */
+      .browser {
+        position: relative;
+        min-height: 100vh;
+      }
+      .chrome-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 46px;
+        padding: 0 14px;
+        background: #2b2d31;
+        color: #c8c9cc;
+        font-size: 13px;
+      }
+      :root:not([data-theme='dark']) .chrome-bar {
+        background: #f1f3f4;
+        color: #3c4043;
+      }
+      .chrome-bar .url {
+        flex: 1;
+        max-width: 760px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgb(127 127 127 / 18%);
+      }
+      .chrome-bar .spacer {
+        flex: 1;
+      }
+      .ext-icon {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgb(127 127 127 / 22%);
+      }
+      .ext-icon .logo-mark {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        background: #0b0b0d;
+        display: grid;
+        place-items: center;
+      }
+      .ext-icon .logo-mark i {
+        width: 11px;
+        height: 7px;
+        border-radius: 1px;
+        background: #ff9418;
+      }
+      .ext-badge {
+        position: absolute;
+        right: -6px;
+        bottom: -4px;
+        padding: 0 4px;
+        border-radius: 6px;
+        background: #ff9418;
+        color: #1a0f00;
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .page-ghost {
+        padding: 40px;
+        color: rgb(127 127 127 / 50%);
+        font-size: 13px;
+      }
+
+      /* The popup itself */
+      .popup {
+        position: absolute;
+        top: 52px;
+        right: 64px;
+        display: flex;
+        flex-direction: column;
+        width: 780px;
+        height: 600px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--halo), var(--bg);
+        box-shadow: 0 30px 80px rgb(0 0 0 / 45%);
+      }
+      .p-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      .p-head .logo {
+        padding: 0 4px 0 2px;
+        font-size: 18px;
+      }
+      .switcher {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 10px 3px 3px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface-2);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .stack {
+        display: flex;
+      }
+      .stack .account-dot {
+        width: 22px;
+        height: 22px;
+        margin-left: -6px;
+        border: 2px solid var(--bg);
+        display: grid;
+        place-items: center;
+        color: #0b0b0d;
+        font-size: 9px;
+        font-weight: 800;
+      }
+      .stack .account-dot:first-child {
+        margin-left: 0;
+      }
+      .p-head .spacer {
+        flex: 1;
+      }
+      .compose-fab {
+        display: inline-grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border: 0;
+        border-radius: 50%;
+        background: var(--primary);
+        color: var(--primary-text);
+        box-shadow: 0 8px 24px var(--glow);
+        cursor: pointer;
+      }
+
+      .p-main {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        flex: 1;
+        min-height: 0;
+      }
+      .p-list {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border-right: 1px solid var(--border);
+      }
+      .p-list-head {
+        display: grid;
+        gap: 10px;
+        padding: 12px 12px 8px;
+      }
+      .p-list-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 6px 10px;
+      }
+
+      /* AI digest card */
+      .digest {
+        padding: 10px 12px;
+        border: 1px solid color-mix(in srgb, var(--eyebrow) 35%, var(--border));
+        border-radius: 14px;
+        background:
+          linear-gradient(135deg, color-mix(in srgb, var(--eyebrow) 12%, transparent), transparent 60%), var(--surface);
+      }
+      .digest-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      .digest-head .spacer {
+        flex: 1;
+      }
+      .digest ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 4px;
+        font-size: 12.5px;
+      }
+      .digest li {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+      }
+      .digest li b {
+        font-weight: 700;
+      }
+      .ai {
+        color: var(--eyebrow);
+      }
+
+      .row {
+        padding: 9px 10px 9px 14px;
+        border-radius: 12px;
+      }
+      .row .avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+      }
+      .row .unread {
+        top: 15px;
+        left: 4px;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        font-size: 10.5px;
+        font-weight: 700;
+      }
+      .tag.warn {
+        background: color-mix(in srgb, var(--danger) 14%, transparent);
+        color: var(--danger);
+      }
+      .tag.ai {
+        background: color-mix(in srgb, var(--eyebrow) 14%, transparent);
+        color: var(--eyebrow);
+      }
+      .tag.code {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: var(--mono);
+        cursor: pointer;
+      }
+      .stackcard {
+        position: relative;
+        margin: 2px 0 8px;
+      }
+      .stackcard::after {
+        content: '';
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: -4px;
+        height: 8px;
+        border: 1px solid var(--border);
+        border-top: 0;
+        border-radius: 0 0 12px 12px;
+        background: var(--surface-2);
+      }
+      .stackcard .row {
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .count-badge {
+        display: grid;
+        place-items: center;
+        min-width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      /* Reading pane */
+      .p-read {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .p-read-bar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      .p-read-bar .spacer {
+        flex: 1;
+      }
+      .p-read-bar .round {
+        width: 30px;
+        height: 30px;
+      }
+      .p-read-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px 16px;
+      }
+      .p-read-body h2 {
+        margin: 4px 0 10px;
+        font-size: 21px;
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: -0.035em;
+      }
+      .summary {
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        font-size: 12.5px;
+      }
+      .summary .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+      .summary ul {
+        margin: 0;
+        padding-left: 16px;
+      }
+      .summary .actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      .p-read .msg {
+        max-width: none;
+        margin: 0;
+        box-shadow: none;
+      }
+      .p-read .msg-head {
+        padding: 12px 14px 8px;
+      }
+      .p-read .msg-content {
+        padding: 2px 14px 14px;
+        font-size: 13.5px;
+      }
+      .p-read .privacy {
+        margin: 0 14px 10px;
+      }
+      .p-reply {
+        padding: 8px 12px 12px;
+        border-top: 1px solid var(--border);
+      }
+      .p-reply .chips {
+        padding: 0 0 8px;
+      }
+      .p-reply .quick-input {
+        padding: 4px 4px 4px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface-solid);
+      }
+
+      .callout {
+        position: absolute;
+        max-width: 230px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: #fff7c2;
+        color: #3d3200;
+        font-size: 12px;
+        line-height: 1.35;
+        box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+      }
+      .callout b {
+        display: block;
+        margin-bottom: 2px;
+      }
+      [data-hide-notes] .callout {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-search" viewBox="0 0 24 24"><path d="M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14m5 12 6 6" /></symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 6M20 3v8h-8" /></symbol>
+        <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 3h7v7M21 3l-7 7M10 21H3v-7M3 21l7-7" /></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z" />
+        </symbol>
+        <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zm9-13 4 4" /></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+        <symbol id="i-spark" viewBox="0 0 24 24">
+          <path
+            d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"
+          />
+        </symbol>
+        <symbol id="i-archive" viewBox="0 0 24 24"><path d="M3 4h18v4H3zm2 4v12h14V8M10 12h4" /></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6h16M9 6V4h6v2m3 0-1 15H7L6 6" /></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m0 4v5l3 3" /></symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24"><path d="m8 3 8 0-1 6 4 4H5l4-4zm4 10v8" /></symbol>
+        <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 5 5v6" /></symbol>
+        <symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" /></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6z" /></symbol>
+        <symbol id="i-git" viewBox="0 0 24 24">
+          <path
+            d="M6 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4m0 4v10m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4M18 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4m0 4c0 4-6 3-12 6"
+          />
+        </symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24"><path d="M8 8h12v12H8zM4 16V4h12" /></symbol>
+        <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13" /></symbol>
+        <symbol id="i-image" viewBox="0 0 24 24"><path d="M3 3h18v18H3zm0 15 6-6 4 4 3-3 5 5M15 7h1" /></symbol>
+        <symbol id="i-translate" viewBox="0 0 24 24">
+          <path d="M4 5h8M8 3v2m2 0c-1 5-4 8-6 9m2-5c1 2 3 4 5 5m2 6 4-10 4 10m-7-3h6" />
+        </symbol>
+        <symbol id="i-unsub" viewBox="0 0 24 24"><path d="M3 5h18v14H3zm0 1 9 7 9-7M4 20 20 4" /></symbol>
+      </defs>
+    </svg>
+
+    <div class="browser">
+      <div class="chrome-bar">
+        <span>‹ › ⟳</span>
+        <span class="url">twitch.tv/evolvepwp</span>
+        <span class="spacer"></span>
+        <span class="ext-icon"
+          ><span class="logo-mark"><i></i></span><span class="ext-badge">12</span></span
+        >
+      </div>
+      <div class="page-ghost">Страница сайта…</div>
+
+      <div class="popup" role="dialog" aria-label="Почта">
+        <!-- Header -->
+        <header class="p-head">
+          <span class="logo">mailchecker<span class="dot">.</span></span>
+          <span class="switcher" title="Выбрать ящик">
+            <span class="stack">
+              <span class="account-dot" style="background: #ff9418">A</span>
+              <span class="account-dot" style="background: #4f8cff">C</span>
+              <span class="account-dot" style="background: #3ecf8e">M</span>
+            </span>
+            Все ящики
+            <svg class="i" style="width: 12px; height: 12px"><use href="#i-chevron" /></svg>
+          </span>
+          <span class="spacer"></span>
+          <button class="round ghost" title="Поиск · /">
+            <svg class="i"><use href="#i-search" /></svg>
+          </button>
+          <button class="round ghost" title="Проверить сейчас">
+            <svg class="i"><use href="#i-refresh" /></svg>
+          </button>
+          <button class="round ghost" title="Открыть во вкладке">
+            <svg class="i"><use href="#i-expand" /></svg>
+          </button>
+          <button class="round ghost" title="Настройки">
+            <svg class="i"><use href="#i-settings" /></svg>
+          </button>
+          <button class="compose-fab" title="Написать · C">
+            <svg class="i"><use href="#i-pen" /></svg>
+          </button>
+        </header>
+
+        <div class="p-main">
+          <!-- List -->
+          <section class="p-list">
+            <div class="p-list-head">
+              <div class="digest">
+                <div class="digest-head">
+                  <svg class="i ai"><use href="#i-spark" /></svg>
+                  <span class="eyebrow">Сводка · 22:53</span>
+                  <span class="spacer"></span>
+                  <span class="muted" style="font-size: 11px">на устройстве</span>
+                </div>
+                <ul>
+                  <li><b>2</b><span>письма ждут вашего ответа — Иван (до пятницы), Дмитрий</span></li>
+                  <li><b>4×</b><span>CI упал в ziqq/cardhub: Frontend checkout</span></li>
+                  <li><b>!</b><span>Новый вход в Google с Mac OS — проверьте</span></li>
+                </ul>
+              </div>
+              <div class="segmented">
+                <button aria-pressed="true" type="button">Все <span class="n">12</span></button>
+                <button aria-pressed="false" type="button">Люди <span class="n">3</span></button>
+                <button aria-pressed="false" type="button">Уведомления <span class="n">7</span></button>
+                <button aria-pressed="false" type="button">Рассылки <span class="n">2</span></button>
+              </div>
+            </div>
+
+            <div class="p-list-body">
+              <div class="group-head" style="padding: 4px 8px"><span class="eyebrow">Люди</span></div>
+              <article class="row" aria-selected="true" data-row>
+                <span class="unread"></span>
+                <span class="avatar">И</span>
+                <div class="body">
+                  <div class="top"><span class="from">Иван Петров</span><span class="time">22:39</span></div>
+                  <div class="subject">Отчёт за сентябрь</div>
+                  <div class="meta">
+                    <span class="account-dot" style="background: #ff9418"></span>
+                    <span class="tag ai"
+                      ><svg class="i" style="width: 10px; height: 10px"><use href="#i-spark" /></svg>Ответить до
+                      пт</span
+                    >
+                  </div>
+                </div>
+              </article>
+              <article class="row" data-row>
+                <span class="unread"></span>
+                <span class="avatar">D</span>
+                <div class="body">
+                  <div class="top"><span class="from">Dmitry Orlov</span><span class="time">19:05</span></div>
+                  <div class="subject">Re: созвон по интеграции Graph</div>
+                  <div class="meta">
+                    <span class="account-dot" style="background: #4f8cff"></span>
+                    <span class="tag ai">Встреча · Чт 11:00</span>
+                  </div>
+                </div>
+              </article>
+
+              <div class="group-head" style="padding: 10px 8px 4px"><span class="eyebrow">Уведомления</span></div>
+              <div class="stackcard">
+                <article class="row" data-row>
+                  <span class="unread"></span>
+                  <span class="avatar" style="background: var(--surface-2); color: var(--text)"
+                    ><svg class="i"><use href="#i-git" /></svg
+                  ></span>
+                  <div class="body">
+                    <div class="top"><span class="from">ziqq/cardhub · CI</span><span class="time">22:53</span></div>
+                    <div class="subject">PR run failed: Frontend checkout</div>
+                    <div class="snippet">feat(github-36): pin cards to the top</div>
+                  </div>
+                  <span class="count-badge">×4</span>
+                </article>
+              </div>
+              <article class="row" data-row>
+                <span class="unread"></span>
+                <span class="avatar" style="background: var(--surface-2); color: var(--text)">G</span>
+                <div class="body">
+                  <div class="top"><span class="from">Google</span><span class="time">22:34</span></div>
+                  <div class="subject">Оповещение системы безопасности</div>
+                  <div class="meta">
+                    <span class="tag warn"
+                      ><svg class="i" style="width: 10px; height: 10px"><use href="#i-shield" /></svg>Вход с Mac
+                      OS</span
+                    >
+                  </div>
+                </div>
+              </article>
+              <article class="row" data-row>
+                <span class="unread"></span>
+                <span class="avatar" style="background: var(--surface-2); color: var(--text)">Я</span>
+                <div class="body">
+                  <div class="top"><span class="from">Яндекс ID</span><span class="time">21:10</span></div>
+                  <div class="subject">Код подтверждения</div>
+                  <div class="meta">
+                    <span class="tag code" title="Скопировать"
+                      ><svg class="i" style="width: 10px; height: 10px"><use href="#i-copy" /></svg>482 913</span
+                    >
+                    <span class="muted" style="font-size: 11px">удалится через 10 мин</span>
+                  </div>
+                </div>
+              </article>
+
+              <div class="group-head" style="padding: 10px 8px 4px"><span class="eyebrow">Рассылки</span></div>
+              <article class="row read" data-row>
+                <span class="avatar" style="background: var(--surface-2); color: var(--text)">R</span>
+                <div class="body">
+                  <div class="top"><span class="from">RuStore Updates</span><span class="time">18:39</span></div>
+                  <div class="subject">GameDev Mobile Conf 2026, 2 ноября</div>
+                  <div class="meta">
+                    <span class="tag code" style="font-family: var(--font)"
+                      ><svg class="i" style="width: 10px; height: 10px"><use href="#i-unsub" /></svg>Отписаться</span
+                    >
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <!-- Reading pane -->
+          <section class="p-read">
+            <div class="p-read-bar">
+              <button class="round ghost" title="Назад к списку">‹</button>
+              <span class="spacer"></span>
+              <button class="round" title="В архив · E">
+                <svg class="i"><use href="#i-archive" /></svg>
+              </button>
+              <button class="round" title="Удалить · #">
+                <svg class="i"><use href="#i-trash" /></svg>
+              </button>
+              <button class="round" title="Отложить · H">
+                <svg class="i"><use href="#i-clock" /></svg>
+              </button>
+              <button class="round" title="Закрепить · P">
+                <svg class="i"><use href="#i-pin" /></svg>
+              </button>
+              <button class="round ghost" title="Ещё">
+                <svg class="i"><use href="#i-more" /></svg>
+              </button>
+            </div>
+            <div class="p-read-body">
+              <p class="eyebrow">anton@company.com · 3 письма</p>
+              <h2>Отчёт за сентябрь</h2>
+
+              <div class="summary">
+                <div class="eyebrow ai">
+                  <svg class="i"><use href="#i-spark" /></svg>Коротко
+                </div>
+                <ul>
+                  <li>Выручка +18%, отток снизился до 2,1%</li>
+                  <li>Есть вопросы к срокам мобильного приложения</li>
+                  <li>Нужно посмотреть <b>до пятницы</b>, презентация в понедельник</li>
+                </ul>
+                <div class="actions">
+                  <button class="btn small" type="button">
+                    <svg class="i"><use href="#i-clock" /></svg>Напомнить в пт 10:00
+                  </button>
+                  <button class="btn small" type="button">
+                    <svg class="i"><use href="#i-translate" /></svg>Перевести
+                  </button>
+                </div>
+              </div>
+
+              <article class="msg">
+                <div class="msg-head">
+                  <span class="avatar">И</span>
+                  <div class="who">
+                    <strong>Иван Петров</strong>
+                    <span>ivan@partner.ru → вам · 22:39</span>
+                  </div>
+                  <button class="round ghost" title="Ответить">
+                    <svg class="i"><use href="#i-reply" /></svg>
+                  </button>
+                </div>
+                <div class="privacy">
+                  <svg class="i"><use href="#i-shield" /></svg>
+                  <span>Картинки и 2 трекера заблокированы</span>
+                  <button class="btn small" type="button">
+                    <svg class="i"><use href="#i-image" /></svg>Показать
+                  </button>
+                </div>
+                <div class="msg-content">
+                  <p>Привет, Антон!</p>
+                  <p>
+                    Во вложении отчёт за сентябрь. Выручка выросла на 18%, отток снизился до 2,1%. Отдельно подсветил
+                    мобильное приложение — там вопросы к срокам.
+                  </p>
+                  <p>Посмотри, пожалуйста, до пятницы — в понедельник презентуем.</p>
+                  <span class="attachment"><span class="tile">PDF</span>Отчёт_сентябрь.pdf · 2,4 МБ</span>
+                </div>
+              </article>
+            </div>
+            <div class="p-reply">
+              <div class="chips">
+                <span class="chip"
+                  ><svg class="i ai" style="width: 11px; height: 11px; vertical-align: -1px">
+                    <use href="#i-spark" />
+                  </svg>
+                  Спасибо, посмотрю до пятницы</span
+                >
+                <span class="chip">Есть пара вопросов по срокам</span>
+                <span class="chip">Созвонимся в чт?</span>
+              </div>
+              <div class="quick-input">
+                <input type="text" placeholder="Ответить Ивану… или опишите мысль — ИИ допишет" />
+                <button class="round ghost" title="Улучшить текст">
+                  <svg class="i ai"><use href="#i-spark" /></svg>
+                </button>
+                <button class="btn primary small" type="button">
+                  <svg class="i"><use href="#i-send" /></svg>Отправить
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Design notes (toggle in the panel) -->
+      <div class="callout" style="top: 120px; left: 40px">
+        <b>1. Окно как у Checker Plus</b>Клик по иконке открывает полноценный клиент 780×600: список + чтение + ответ.
+        Кнопка ⤢ — развернуть во вкладку (3 колонки).
+      </div>
+      <div class="callout" style="top: 260px; left: 40px">
+        <b>2. ИИ-сводка</b>Что ждёт ответа, дедлайны, что сломалось, на что обратить внимание. Считается на устройстве.
+      </div>
+      <div class="callout" style="top: 390px; left: 40px">
+        <b>3. Умная группировка</b>4 одинаковых письма CI → одна карточка «×4». Коды подтверждения копируются в один
+        клик и исчезают.
+      </div>
+      <div class="callout" style="top: 520px; left: 40px">
+        <b>4. Безопасность</b>Подозрительные входы, фишинг, трекеры и внешние картинки — отмечаются и блокируются.
+      </div>
+    </div>
+
+    <div class="mock-panel" aria-label="Переключатели макета">
+      <b>Макет</b>
+      <div class="segmented" data-attr="palette">
+        <button type="button" aria-pressed="true" data-value="accent">Оранжевый</button>
+        <button type="button" aria-pressed="false" data-value="neutral">Нейтральный</button>
+      </div>
+      <div class="segmented" data-attr="theme">
+        <button type="button" aria-pressed="true" data-value="dark">Тёмная</button>
+        <button type="button" aria-pressed="false" data-value="light">Светлая</button>
+      </div>
+      <button class="btn small" type="button" data-notes>Заметки</button>
+    </div>
+
+    <script>
+      // Mockup interactions only.
+      const root = document.documentElement;
+      for (const group of document.querySelectorAll('.segmented')) {
+        group.addEventListener('click', event => {
+          const button = event.target.closest('button');
+          if (!button) return;
+          if (group.dataset.attr) root.dataset[group.dataset.attr] = button.dataset.value;
+          for (const item of group.children) item.setAttribute('aria-pressed', String(item === button));
+        });
+      }
+      for (const row of document.querySelectorAll('[data-row]')) {
+        row.addEventListener('click', () => {
+          for (const other of document.querySelectorAll('[data-row]')) other.setAttribute('aria-selected', 'false');
+          row.setAttribute('aria-selected', 'true');
+        });
+      }
+      document.querySelector('[data-notes]').addEventListener('click', () => {
+        document.body.toggleAttribute('data-hide-notes');
+      });
+    </script>
+  </body>
+</html>
