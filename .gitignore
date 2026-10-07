@@ -1,0 +1,13 @@
+.DS_Store
+build/
+dist/
+node_modules/
+__pycache__/
+*.pyc
+*.zip
+*.log
+.env
+.env.*
+!.env.example
+# Private extension key: keep it outside the repository and back it up.
+keys/*.pem

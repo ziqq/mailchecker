@@ -1,0 +1,92 @@
+/**
+ * Original 24×24 line icons and provider marks rendered as inline SVG.
+ *
+ * Elements are created with DOM APIs only; no markup strings are parsed.
+ *
+ * @module shared/icons
+ */
+import type {ProviderId} from './types';
+
+/** Line-icon path data by name. */
+const paths: Readonly<Record<string, string>> = Object.freeze({
+  refresh: 'M20 11a8 8 0 1 0-2 6M20 3v8h-8',
+  settings: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z',
+  theme: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m0 0v18',
+  check: 'm5 12 4 4L20 5',
+  trash: 'M4 6h16M9 6V4h6v2m3 0-1 15H7L6 6',
+  external: 'M14 3h7v7m0-7-12 12M11 3H3v18h18v-8',
+  mail: 'M3 5h18v14H3zm0 1 9 7 9-7',
+  inbox: 'M3 13h5l1 3h6l1-3h5M5 5h14l2 8v6H3v-6z',
+  server: 'M4 4h16v7H4zm0 9h16v7H4zm3-5.5h.01M7 16.5h.01',
+  lock: 'M5 11h14v10H5zm3 0V7a4 4 0 0 1 8 0v4',
+  bell: 'M6 9a6 6 0 0 1 12 0c0 6 3 8 3 8H3s3-2 3-8m4 12h4',
+  key: 'M8 11a4 4 0 1 0 0 8 4 4 0 0 0 0-8m3 1 9-9m-4 4 3 3',
+  alert: 'M12 3 2 20h20zm0 6v5m0 3h.01',
+  plus: 'M12 5v14M5 12h14',
+  close: 'm6 6 12 12M18 6 6 18',
+  clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m0 4v5l3 3',
+  list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+  shield: 'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6z',
+});
+
+/** Filled provider marks: `[path, colour]` pairs. */
+const marks: Readonly<Record<string, ReadonlyArray<readonly [string, string]>>> = Object.freeze({
+  gmail: [
+    ['M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3', '#4285F4'],
+    ['M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22', '#34A853'],
+    ['M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z', '#FBBC05'],
+    ['M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.8 9.4 6 12 6', '#EA4335'],
+  ],
+  outlook: [
+    ['M3 3h8.5v8.5H3z', '#F25022'],
+    ['M12.5 3H21v8.5h-8.5z', '#7FBA00'],
+    ['M3 12.5h8.5V21H3z', '#00A4EF'],
+    ['M12.5 12.5H21V21h-8.5z', '#FFB900'],
+  ],
+});
+
+/** SVG namespace. */
+const ns = 'http://www.w3.org/2000/svg';
+
+/**
+ * Creates a line icon that inherits `currentColor`.
+ *
+ * @param name An icon name; unknown names use the mail icon.
+ * @param className An extra CSS class.
+ */
+export function icon(name: string, className = ''): SVGSVGElement {
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.8');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.classList.add('icon');
+  if (className) svg.classList.add(className);
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', paths[name] || paths.mail);
+  svg.append(path);
+  return svg;
+}
+
+/**
+ * Creates a provider mark: the coloured Google or Microsoft logo, or a server icon for JMAP.
+ *
+ * @param provider A provider ID.
+ */
+export function providerMark(provider: ProviderId): SVGSVGElement {
+  if (!marks[provider]) return icon('server');
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.classList.add('icon');
+  for (const [d, fill] of marks[provider]) {
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', fill);
+    svg.append(path);
+  }
+  return svg;
+}
