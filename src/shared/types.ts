@@ -48,7 +48,10 @@ export interface Account {
   settings: AccountSettings;
 }
 
-/** A bounded unread message record. */
+/** Smart Inbox category. */
+export type Category = 'people' | 'notifications' | 'newsletters';
+
+/** A bounded Inbox message record for lists. */
 export interface MailMessage {
   id: string;
   thread: string;
@@ -59,13 +62,44 @@ export interface MailMessage {
   date: number;
   /** HTTPS link to the message in webmail, or empty. */
   link: string;
+  unread: boolean;
+  /** Starred (Gmail), flagged (Outlook) or `$flagged` (JMAP). */
+  pinned: boolean;
+  category: Category;
+  attachments: boolean;
 }
 
-/** Unread Inbox state returned by a provider. */
+/** Inbox state returned by a provider: the latest messages and the unread count. */
 export interface InboxResult {
   unread: number;
   messages: MailMessage[];
 }
+
+/** Attachment metadata; content is not downloaded in v0.2. */
+export interface Attachment {
+  name: string;
+  size: number;
+  type: string;
+}
+
+/** A message of an opened conversation, with its body. */
+export interface ThreadMessage {
+  id: string;
+  from: string;
+  to: string;
+  cc: string;
+  subject: string;
+  date: number;
+  /** Untrusted HTML; pages sanitize it before rendering. */
+  html: string;
+  /** Plain-text body when no HTML part exists. */
+  text: string;
+  unread: boolean;
+  attachments: Attachment[];
+}
+
+/** Message actions available in lists and the reader. */
+export type MessageAction = 'archive' | 'trash' | 'read' | 'unread' | 'pin' | 'unpin';
 
 /** The last check result for an account. */
 export interface Mailbox extends InboxResult {
@@ -93,7 +127,7 @@ export interface PublicAccount {
   email: string;
 }
 
-/** State sent to the popup and Settings. */
+/** State sent to the client pages and Settings. */
 export interface PublicState {
   preferences: Preferences;
   accounts: PublicAccount[];
@@ -110,12 +144,21 @@ export type Request =
   | {type: 'STATE'}
   | {type: 'CHECK'}
   | {type: 'OPTIONS'}
-  | {type: 'MARK_READ' | 'TRASH'; account: string; message: string}
+  | {type: 'OPEN_APP'}
   | {type: 'OPEN'; account: string; message?: string}
+  | {type: 'THREAD'; account: string; message: string; thread: string}
+  | {type: 'ACT'; account: string; message: string; action: MessageAction}
+  | {type: 'SEARCH'; query: string}
   | {type: 'SIGN_IN'; account: string}
   | {type: 'PREFERENCES'; value: Partial<Preferences>}
   | {type: 'ADD_ACCOUNT'; provider: ProviderId; input?: JmapInput}
   | {type: 'REMOVE_ACCOUNT'; account: string};
+
+/** A search hit: a message with its account. */
+export interface SearchHit {
+  account: string;
+  message: MailMessage;
+}
 
 /** Request type names. */
 export type RequestType = Request['type'];

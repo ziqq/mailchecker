@@ -11,12 +11,13 @@
  * @module background/storage
  */
 import type {Store} from '../shared/types';
+import {restrictStorage} from './platform';
 
 /** Tail of the serialized write queue. */
 let writes: Promise<unknown> = Promise.resolve();
 
-/** Resolves once local storage is limited to trusted extension contexts. */
-export const storageReady = chrome.storage.local.setAccessLevel({accessLevel: 'TRUSTED_CONTEXTS'});
+/** Resolves once local storage is limited to trusted extension contexts where supported. */
+export const storageReady = restrictStorage();
 
 /** Reads the stored preferences, accounts and mailboxes. */
 export async function readStore(): Promise<Store> {

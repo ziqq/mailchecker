@@ -11,7 +11,7 @@ import type {Palette, Preferences, Theme} from './types';
 export const defaults: Readonly<Preferences> = Object.freeze({
   interval: 2,
   notifications: true,
-  limit: 20,
+  limit: 30,
   theme: 'auto',
   palette: 'accent',
 });

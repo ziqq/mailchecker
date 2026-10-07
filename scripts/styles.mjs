@@ -8,7 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Runtime stylesheet names and their SCSS entry points. */
 const entries = {
-  'popup.css': 'src/popup/popup.scss',
+  'client.css': 'src/client/client.scss',
   'options.css': 'src/options/options.scss',
 };
 

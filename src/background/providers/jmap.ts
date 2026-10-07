@@ -6,9 +6,9 @@
  *
  * @module background/providers/jmap
  */
-import type {Account} from '../../shared/types';
+import type {Account, MailMessage} from '../../shared/types';
 import {AuthError, requestJSON} from '../http';
-import {count, message, type Provider} from './message';
+import {addresses, categorize, count, message, threadMessage, type Provider} from './message';
 
 /** JMAP capabilities used by every request. */
 const USING = ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'];
@@ -23,15 +23,40 @@ interface JmapMailbox {
   unreadEmails?: number;
 }
 
+/** JMAP address. */
+type JmapAddress = {name?: string; email?: string};
+
 /** JMAP email fields used here. */
 interface JmapEmail {
   id: string;
   threadId?: string;
-  from?: {name?: string; email?: string}[];
+  from?: JmapAddress[];
+  to?: JmapAddress[];
+  cc?: JmapAddress[];
   subject?: string;
   preview?: string;
   receivedAt?: string;
+  keywords?: Record<string, boolean>;
+  hasAttachment?: boolean;
+  'header:List-Unsubscribe:asText'?: string | null;
+  htmlBody?: {partId?: string; type?: string}[];
+  textBody?: {partId?: string; type?: string}[];
+  attachments?: {name?: string; size?: number; type?: string}[];
+  bodyValues?: Record<string, {value?: string}>;
 }
+
+/** Properties requested for lists. */
+const LIST_PROPERTIES = [
+  'id',
+  'threadId',
+  'from',
+  'subject',
+  'preview',
+  'receivedAt',
+  'keywords',
+  'hasAttachment',
+  'header:List-Unsubscribe:asText',
+];
 
 /** Returns a validated HTTPS URL string. */
 function httpsURL(value: unknown, name: string): string {
@@ -84,15 +109,65 @@ async function run(account: Account, calls: Call[]): Promise<Record<string, any>
   return replies;
 }
 
-/** Returns the Inbox and Trash mailboxes. */
-async function mailboxes(account: Account): Promise<{inbox: JmapMailbox; trash?: JmapMailbox}> {
+/** Returns mailboxes by role. */
+async function mailboxes(account: Account): Promise<Record<string, JmapMailbox>> {
   const replies = await run(account, [
     ['Mailbox/get', {ids: null, properties: ['id', 'role', 'unreadEmails']}, 'mailboxes'],
   ]);
   const list: JmapMailbox[] = Array.isArray(replies.mailboxes?.list) ? replies.mailboxes.list : [];
-  const inbox = list.find(item => item.role === 'inbox');
-  if (!inbox) throw new Error('В ящике нет папки «Входящие».');
-  return {inbox, trash: list.find(item => item.role === 'trash')};
+  const roles: Record<string, JmapMailbox> = {};
+  for (const box of list) if (box.role) roles[box.role] = box;
+  if (!roles.inbox) throw new Error('В ящике нет папки «Входящие».');
+  return roles;
+}
+
+/** Converts a JMAP email to a list message. */
+function listMessage(item: JmapEmail): MailMessage {
+  const from = addresses(item.from?.slice(0, 1));
+  return message({
+    id: item.id,
+    thread: item.threadId,
+    from,
+    subject: item.subject,
+    snippet: item.preview,
+    date: Date.parse(item.receivedAt || ''),
+    unread: !item.keywords?.$seen,
+    pinned: Boolean(item.keywords?.$flagged),
+    attachments: item.hasAttachment,
+    category: categorize({from, listUnsubscribe: Boolean(item['header:List-Unsubscribe:asText'])}),
+  });
+}
+
+/** Queries emails with a filter and returns list messages. */
+async function query(account: Account, filter: Record<string, unknown>, limit: number): Promise<MailMessage[]> {
+  const replies = await run(account, [
+    ['Email/query', {filter, sort: [{property: 'receivedAt', isAscending: false}], limit}, 'query'],
+    [
+      'Email/get',
+      {'#ids': {resultOf: 'query', name: 'Email/query', path: '/ids'}, properties: LIST_PROPERTIES},
+      'emails',
+    ],
+  ]);
+  const list: JmapEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
+  return list.slice(0, limit).map(listMessage);
+}
+
+/** Keyword and mailbox patches for each action. */
+async function patch(account: Account, action: string): Promise<Record<string, unknown>> {
+  switch (action) {
+    case 'read':
+      return {'keywords/$seen': true};
+    case 'unread':
+      return {'keywords/$seen': null};
+    case 'pin':
+      return {'keywords/$flagged': true};
+    case 'unpin':
+      return {'keywords/$flagged': null};
+  }
+  const roles = await mailboxes(account);
+  const target = roles[action === 'archive' ? 'archive' : 'trash'];
+  if (!target) throw new Error(action === 'archive' ? 'В ящике нет папки «Архив».' : 'В ящике нет папки «Корзина».');
+  return {mailboxIds: {[target.id]: true}};
 }
 
 /** JMAP provider. */
@@ -122,49 +197,67 @@ export const jmap: Provider = {
   },
 
   async inbox(account, limit) {
-    const boxes = await mailboxes(account);
+    const roles = await mailboxes(account);
+    const messages = await query(account, {inMailbox: roles.inbox.id}, limit);
+    return {unread: count(roles.inbox.unreadEmails, messages.filter(item => item.unread).length), messages};
+  },
+
+  async thread(account, item) {
     const replies = await run(account, [
-      [
-        'Email/query',
-        {
-          filter: {inMailbox: boxes.inbox.id, notKeyword: '$seen'},
-          sort: [{property: 'receivedAt', isAscending: false}],
-          limit,
-        },
-        'query',
-      ],
+      ['Thread/get', {ids: [item.thread || item.id]}, 'thread'],
       [
         'Email/get',
         {
-          '#ids': {resultOf: 'query', name: 'Email/query', path: '/ids'},
-          properties: ['id', 'threadId', 'from', 'subject', 'preview', 'receivedAt'],
+          '#ids': {resultOf: 'thread', name: 'Thread/get', path: '/list/*/emailIds'},
+          properties: [
+            'id',
+            'from',
+            'to',
+            'cc',
+            'subject',
+            'receivedAt',
+            'keywords',
+            'htmlBody',
+            'textBody',
+            'attachments',
+            'bodyValues',
+          ],
+          fetchHTMLBodyValues: true,
+          fetchTextBodyValues: true,
+          maxBodyValueBytes: 2 * 1024 * 1024,
         },
         'emails',
       ],
     ]);
     const list: JmapEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
-    const messages = list.slice(0, limit).map(item =>
-      message({
-        id: item.id,
-        thread: item.threadId,
-        from: item.from?.[0] ? `${item.from[0].name || ''} <${item.from[0].email || ''}>` : '',
-        subject: item.subject,
-        snippet: item.preview,
-        date: Date.parse(item.receivedAt || ''),
-      }),
-    );
-    return {unread: count(boxes.inbox.unreadEmails, messages.length), messages};
+    return list
+      .map(entry => {
+        const value = (parts?: {partId?: string; type?: string}[], type?: string) =>
+          (parts || [])
+            .filter(part => !type || part.type === type)
+            .map(part => entry.bodyValues?.[part.partId || '']?.value || '')
+            .join('\n');
+        return threadMessage({
+          id: entry.id,
+          from: addresses(entry.from),
+          to: addresses(entry.to),
+          cc: addresses(entry.cc),
+          subject: entry.subject,
+          date: Date.parse(entry.receivedAt || ''),
+          html: value(entry.htmlBody, 'text/html'),
+          text: value(entry.textBody),
+          unread: !entry.keywords?.$seen,
+          attachments: entry.attachments,
+        });
+      })
+      .sort((a, b) => a.date - b.date);
   },
 
-  async markRead(account, item) {
-    await run(account, [['Email/set', {update: {[item.id]: {'keywords/$seen': true}}}, 'set']]);
+  async act(account, item, action) {
+    await run(account, [['Email/set', {update: {[item.id]: await patch(account, action)}}, 'set']]);
   },
 
-  async trash(account, item) {
-    const boxes = await mailboxes(account);
-    if (!boxes.trash) throw new Error('В ящике нет папки «Корзина».');
-    await run(account, [['Email/set', {update: {[item.id]: {mailboxIds: {[boxes.trash.id]: true}}}}, 'set']]);
-  },
+  search: (account, text, limit) => query(account, {text}, limit),
 
   webURL: account => account.settings.webUrl || new URL(sessionURL(account)).origin,
 };

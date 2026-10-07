@@ -1,17 +1,22 @@
 /**
- * Bundles `src/` into an unpacked Manifest V3 extension in `build/`.
+ * Bundles `src/` into an unpacked Manifest V3 extension.
  *
- * esbuild bundles each entry point into one classic script (no runtime
- * module loading), unminified so reviewers can read it. Sass compiles SCSS
- * to CSS without source maps. The manifest, pages and icons are copied
- * unchanged.
+ * esbuild bundles each TypeScript entry point into one classic script (no
+ * runtime module loading), unminified so reviewers can read it; Solid JSX
+ * is compiled ahead of time, so no runtime compiler or `eval` ships. Sass
+ * compiles SCSS without source maps. The manifest is adapted per target:
  *
- * Usage: `node scripts/build.mjs [--outdir <directory>]`.
+ * - `chromium` (default, `build/`): Chrome, Edge, Brave, Opera, Yandex Browser.
+ * - `safari` (`build-safari/`): input for `xcrun safari-web-extension-converter`;
+ *   drops keys Safari ignores or rejects (see docs/SAFARI.md).
+ *
+ * Usage: `node scripts/build.mjs [--target chromium|safari] [--outdir <directory>]`.
  */
-import {copyFile, mkdir, rm, writeFile} from 'node:fs/promises';
+import {copyFile, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
 import {dirname, relative, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
+import {solidPlugin} from 'esbuild-plugin-solid';
 import {compileStyles} from './styles.mjs';
 
 /** Repository root. */
@@ -20,14 +25,14 @@ export const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 /** Bundled entry points by output name. */
 const entries = {
   background: 'src/background/index.ts',
-  popup: 'src/popup/index.ts',
+  client: 'src/client/index.tsx',
   options: 'src/options/index.ts',
 };
 
 /** Copied files: output path → source path. */
 export const assets = {
-  'manifest.json': 'src/manifest.json',
-  'popup.html': 'src/popup/popup.html',
+  'popup.html': 'src/client/popup.html',
+  'app.html': 'src/client/app.html',
   'options.html': 'src/options/options.html',
   'icons/icon16.png': 'src/icons/icon16.png',
   'icons/icon32.png': 'src/icons/icon32.png',
@@ -35,38 +40,72 @@ export const assets = {
   'icons/icon128.png': 'src/icons/icon128.png',
 };
 
+/** Build targets: output directory and manifest adapter. */
+export const targets = {
+  chromium: {outdir: 'build', manifest: manifest => manifest},
+  safari: {
+    outdir: 'build-safari',
+    /** Safari ignores `key` and `minimum_chrome_version`, and has no `identity` or `notifications` APIs. */
+    manifest: manifest => {
+      const {optional_permissions: optional = [], permissions, ...rest} = manifest;
+      delete rest.key;
+      delete rest.minimum_chrome_version;
+      const kept = optional.filter(name => name !== 'identity');
+      return {
+        ...rest,
+        permissions: permissions.filter(name => name !== 'notifications'),
+        ...(kept.length ? {optional_permissions: kept} : {}),
+        browser_specific_settings: {safari: {strict_min_version: '16.4'}},
+      };
+    },
+  },
+};
+
 /**
- * Builds the extension into [outdir], replacing its previous contents.
+ * Builds the extension for [target] into [outdir], replacing its previous contents.
  *
- * @param {string} [outdir=build/] Output directory.
+ * @param {Object} [options]
+ * @param {'chromium'|'safari'} [options.target='chromium'] The browser family.
+ * @param {string} [options.outdir] Output directory; defaults to the target's.
  * @returns {Promise<string>} The output directory.
  */
-export async function buildExtension(outdir = resolve(root, 'build')) {
+export async function buildExtension({target = 'chromium', outdir} = {}) {
+  const config = targets[target];
+  if (!config) throw new Error(`Unknown target: ${target}`);
+  const out = outdir || resolve(root, config.outdir);
   const styles = compileStyles();
-  await rm(outdir, {recursive: true, force: true});
+  await rm(out, {recursive: true, force: true});
   await build({
     absWorkingDir: root,
     entryPoints: entries,
-    outdir,
+    outdir: out,
     bundle: true,
     format: 'iife',
     platform: 'browser',
-    target: 'chrome116',
+    target: ['chrome116', 'safari16'],
     charset: 'utf8',
     legalComments: 'none',
     banner: {js: "'use strict';"},
+    define: {__TARGET__: JSON.stringify(target)},
     logLevel: 'warning',
+    plugins: [solidPlugin()],
   });
-  for (const [name, {css}] of Object.entries(styles)) await writeFile(resolve(outdir, name), css);
+  for (const [name, {css}] of Object.entries(styles)) await writeFile(resolve(out, name), css);
   for (const [name, source] of Object.entries(assets)) {
-    await mkdir(dirname(resolve(outdir, name)), {recursive: true});
-    await copyFile(resolve(root, source), resolve(outdir, name));
+    await mkdir(dirname(resolve(out, name)), {recursive: true});
+    await copyFile(resolve(root, source), resolve(out, name));
   }
-  return outdir;
+  const manifest = JSON.parse(await readFile(resolve(root, 'src/manifest.json'), 'utf8'));
+  await writeFile(resolve(out, 'manifest.json'), `${JSON.stringify(config.manifest(manifest), null, 2)}\n`);
+  return out;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const index = process.argv.indexOf('--outdir');
-  const outdir = await buildExtension(index > 0 ? resolve(process.argv[index + 1]) : undefined);
-  console.log(`Built the unpacked extension in ${relative(root, outdir) || '.'}/.`);
+  const option = name => {
+    const index = process.argv.indexOf(name);
+    return index > 0 ? process.argv[index + 1] : undefined;
+  };
+  const outdir = option('--outdir');
+  const out = await buildExtension({target: option('--target'), outdir: outdir && resolve(outdir)});
+  console.log(`Built the unpacked extension in ${relative(root, out) || '.'}/.`);
 }

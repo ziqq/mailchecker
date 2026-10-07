@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0
+
+- **ADDED**: a full mail client in the toolbar popup (780×600) and a full-tab mode (⤢), built with SolidJS
+- **ADDED**: unified Inbox across accounts with an account switcher, Smart Inbox categories (people, notifications, newsletters), pinned messages and stacks of repeated notifications (`×N`)
+- **ADDED**: conversation reader with collapsed earlier messages, attachment list, and safe HTML rendering: sanitized bodies in a script-free sandboxed frame with its own CSP, remote images and tracking pixels blocked until allowed
+- **ADDED**: archive, trash, read/unread and pin (Gmail star, Outlook flag, JMAP `$flagged`) synced with the provider; opening a message marks it read
+- **ADDED**: search across all accounts and keyboard shortcuts (`J`/`K`, `E`, `#`, `U`, `S`, `/`, `Esc`)
+- **ADDED**: responsive layouts: three columns in wide tabs, list and reader in the popup, one column with back navigation on narrow screens and iPhone
+- **ADDED**: Safari target (`npm run build:safari`), `background/platform.ts` for browser differences and `docs/SAFARI.md`
+- **CHANGED**: stored Inbox lists include read messages (default 30 per account); notifications still cover new unread mail only
+- **CHANGED**: `MARK_READ`/`TRASH` requests replaced by `ACT`
+
 ## 0.1.0
 
 - **ADDED**: unread counter on the toolbar badge, popup with unread Inbox messages, account filter, mark-read, trash and open-in-webmail actions

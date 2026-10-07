@@ -1,6 +1,6 @@
 # Mail Checker
 
-Mail Checker is a Chrome/Chromium Manifest V3 extension: unread counter, message list and notifications for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP mailboxes on any domain. It has no runtime dependencies or backend. A private npm package provides TypeScript/Sass compilation, esbuild bundling of `src/` into `build/`, checks and tests; Python packages the bundled runtime files.
+Mail Checker is a Manifest V3 mail client for Chromium browsers and Safari: a Spark-like client in the toolbar popup and a full-tab mode for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP mailboxes on any domain. It has no backend. SolidJS is the only runtime dependency (bundled). A private npm package provides TypeScript/Sass compilation, esbuild bundling of `src/` into `build/` and `build-safari/`, checks and tests; Python packages the bundled runtime files.
 
 ## General rules
 
@@ -17,10 +17,12 @@ Run `npm ci` and `npm run build`, then load `build/` as an unpacked extension in
 ## Project structure
 
 - `src/shared/`: types, preferences, formatting, DOM helpers and icons; side-effect-free modules used by every context.
-- `src/background/`: trusted service worker. `index.ts` routes messages; `storage`, `http`, `accounts` and `mailbox` hold storage, bounded requests, credentials and checks.
+- `src/background/`: trusted service worker. `index.ts` routes messages; `storage`, `http`, `accounts` and `mailbox` hold storage, bounded requests, credentials, checks and actions; `platform.ts` is the only place for browser-specific APIs.
 - `src/background/providers/`: Gmail, Microsoft Graph and JMAP adapters implementing `Provider` from `message.ts`.
 - `src/background/oauth/`: public client IDs and Google/Microsoft flows. Never add a client secret.
-- `src/popup/`, `src/options/`: pages, their TypeScript and SCSS.
+- `src/client/`: SolidJS client for `popup.html` and `app.html` (store, components, responsive `client.scss`).
+- `src/options/`: Settings page, its TypeScript and SCSS.
+- `design/`: HTML mockups of the client.
 - `src/styles/`: design tokens (two palettes × light/dark) and shared components.
 - `scripts/`, `.github/workflows/`: bundling, checks, icons, deterministic packaging and CI.
 - `docs/`, `PRIVACY.md`: architecture, OAuth setup and data handling. Read [Architecture](docs/ARCHITECTURE.md) before changing messages or storage.
@@ -41,3 +43,5 @@ npm audit --audit-level=high
 - Keep tokens and API requests in the worker; pages receive public state only.
 - Validate untrusted provider data and bound its size. Preserve `credentials: 'omit'`, `redirect: 'error'`, timeouts and response limits.
 - Request optional permissions only from a user gesture in Settings.
+- Email bodies render only through `shared/sanitize.ts` and `MailFrame` (sandbox without scripts, strict frame CSP); never insert them into extension pages.
+- Keep every layout working at popup (780×600), wide tab and phone widths; check Safari limits in [docs/SAFARI.md](docs/SAFARI.md) before using a new browser API.

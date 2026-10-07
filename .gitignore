@@ -12,3 +12,4 @@ __pycache__/
 # Private extension key: keep it outside the repository and back it up.
 keys/*.pem
 .claude/
+build-safari/
