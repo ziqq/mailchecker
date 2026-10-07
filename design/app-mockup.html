@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="ru" data-theme="dark" data-palette="accent">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mail Client · Mockup</title>
+    <!--
+      Design mockup of the full-tab mail client (v0.2–v0.4).
+      Static sample data; tokens mirror src/styles/_tokens.scss.
+      Use the floating panel to switch palette, theme and states.
+    -->
+    <link rel="stylesheet" href="mockup.css" />
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 13h5l1 3h6l1-3h5M5 5h14l2 8v6H3v-6z" /></symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24"><path d="m8 3 8 0-1 6 4 4H5l4-4zm4 10v8" /></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m0 4v5l3 3" /></symbol>
+        <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13" /></symbol>
+        <symbol id="i-draft" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zm9-13 4 4" /></symbol>
+        <symbol id="i-archive" viewBox="0 0 24 24"><path d="M3 4h18v4H3zm2 4v12h14V8M10 12h4" /></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6h16M9 6V4h6v2m3 0-1 15H7L6 6" /></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6z" /></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><path d="M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14m5 12 6 6" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 5 5v6" /></symbol>
+        <symbol id="i-forward" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5M20 9H9a5 5 0 0 0-5 5v6" /></symbol>
+        <symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" /></symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 3 8 3 8H3s3-2 3-8m4 12h4" /></symbol>
+        <symbol id="i-news" viewBox="0 0 24 24">
+          <path d="M4 5h13v14H6a2 2 0 0 1-2-2zm13 4h3v8a2 2 0 0 1-2 2M8 9h5m-5 4h5" />
+        </symbol>
+        <symbol id="i-image" viewBox="0 0 24 24"><path d="M3 3h18v18H3zm0 15 6-6 4 4 3-3 5 5M15 7h1" /></symbol>
+        <symbol id="i-clip" viewBox="0 0 24 24">
+          <path d="m21 11-9 9a6 6 0 0 1-8-8l9-9a4 4 0 0 1 6 6l-9 9a2 2 0 0 1-3-3l8-8" />
+        </symbol>
+        <symbol id="i-template" viewBox="0 0 24 24"><path d="M4 4h16v16H4zm0 5h16M9 9v11" /></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+        <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L20 5" /></symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24">
+          <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m0 0v18" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div class="app">
+      <!-- ============ Sidebar ============ -->
+      <aside class="side">
+        <div class="logo">mailchecker<span class="dot">.</span></div>
+        <button class="btn primary" type="button" data-open-compose>
+          <svg class="i"><use href="#i-plus" /></svg><span class="compose-label">Написать</span>
+        </button>
+
+        <nav class="nav" aria-label="Папки">
+          <a aria-current="page"
+            ><svg class="i"><use href="#i-inbox" /></svg><span class="label">Входящие</span
+            ><span class="count">12</span></a
+          >
+          <a
+            ><svg class="i"><use href="#i-pin" /></svg><span class="label">Закреплённые</span
+            ><span class="count">3</span></a
+          >
+          <a
+            ><svg class="i"><use href="#i-clock" /></svg><span class="label">Отложенные</span
+            ><span class="count">2</span></a
+          >
+          <a
+            ><svg class="i"><use href="#i-send" /></svg><span class="label">Отправленные</span></a
+          >
+          <a
+            ><svg class="i"><use href="#i-draft" /></svg><span class="label">Черновики</span
+            ><span class="count">1</span></a
+          >
+          <a
+            ><svg class="i"><use href="#i-archive" /></svg><span class="label">Архив</span></a
+          >
+          <a
+            ><svg class="i"><use href="#i-trash" /></svg><span class="label">Корзина</span></a
+          >
+        </nav>
+
+        <div>
+          <h3 class="eyebrow">Ящики</h3>
+          <nav class="nav" aria-label="Ящики">
+            <a
+              ><span class="account-dot" style="background: #ff9418"></span><span class="label">anton@company.com</span
+              ><span class="count">7</span></a
+            >
+            <a
+              ><span class="account-dot" style="background: #4f8cff"></span><span class="label">a.ustinov@corp.ru</span
+              ><span class="count">4</span></a
+            >
+            <a
+              ><span class="account-dot" style="background: #3ecf8e"></span><span class="label">me@mydomain.org</span
+              ><span class="count">1</span></a
+            >
+          </nav>
+        </div>
+
+        <div>
+          <h3 class="eyebrow">Фильтр</h3>
+          <nav class="nav">
+            <a
+              ><svg class="i"><use href="#i-shield" /></svg><span class="label">Новые отправители</span
+              ><span class="count">5</span></a
+            >
+          </nav>
+        </div>
+
+        <div class="side-foot">
+          <span class="avatar sm">A</span>
+          <span class="label muted" style="flex: 1; font-size: 12px">3 ящика · синхр. 22:44</span>
+          <button class="round ghost" type="button" title="Настройки">
+            <svg class="i"><use href="#i-settings" /></svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ============ Message list ============ -->
+      <section class="list" aria-label="Письма">
+        <header class="list-head">
+          <div class="list-title">
+            <div>
+              <p class="eyebrow">Smart Inbox</p>
+              <h1>Входящие<span class="dot">.</span></h1>
+            </div>
+            <span class="pill strong">12 новых</span>
+          </div>
+          <label class="search">
+            <svg class="i"><use href="#i-search" /></svg>
+            <input type="search" placeholder="Поиск по всем ящикам" />
+            <kbd>/</kbd>
+          </label>
+          <div class="segmented" role="tablist">
+            <button aria-pressed="true" type="button">Все <span class="n">12</span></button>
+            <button aria-pressed="false" type="button">Люди <span class="n">5</span></button>
+            <button aria-pressed="false" type="button">Уведомления <span class="n">4</span></button>
+            <button aria-pressed="false" type="button">Рассылки <span class="n">3</span></button>
+          </div>
+        </header>
+
+        <div class="list-body">
+          <div class="group">
+            <div class="group-head"><span class="eyebrow">Закреплённые</span><span class="pill">2</span></div>
+            <article class="row" aria-selected="true" data-row>
+              <span class="unread"></span>
+              <span class="avatar">И</span>
+              <div class="body">
+                <div class="top"><span class="from">Иван Петров</span><span class="time">22:39</span></div>
+                <div class="subject">Отчёт за сентябрь · 3</div>
+                <div class="snippet">Привет! Во вложении отчёт, посмотри, пожалуйста, до пятницы</div>
+                <div class="meta">
+                  <span class="account-dot" style="background: #ff9418"></span>
+                  <span class="pill"
+                    ><svg class="i" style="width: 11px; height: 11px"><use href="#i-clip" /></svg>1</span
+                  >
+                  <span class="pill"
+                    ><svg class="i" style="width: 11px; height: 11px"><use href="#i-pin" /></svg>Закреплено</span
+                  >
+                </div>
+              </div>
+              <div class="hover-actions">
+                <button class="round ghost" title="Открепить">
+                  <svg class="i"><use href="#i-pin" /></svg>
+                </button>
+                <button class="round ghost" title="Отложить" data-snooze>
+                  <svg class="i"><use href="#i-clock" /></svg>
+                </button>
+                <button class="round ghost" title="В архив">
+                  <svg class="i"><use href="#i-archive" /></svg>
+                </button>
+              </div>
+            </article>
+            <article class="row read" data-row>
+              <span class="avatar">М</span>
+              <div class="body">
+                <div class="top"><span class="from">Мария Соколова</span><span class="time">Вчера</span></div>
+                <div class="subject">Договор на Q4 — финальная версия</div>
+                <div class="snippet">Внесла правки юристов, можно подписывать</div>
+                <div class="meta"><span class="account-dot" style="background: #4f8cff"></span></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="group">
+            <div class="group-head"><span class="eyebrow">Люди</span><span class="pill">3</span></div>
+            <article class="row" data-row>
+              <span class="unread"></span>
+              <span class="avatar">А</span>
+              <div class="body">
+                <div class="top"><span class="from">Анна Ким</span><span class="time">21:12</span></div>
+                <div class="subject">Макет popup — финальные правки</div>
+                <div class="snippet">Посмотрела нейтральную тему, выглядит очень чисто…</div>
+                <div class="meta"><span class="account-dot" style="background: #ff9418"></span></div>
+              </div>
+            </article>
+            <article class="row" data-row>
+              <span class="unread"></span>
+              <span class="avatar">D</span>
+              <div class="body">
+                <div class="top"><span class="from">Dmitry Orlov</span><span class="time">19:05</span></div>
+                <div class="subject">Re: созвон по интеграции Graph</div>
+                <div class="snippet">Давай в четверг в 11:00, ссылку пришлю</div>
+                <div class="meta">
+                  <span class="account-dot" style="background: #4f8cff"></span>
+                  <span class="pill">Ждёт ответа</span>
+                </div>
+              </div>
+            </article>
+            <article class="row read" data-row>
+              <span class="avatar">Е</span>
+              <div class="body">
+                <div class="top"><span class="from">Елена Волкова</span><span class="time">Пн</span></div>
+                <div class="subject">Фото с конференции</div>
+                <div class="snippet">Собрала всё в одну папку</div>
+                <div class="meta"><span class="account-dot" style="background: #3ecf8e"></span></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="group">
+            <div class="group-head"><span class="eyebrow">Остальное</span></div>
+            <div class="bundle">
+              <span class="tile"
+                ><svg class="i"><use href="#i-bell" /></svg
+              ></span>
+              <div class="body">
+                <strong>Уведомления</strong>
+                <div class="senders">GitHub, Figma, Google Cloud, Jira</div>
+              </div>
+              <span class="pill strong">4</span>
+            </div>
+            <div class="bundle">
+              <span class="tile"
+                ><svg class="i"><use href="#i-news" /></svg
+              ></span>
+              <div class="body">
+                <strong>Рассылки</strong>
+                <div class="senders">Habr, Product Hunt, Smashing Magazine</div>
+              </div>
+              <span class="pill">3</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ Reader ============ -->
+      <main class="reader" aria-label="Письмо">
+        <div class="reader-bar">
+          <button class="round" title="В архив · E">
+            <svg class="i"><use href="#i-archive" /></svg>
+          </button>
+          <button class="round" title="Удалить · #">
+            <svg class="i"><use href="#i-trash" /></svg>
+          </button>
+          <button class="round" title="Отложить · H" data-snooze>
+            <svg class="i"><use href="#i-clock" /></svg>
+          </button>
+          <button class="round" title="Закрепить · P">
+            <svg class="i"><use href="#i-pin" /></svg>
+          </button>
+          <span class="spacer"></span>
+          <span class="muted" style="font-size: 12px">1 из 12</span>
+          <button class="round ghost" title="Ещё">
+            <svg class="i"><use href="#i-more" /></svg>
+          </button>
+        </div>
+
+        <div class="reader-body">
+          <div class="thread-title">
+            <p class="eyebrow">anton@company.com · 3 письма</p>
+            <h2>Отчёт за сентябрь</h2>
+            <div class="labels">
+              <span class="pill strong">Закреплено</span>
+              <span class="pill">Люди</span>
+              <span class="pill">Работа</span>
+            </div>
+          </div>
+
+          <div class="msg collapsed">
+            <span class="avatar sm">A</span>
+            <strong>Вы</strong>
+            <span class="snippet">Иван, пришли, пожалуйста, отчёт до конца недели, нужен для планирования</span>
+            <span class="muted" style="font-size: 12px">3 окт.</span>
+          </div>
+          <div class="msg collapsed">
+            <span class="avatar sm">И</span>
+            <strong>Иван Петров</strong>
+            <span class="snippet">Да, без проблем, будет в четверг</span>
+            <span class="muted" style="font-size: 12px">3 окт.</span>
+          </div>
+
+          <article class="msg">
+            <div class="msg-head">
+              <span class="avatar">И</span>
+              <div class="who">
+                <strong>Иван Петров</strong>
+                <span>ivan@partner.ru → вам · сегодня, 22:39</span>
+              </div>
+              <button class="round ghost" title="Ответить · R">
+                <svg class="i"><use href="#i-reply" /></svg>
+              </button>
+              <button class="round ghost" title="Переслать · F">
+                <svg class="i"><use href="#i-forward" /></svg>
+              </button>
+              <button class="round ghost" title="Ещё">
+                <svg class="i"><use href="#i-more" /></svg>
+              </button>
+            </div>
+            <div class="privacy">
+              <svg class="i"><use href="#i-shield" /></svg>
+              <span>Внешние картинки и 2 трекера заблокированы</span>
+              <button class="btn small" type="button">
+                <svg class="i"><use href="#i-image" /></svg>Показать картинки
+              </button>
+            </div>
+            <div class="msg-content">
+              <p>Привет, Антон!</p>
+              <p>
+                Во вложении отчёт за сентябрь. Основное: выручка выросла на 18%, отток снизился до 2,1%. Отдельно
+                подсветил блок по мобильному приложению — там есть вопросы к срокам.
+              </p>
+              <p>Посмотри, пожалуйста, до пятницы — в понедельник презентуем.</p>
+              <p class="muted">— Иван</p>
+              <span class="attachment"><span class="tile">PDF</span>Отчёт_сентябрь_2026.pdf · 2,4 МБ</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="quick">
+          <div class="quick-box">
+            <div class="chips">
+              <span class="chip">👍 Спасибо, посмотрю!</span>
+              <span class="chip">Ок, до пятницы</span>
+              <span class="chip">Давай созвонимся</span>
+            </div>
+            <div class="quick-input">
+              <input type="text" placeholder="Быстрый ответ Ивану…" />
+              <button class="round ghost" title="Шаблоны">
+                <svg class="i"><use href="#i-template" /></svg>
+              </button>
+              <button class="btn primary small" type="button" data-open-compose>
+                <svg class="i"><use href="#i-send" /></svg>Отправить
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Snooze popover -->
+    <div class="popover" id="snooze" hidden>
+      <p class="eyebrow" style="padding: 6px 10px 4px">Отложить до</p>
+      <button class="option">
+        <svg class="i"><use href="#i-clock" /></svg><span>Позже сегодня</span><small>18:00</small>
+      </button>
+      <button class="option">
+        <svg class="i"><use href="#i-sun" /></svg><span>Завтра утром</span><small>Чт 09:00</small>
+      </button>
+      <button class="option">
+        <svg class="i"><use href="#i-inbox" /></svg><span>На выходных</span><small>Сб 10:00</small>
+      </button>
+      <button class="option">
+        <svg class="i"><use href="#i-forward" /></svg><span>На следующей неделе</span><small>Пн 09:00</small>
+      </button>
+      <hr />
+      <button class="option">
+        <svg class="i"><use href="#i-plus" /></svg><span>Выбрать дату и время…</span>
+      </button>
+    </div>
+
+    <!-- Compose -->
+    <section class="compose" id="compose" hidden aria-label="Новое письмо">
+      <div class="compose-head">
+        <span>Новое письмо</span>
+        <button class="round ghost" title="Свернуть">
+          <svg class="i"><use href="#i-chevron" /></svg>
+        </button>
+        <button class="round ghost" title="Закрыть" data-close-compose>
+          <svg class="i"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <div class="field">
+        От
+        <span class="recipient"
+          ><span class="account-dot" style="background: #ff9418; margin-left: 6px"></span>anton@company.com</span
+        >
+      </div>
+      <div class="field">
+        Кому
+        <span class="recipient"><span class="avatar sm">И</span>Иван Петров</span>
+        <input type="text" />
+        <span>Копия</span>
+      </div>
+      <div class="field"><input type="text" value="Re: Отчёт за сентябрь" /></div>
+      <textarea>
+Иван, спасибо!
+
+Посмотрю до пятницы и вернусь с комментариями по мобильному блоку.
+
+—
+Антон Устинов</textarea>
+      <div class="compose-foot">
+        <button class="round ghost" title="Вложение">
+          <svg class="i"><use href="#i-clip" /></svg>
+        </button>
+        <button class="round ghost" title="Шаблоны">
+          <svg class="i"><use href="#i-template" /></svg>
+        </button>
+        <button class="round ghost" title="Напомнить, если не ответят">
+          <svg class="i"><use href="#i-bell" /></svg>
+        </button>
+        <span class="spacer"></span>
+        <span class="muted" style="font-size: 12px">Черновик сохранён</span>
+        <div class="split">
+          <button class="btn primary" type="button">
+            <svg class="i"><use href="#i-send" /></svg>Отправить
+          </button>
+          <button class="btn primary" type="button" title="Отправить позже">
+            <svg class="i"><use href="#i-clock" /></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mockup controls -->
+    <div class="mock-panel" aria-label="Переключатели макета">
+      <b>Макет</b>
+      <div class="segmented" data-attr="palette">
+        <button type="button" aria-pressed="true" data-value="accent">Оранжевый</button>
+        <button type="button" aria-pressed="false" data-value="neutral">Нейтральный</button>
+      </div>
+      <div class="segmented" data-attr="theme">
+        <button type="button" aria-pressed="true" data-value="dark">Тёмная</button>
+        <button type="button" aria-pressed="false" data-value="light">Светлая</button>
+      </div>
+      <button class="btn small" type="button" data-toggle-compose>Окно письма</button>
+    </div>
+
+    <script>
+      // Mockup interactions only: palette/theme switches, row selection, snooze popover, compose window.
+      const root = document.documentElement;
+      for (const group of document.querySelectorAll('.mock-panel .segmented')) {
+        group.addEventListener('click', event => {
+          const button = event.target.closest('button');
+          if (!button) return;
+          root.dataset[group.dataset.attr] = button.dataset.value;
+          for (const item of group.children) item.setAttribute('aria-pressed', String(item === button));
+        });
+      }
+      for (const group of document.querySelectorAll('.list-head .segmented')) {
+        group.addEventListener('click', event => {
+          const button = event.target.closest('button');
+          if (!button) return;
+          for (const item of group.children) item.setAttribute('aria-pressed', String(item === button));
+        });
+      }
+      for (const row of document.querySelectorAll('[data-row]')) {
+        row.addEventListener('click', () => {
+          for (const other of document.querySelectorAll('[data-row]')) other.setAttribute('aria-selected', 'false');
+          row.setAttribute('aria-selected', 'true');
+          row.classList.add('read');
+          row.querySelector('.unread')?.remove();
+        });
+      }
+      const snooze = document.getElementById('snooze');
+      document.addEventListener('click', event => {
+        const trigger = event.target.closest('[data-snooze]');
+        if (trigger) {
+          event.stopPropagation();
+          const rect = trigger.getBoundingClientRect();
+          snooze.hidden = false;
+          snooze.style.top = `${Math.min(rect.bottom + 6, innerHeight - snooze.offsetHeight - 10)}px`;
+          snooze.style.left = `${Math.min(rect.left, innerWidth - 270)}px`;
+        } else if (!event.target.closest('#snooze')) snooze.hidden = true;
+      });
+      const compose = document.getElementById('compose');
+      for (const button of document.querySelectorAll('[data-open-compose]'))
+        button.addEventListener('click', () => (compose.hidden = false));
+      document.querySelector('[data-close-compose]').addEventListener('click', () => (compose.hidden = true));
+      document
+        .querySelector('[data-toggle-compose]')
+        .addEventListener('click', () => (compose.hidden = !compose.hidden));
+    </script>
+  </body>
+</html>
