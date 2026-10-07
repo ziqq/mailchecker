@@ -1,0 +1,55 @@
+name: Verify Mail Checker
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, type-check, test and package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - name: Install development tools
+        run: npm ci
+
+      - name: Check source, types, tests and repository
+        run: npm run check
+
+      - name: Audit development dependencies
+        run: npm audit --audit-level=high
+
+      - name: Build and package
+        run: |
+          npm run build
+          python3 scripts/package.py
+          # An independent bundle must produce the same ZIP bytes.
+          node scripts/build.mjs --outdir "$RUNNER_TEMP/rebuild"
+          python3 scripts/package.py --source "$RUNNER_TEMP/rebuild" --output "$RUNNER_TEMP/repackage"
+          cmp dist/*.zip "$RUNNER_TEMP"/repackage/*.zip
+
+      - name: Upload extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: mail-checker-${{ github.sha }}
+          path: |
+            dist/mail-checker-*.zip
+            dist/mail-checker-*.sha256
+          if-no-files-found: error
+          retention-days: 14
