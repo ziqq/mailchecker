@@ -134,7 +134,7 @@ export function TopBar() {
       <span class="spacer" />
       <RefreshButton />
       <button
-        class="round ghost"
+        class="round ghost theme-toggle"
         type="button"
         title={THEME_TITLES[store.state()?.preferences.theme || 'auto']}
         aria-label="Сменить тему"

@@ -117,3 +117,26 @@ test.describe('wide tab', () => {
     await expect(page.locator('html')).toHaveAttribute('data-palette', 'neutral');
   });
 });
+
+for (const layout of LAYOUTS) {
+  test.describe(layout.name, () => {
+    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+
+    test('fits every category and the mailbox switcher label', async ({page}) => {
+      await page.goto(layout.path);
+      await expect(page.locator('.row').first()).toBeVisible();
+
+      const segments = page.getByRole('tablist', {name: 'Категории'});
+      const box = await segments.boundingBox();
+      const last = await segments.getByRole('tab').last().boundingBox();
+      expect(last.x + last.width).toBeLessThanOrEqual(box.x + box.width);
+
+      const label = page.locator('.switcher-label');
+      if (await label.isVisible()) {
+        await expect(label).toHaveText('Все ящики');
+        const clipped = await label.evaluate(element => element.scrollWidth - element.clientWidth);
+        expect(clipped).toBeLessThanOrEqual(0);
+      }
+    });
+  });
+}
