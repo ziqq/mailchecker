@@ -18,7 +18,7 @@ IMAP-only services (Yandex, Mail.ru, iCloud and similar) are not supported yet: 
 - **Safe reading:** conversations with collapsed history, sanitized HTML in a script-free sandbox, remote images and trackers blocked until you allow them.
 - **Actions** synced with the provider: archive, trash, read/unread, pin; search across all accounts; keyboard shortcuts.
 - **Responsive:** three columns in a wide tab, two in the popup, one with back navigation on narrow screens and iPhone.
-- **Badge and notifications** for new mail; theme (auto/light/dark) and palette (orange accent or neutral).
+- **Badge and notifications** for new mail; theme (auto/light/dark) and accent colour (nine Telegram iOS accents, orange by default, or neutral graphite).
 - **Chromium and Safari** from one codebase — see [Safari](docs/SAFARI.md).
 
 ## Development

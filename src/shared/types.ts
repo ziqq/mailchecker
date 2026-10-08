@@ -22,8 +22,8 @@ export type ProviderId = 'gmail' | 'outlook' | 'jmap' | 'yandex' | 'mailru' | 'i
 /** Theme preference: follow the system or force a scheme. */
 export type Theme = 'auto' | 'light' | 'dark';
 
-/** Palette preference: orange accent or monochrome. */
-export type Palette = 'accent' | 'neutral';
+/** Palette preference: a warm palette with an accent colour (Telegram iOS accents), or monochrome graphite. */
+export type Palette = 'orange' | 'blue' | 'cyan' | 'green' | 'pink' | 'purple' | 'red' | 'yellow' | 'gray' | 'neutral';
 
 /** Normalized user preferences. */
 export interface Preferences {
