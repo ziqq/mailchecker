@@ -1,3 +1,9 @@
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ */
+
 /**
  * Repository consistency checks run by `npm run check`.
  *
@@ -52,7 +58,7 @@ for (const file of await files(resolve(root, 'src'))) {
 }
 
 for (const target of ['chromium', 'safari']) {
-  const outdir = await mkdtemp(join(tmpdir(), `mail-checker-${target}-`));
+  const outdir = await mkdtemp(join(tmpdir(), `mailchecker-${target}-`));
   try {
     await buildExtension({target, outdir});
     const built = JSON.parse(await readFile(join(outdir, 'manifest.json'), 'utf8'));

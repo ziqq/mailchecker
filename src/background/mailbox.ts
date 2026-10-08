@@ -1,3 +1,9 @@
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ */
+
 /**
  * Mail checks, the toolbar badge, notifications, conversations, search and message actions.
  *
@@ -86,7 +92,7 @@ export async function updateBadge(): Promise<void> {
   await setBadge(
     unread > 999 ? '999+' : unread ? String(unread) : problems ? '!' : '',
     unread ? {background: '#ff9418', text: '#1a0f00'} : {background: '#6b6b70', text: '#ffffff'},
-    `Mail Checker · непрочитанных: ${unread}${problems ? ` · ящиков с ошибкой: ${problems}` : ''}`,
+    `mailchecker · непрочитанных: ${unread}${problems ? ` · ящиков с ошибкой: ${problems}` : ''}`,
   );
 }
 

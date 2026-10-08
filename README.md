@@ -1,4 +1,4 @@
-# Mail Checker
+# mailchecker
 
 A Spark-like mail client that lives in the browser toolbar, for mailboxes on **any domain**: Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP servers such as Fastmail. It runs entirely in the browser: no backend and no companion app (Safari adds a native containing app; see below).
 
@@ -30,7 +30,7 @@ npm ci
 npm run build      # build/ → chrome://extensions → Load unpacked
 npm run check      # format, lint, typecheck, tests, repository checks
 npm run build:safari  # build-safari/ → xcrun safari-web-extension-converter
-npm run package    # dist/mail-checker-<version>.zip
+npm run package    # dist/mailchecker-<version>.zip
 ```
 
 Gmail and Outlook need OAuth client IDs: see [OAuth setup](docs/OAUTH.md). See [Architecture](docs/ARCHITECTURE.md), [Safari](docs/SAFARI.md) and [Privacy](PRIVACY.md). Mockups are in `design/`.

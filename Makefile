@@ -1,3 +1,7 @@
+# https://github.com/ziqq/mailchecker
+# Copyright (C) 2026 Anton Ustinoff
+# https://github.com/ziqq/mailchecker/blob/main/LICENSE
+
 SHELL   :=/bin/bash -e -o pipefail
 VERSION :=$(shell node -p "require('./src/manifest.json').version")
 

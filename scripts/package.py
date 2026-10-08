@@ -1,3 +1,7 @@
+# https://github.com/ziqq/mailchecker
+# Copyright (C) 2026 Anton Ustinoff
+# https://github.com/ziqq/mailchecker/blob/main/LICENSE
+
 """Package a deterministic Chrome extension ZIP from the bundled build/ directory.
 
 The ZIP contains every file in build/ plus PRIVACY.md (and LICENSE when
@@ -44,7 +48,7 @@ def write_zip(source, output):
     """Write the reproducible ZIP and its checksum; return the ZIP path."""
     manifest = json.loads((source / 'manifest.json').read_text(encoding='utf-8'))
     output.mkdir(parents=True, exist_ok=True)
-    target = output / f"mail-checker-{manifest['version']}.zip"
+    target = output / f"mailchecker-{manifest['version']}.zip"
     with ZipFile(target, 'w', ZIP_STORED) as archive:
         for name, path in package_files(source).items():
             info = ZipInfo(name, TIMESTAMP)

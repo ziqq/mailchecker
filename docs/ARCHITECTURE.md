@@ -1,6 +1,6 @@
 # Architecture
 
-Mail Checker is a Manifest V3 mail client that lives in the browser toolbar. It has three execution contexts. Each has one TypeScript entry point in `src/`, bundled by esbuild into one classic script per target (`build/` for Chromium, `build-safari/` for Safari).
+mailchecker is a Manifest V3 mail client that lives in the browser toolbar. It has three execution contexts. Each has one TypeScript entry point in `src/`, bundled by esbuild into one classic script per target (`build/` for Chromium, `build-safari/` for Safari).
 
 ```mermaid
 flowchart LR
@@ -116,7 +116,7 @@ Chromium browsers load `build/`. Safari loads `build-safari/` inside a containin
 
 1. `npm run build` / `npm run build:safari` runs `scripts/build.mjs`: esbuild bundles the three entry points (`format: iife`, targets Chrome 116 and Safari 16, unminified) with `esbuild-plugin-solid` compiling JSX ahead of time; Sass compiles SCSS; pages and icons are copied and the manifest is adapted per target.
 2. `npm run typecheck` runs `tsc --noEmit` with `strict` and Solid's JSX types.
-3. `scripts/package.py` packages `build/` with `PRIVACY.md` into a reproducible `dist/mail-checker-<version>.zip` and its SHA-256.
+3. `scripts/package.py` packages `build/` with `PRIVACY.md` into a reproducible `dist/mailchecker-<version>.zip` and its SHA-256.
 4. `scripts/check.mjs` validates the manifest, version consistency, strict CSP, the optional `identity` permission, unsafe DOM APIs, and both targets' builds (including Safari manifest adaptations).
 
 ## Tests

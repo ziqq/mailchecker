@@ -1,3 +1,9 @@
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ */
+
 /**
  * JMAP mail (RFC 8620/8621): Fastmail, Stalwart, Cyrus and other servers on any domain.
  *
