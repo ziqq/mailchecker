@@ -12,7 +12,6 @@
 - **ADDED**: accent colour in Settings: nine Telegram iOS accents (orange by default) or graphite for the neutral palette; the unread badge takes the accent
 - **CHANGED**: stored Inbox lists include read messages (default 30 per account); notifications still cover new unread mail only
 - **CHANGED**: `MARK_READ`/`TRASH` requests replaced by `ACT`
-- **CHANGED**: the `palette` preference holds the accent (`orange` … `gray`) or `neutral`; the former `accent` value becomes `orange`
 
 ## 0.1.0
 
