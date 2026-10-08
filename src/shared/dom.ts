@@ -11,6 +11,7 @@
  * @module shared/dom
  */
 import {handle} from '../sandbox/worker';
+import {accents} from './preferences';
 import type {Preferences, Reply, Request} from './types';
 
 /** Set by the build: `true` only in the sandbox build (`npm run sandbox`). */
@@ -59,8 +60,15 @@ export function applyTheme({theme, palette}: Pick<Preferences, 'theme' | 'palett
   if (theme === 'light' || theme === 'dark') root.dataset.theme = theme;
   else delete root.dataset.theme;
   root.dataset.palette = palette === 'neutral' ? 'neutral' : 'accent';
-  if (palette === 'neutral') delete root.dataset.accent;
-  else root.dataset.accent = palette;
+  if (palette === 'neutral') {
+    delete root.dataset.accent;
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent-text');
+  } else {
+    root.dataset.accent = palette;
+    root.style.setProperty('--accent', accents[palette].color);
+    root.style.setProperty('--accent-text', accents[palette].text);
+  }
 }
 
 /**

@@ -114,6 +114,7 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
         preferences: preferences({...preferences(current.preferences), ...value}),
       }));
       await schedule();
+      await updateBadge();
       return update.preferences;
     }
     case 'ADD_ACCOUNT': {

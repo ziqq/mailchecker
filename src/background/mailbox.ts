@@ -17,7 +17,7 @@
  * @module background/mailbox
  */
 import {senderName} from '../shared/format';
-import {preferences} from '../shared/preferences';
+import {accents, preferences} from '../shared/preferences';
 import type {Account, MailMessage, Mailbox, MessageAction, SearchHit, ThreadMessage} from '../shared/types';
 import {provider, withAccount} from './accounts';
 import {message as normalize} from './providers/message';
@@ -80,9 +80,18 @@ export async function checkAccount(id: string): Promise<void> {
   }
 }
 
-/** Updates the toolbar badge with the total unread count, or `!` when only errors remain. */
+/** Graphite badge colours for the neutral palette. */
+const NEUTRAL_BADGE = {color: '#171717', text: '#fafafa'};
+
+/**
+ * Updates the toolbar badge with the total unread count, or `!` when only errors remain.
+ *
+ * Unread mail takes the accent colour from the preferences.
+ */
 export async function updateBadge(): Promise<void> {
-  const {accounts = [], mailboxes = {}} = await readStore();
+  const {accounts = [], mailboxes = {}, preferences: stored} = await readStore();
+  const {palette} = preferences(stored);
+  const accent = palette === 'neutral' ? NEUTRAL_BADGE : accents[palette];
   let unread = 0;
   let problems = 0;
   for (const account of accounts) {
@@ -91,7 +100,7 @@ export async function updateBadge(): Promise<void> {
   }
   await setBadge(
     unread > 999 ? '999+' : unread ? String(unread) : problems ? '!' : '',
-    unread ? {background: '#ff9418', text: '#1a0f00'} : {background: '#6b6b70', text: '#ffffff'},
+    unread ? {background: accent.color, text: accent.text} : {background: '#6b6b70', text: '#ffffff'},
     `mailchecker · непрочитанных: ${unread}${problems ? ` · ящиков с ошибкой: ${problems}` : ''}`,
   );
 }

@@ -16,7 +16,7 @@
 import {applyTheme, byId, el, errorMessage, request} from '../shared/dom';
 import {initial, shortDate} from '../shared/format';
 import {icon, providerMark} from '../shared/icons';
-import {palettes, themes} from '../shared/preferences';
+import {accents, palettes, themes} from '../shared/preferences';
 import type {Palette, Preferences, ProviderId, PublicState, Request, Theme} from '../shared/types';
 
 /** The rendered public state. */
@@ -28,7 +28,7 @@ const statusLine = byId('status');
 /** Theme labels by preference. */
 const themeNames: Record<Theme, string> = {auto: 'Авто', light: 'Светлая', dark: 'Тёмная'};
 
-/** Palette names; the swatch colours come from the `data-accent` tokens. */
+/** Palette names; the swatch colours come from `accents`. */
 const paletteNames: Record<Palette, string> = {
   orange: 'Оранжевый',
   blue: 'Синий',
@@ -247,6 +247,7 @@ function renderAppearance({theme, palette}: Preferences): void {
         'aria-label': paletteNames[value],
         title: paletteNames[value],
         'data-accent': value,
+        style: value === 'neutral' ? null : `--accent: ${accents[value].color}`,
         onclick: () => save({palette: value}),
       }),
     ),
