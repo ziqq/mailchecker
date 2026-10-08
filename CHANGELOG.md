@@ -9,8 +9,10 @@
 - **ADDED**: search across all accounts and keyboard shortcuts (`J`/`K`, `E`, `#`, `U`, `S`, `/`, `Esc`)
 - **ADDED**: responsive layouts: three columns in wide tabs, list and reader in the popup, one column with back navigation on narrow screens and iPhone
 - **ADDED**: Safari target (`npm run build:safari`), `background/platform.ts` for browser differences and `docs/SAFARI.md`
+- **ADDED**: accent colour in Settings: nine Telegram iOS accents (orange by default) or graphite for the neutral palette; the unread badge takes the accent
 - **CHANGED**: stored Inbox lists include read messages (default 30 per account); notifications still cover new unread mail only
 - **CHANGED**: `MARK_READ`/`TRASH` requests replaced by `ACT`
+- **CHANGED**: the `palette` preference holds the accent (`orange` … `gray`) or `neutral`; the former `accent` value becomes `orange`
 
 ## 0.1.0
 
