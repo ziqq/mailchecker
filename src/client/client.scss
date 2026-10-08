@@ -88,9 +88,6 @@ html[data-narrow='true'] body {
   .app .reader-bar .back {
     display: inline-grid;
   }
-  .switcher-label {
-    max-width: 120px;
-  }
 }
 
 // ---------- Top bar ----------
@@ -152,6 +149,9 @@ html[data-narrow='true'] body {
   max-width: 220px;
   text-overflow: ellipsis;
   white-space: nowrap;
+  @media (max-width: 699px) {
+    max-width: 120px;
+  }
 }
 .stack {
   display: flex;
