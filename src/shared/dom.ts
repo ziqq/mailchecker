@@ -10,7 +10,11 @@
  *
  * @module shared/dom
  */
+import {handle} from '../sandbox/worker';
 import type {Preferences, Reply, Request} from './types';
+
+/** Set by the build: `true` only in the sandbox build (`npm run sandbox`). */
+declare const __SANDBOX__: boolean;
 
 /** A child accepted by [el]: nodes, text, nested lists or skipped empty values. */
 export type Child = Node | string | null | undefined | false | Child[];
@@ -58,14 +62,16 @@ export function applyTheme({theme, palette}: Pick<Preferences, 'theme' | 'palett
 }
 
 /**
- * Sends a request to the service worker.
+ * Sends a request to the service worker; the sandbox build answers from fixtures instead.
  *
  * @param message The typed request.
  * @returns The reply value.
  * @throws With the worker's user-facing message.
  */
 export async function request<R = unknown>(message: Request): Promise<R> {
-  const reply: Reply<R> | undefined = await chrome.runtime.sendMessage(message);
+  const reply: Reply<R> | undefined = __SANDBOX__
+    ? ((await handle(message)) as Reply<R>)
+    : await chrome.runtime.sendMessage(message);
   if (!reply || !reply.ok) throw new Error(reply?.error || 'Расширение не ответило. Перезагрузите страницу.');
   return reply.value;
 }

@@ -36,6 +36,11 @@ jobs:
       - name: Check source, types, tests and repository
         run: npm run check
 
+      - name: Test the client in the sandbox
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:sandbox
+
       - name: Audit development dependencies
         run: npm audit --audit-level=high
 

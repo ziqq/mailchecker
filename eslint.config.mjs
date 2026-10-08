@@ -9,7 +9,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  {ignores: ['build/**', 'dist/**', 'node_modules/**']},
+  {ignores: ['build/**', 'build-safari/**', 'build-sandbox/**', 'dist/**', 'node_modules/**', 'test-results/**']},
   js.configs.recommended,
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
@@ -27,7 +27,12 @@ export default tseslint.config(
     languageOptions: {globals: {...globals.serviceworker, ...globals.webextensions}},
   },
   {
-    files: ['*.mjs', 'scripts/**/*.mjs', 'tests/**/*.mjs'],
+    files: ['*.mjs', 'scripts/**/*.mjs', 'tests/**/*.mjs', 'e2e/**/*.mjs'],
     languageOptions: {globals: globals.node},
+  },
+  {
+    // `page.evaluate` callbacks run in the browser.
+    files: ['e2e/**/*.mjs'],
+    languageOptions: {globals: {...globals.node, ...globals.browser}},
   },
 );

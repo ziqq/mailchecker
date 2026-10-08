@@ -10,7 +10,8 @@
  * Builds a fresh bundle into a temporary directory and verifies that the
  * manifest, pages and icons it references exist, that the versions in the
  * manifest, `package.json` and `CHANGELOG.md` match, that the CSP stays
- * strict and that no source uses `innerHTML` or `eval`.
+ * strict, that no source uses `innerHTML` or `eval` and that sandbox fixtures
+ * do not ship.
  */
 import {mkdtemp, readdir, readFile, rm, stat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -74,6 +75,8 @@ for (const target of ['chromium', 'safari']) {
       'options.js',
       'options.css',
     ];
+    const client = await readFile(join(outdir, 'client.js'), 'utf8');
+    expect(!client.includes('createFixtures'), `${target}: sandbox fixtures must not ship.`);
     for (const name of referenced) {
       const info = await stat(join(outdir, name)).catch(() => null);
       expect(info?.isFile() && info.size > 0, `${target}: missing build file ${name}.`);

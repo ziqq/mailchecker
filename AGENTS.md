@@ -44,6 +44,8 @@ Run `npm ci` and `npm run build`, then load `build/` as an unpacked extension in
 - `src/background/oauth/`: public client IDs and Google/Microsoft flows. Never add a client secret.
 - `src/client/`: SolidJS client for `popup.html` and `app.html` (store, components, responsive `client.scss`).
 - `src/options/`: Settings page, its TypeScript and SCSS.
+- `src/sandbox/`: fixtures and an in-memory worker for the sandbox build only.
+- `e2e/`: Playwright suite run against the sandbox.
 - `design/`: HTML mockups of the client.
 - `src/styles/`: design tokens (two palettes × light/dark) and shared components.
 - `scripts/`, `.github/workflows/`: bundling, checks, icons, deterministic packaging and CI.
@@ -72,8 +74,18 @@ Run `npm ci` and `npm run build`, then load `build/` as an unpacked extension in
 ```sh
 npm ci
 npm run verify
+npm run test:sandbox
 npm audit --audit-level=high
 ```
+
+## Sandbox
+
+`npm run sandbox` serves the client on mock mailboxes at `http://127.0.0.1:8080/` (`--port` to change): no extension, accounts or network. Use it to check any client change by eye at popup (780×600), wide tab and phone widths; `index.html` shows the popup and a phone side by side, and `?theme=dark&palette=neutral` sets preferences. Actions live in memory until a reload.
+
+- Fixtures live in `src/sandbox/fixtures.ts`. When a UI state is missing (a new flag, an error, a provider), add a fixture for it rather than testing on a real mailbox.
+- `src/sandbox/worker.ts` answers the client's `Request`s. A new client request needs a case there, or the sandbox shows «В песочнице это действие недоступно».
+- Fixtures must be created inside functions: release builds set `__SANDBOX__` to `false` and rely on tree-shaking; `scripts/check.mjs` fails if they ship.
+- `npm run test:sandbox` (Playwright, Chromium, ~10 s) checks every layout for errors and horizontal scroll plus the main flows. Run it after client or style changes and extend `e2e/sandbox.spec.mjs` for new flows.
 
 ## Coding conventions
 

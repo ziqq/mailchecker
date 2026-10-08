@@ -36,7 +36,7 @@ The Xcode project is generated from `build-safari/` and extended with Swift code
 
 1. **OAuth** with `ASWebAuthenticationSession` for Google and Microsoft. The app returns tokens to the extension; refresh tokens live in the Keychain. This needs separate OAuth clients (iOS/macOS app type) with the app's redirect scheme.
 2. **Notifications** through `UNUserNotificationCenter`, triggered by the extension's checks.
-3. **IMAP** (optional) with Network.framework: Yandex, Mail.ru and any IMAP server, which Chromium extensions cannot reach. The extension would talk to it through the same provider contract.
+3. **IMAP** (optional) with Network.framework: Yandex, Mail.ru, iCloud and any IMAP server, which Chromium extensions cannot reach. The extension would talk to it through the same provider contract. The provider IDs `yandex`, `mailru` and `icloud` and their marks already exist; the worker rejects them until an adapter lands.
 
 ## Build and publish
 
