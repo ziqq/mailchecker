@@ -1,3 +1,9 @@
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ */
+
 /**
  * Bounded HTTP requests shared by the mail providers and OAuth flows.
  *

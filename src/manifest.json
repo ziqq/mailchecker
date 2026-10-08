@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Mail Checker",
+  "name": "mailchecker",
   "version": "0.2.0",
   "description": "A fast mail client in your toolbar: unified inbox, Smart Inbox and safe reading for Gmail, Microsoft 365 and JMAP on any domain.",
   "minimum_chrome_version": "116",
@@ -18,7 +18,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Mail Checker",
+    "default_title": "mailchecker",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

@@ -1,6 +1,6 @@
-# Mail Checker
+# mailchecker
 
-Mail Checker is a Manifest V3 mail client for Chromium browsers and Safari: a Spark-like client in the toolbar popup and a full-tab mode for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP mailboxes on any domain. It has no backend. SolidJS is the only runtime dependency (bundled). A private npm package provides TypeScript/Sass compilation, esbuild bundling of `src/` into `build/` and `build-safari/`, checks and tests; Python packages the bundled runtime files.
+mailchecker is a Manifest V3 mail client for Chromium browsers and Safari: a Spark-like client in the toolbar popup and a full-tab mode for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP mailboxes on any domain. It has no backend. SolidJS is the only runtime dependency (bundled). A private npm package provides TypeScript/Sass compilation, esbuild bundling of `src/` into `build/` and `build-safari/`, checks and tests; Python packages the bundled runtime files.
 
 ## General rules
 

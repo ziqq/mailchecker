@@ -1,3 +1,9 @@
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ */
+
 /**
  * Shared data types for the service worker, the popup and Settings.
  *

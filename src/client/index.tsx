@@ -1,3 +1,9 @@
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ */
+
 /**
  * Mail client entry point for the toolbar popup (`popup.html`) and the
  * full-tab app (`app.html`).

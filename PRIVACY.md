@@ -1,6 +1,6 @@
 # Privacy
 
-Mail Checker has no backend, analytics, advertising or telemetry. Requests go directly from the browser to the mail provider the user connected.
+mailchecker has no backend, analytics, advertising or telemetry. Requests go directly from the browser to the mail provider the user connected.
 
 ## Local data
 

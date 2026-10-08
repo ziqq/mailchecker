@@ -1,4 +1,8 @@
-name: Verify Mail Checker
+# https://github.com/ziqq/mailchecker
+# Copyright (C) 2026 Anton Ustinoff
+# https://github.com/ziqq/mailchecker/blob/main/LICENSE
+
+name: Verify mailchecker
 
 on:
   push:
@@ -47,9 +51,9 @@ jobs:
       - name: Upload extension
         uses: actions/upload-artifact@v4
         with:
-          name: mail-checker-${{ github.sha }}
+          name: mailchecker-${{ github.sha }}
           path: |
-            dist/mail-checker-*.zip
-            dist/mail-checker-*.sha256
+            dist/mailchecker-*.zip
+            dist/mailchecker-*.sha256
           if-no-files-found: error
           retention-days: 14

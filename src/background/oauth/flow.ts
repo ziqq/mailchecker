@@ -1,3 +1,9 @@
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ */
+
 /**
  * OAuth sign-in through `chrome.identity.launchWebAuthFlow`.
  *
@@ -41,7 +47,7 @@ export function redirectUri(provider: OAuthProvider): string {
 function clientId(provider: OAuthProvider): string {
   if (!hasIdentity())
     throw new Error(
-      'В этом браузере вход выполняется через приложение Mail Checker (Safari). Используйте JMAP или Chrome.',
+      'В этом браузере вход выполняется через приложение mailchecker (Safari). Используйте JMAP или Chrome.',
     );
   if (!available(provider))
     throw new Error('Вход не настроен в этой сборке: укажите OAuth Client ID в src/background/oauth/config.ts.');

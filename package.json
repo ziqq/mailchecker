@@ -1,5 +1,5 @@
 {
-  "name": "mail-checker",
+  "name": "mailchecker",
   "description": "Chrome extension: unread counter, message list and notifications for Gmail, Microsoft 365 and JMAP mailboxes. Development, bundling and packaging tools; the extension has no runtime dependencies.",
   "version": "0.2.0",
   "private": true,
