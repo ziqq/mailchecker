@@ -294,13 +294,13 @@ form.addEventListener('submit', async event => {
   event.preventDefault();
   const data = new FormData(form);
   const input = {
-    sessionUrl: String(data.get('sessionUrl') || ''),
+    sessionURL: String(data.get('sessionURL') || ''),
     token: String(data.get('token') || ''),
-    webUrl: String(data.get('webUrl') || ''),
+    webURL: String(data.get('webURL') || ''),
   };
   let origin: string;
   try {
-    origin = `${new URL(input.sessionUrl).origin}/*`;
+    origin = `${new URL(input.sessionURL).origin}/*`;
   } catch {
     status('Некорректный JMAP Session URL.', true);
     return;

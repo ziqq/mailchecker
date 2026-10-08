@@ -45,8 +45,8 @@ export interface Credentials {
 
 /** Provider-specific account settings (JMAP URLs). */
 export interface AccountSettings {
-  sessionUrl?: string;
-  webUrl?: string;
+  sessionURL?: string;
+  webURL?: string;
 }
 
 /** A stored account, including credentials. */
@@ -175,9 +175,9 @@ export type RequestType = Request['type'];
 
 /** Settings form values for a JMAP account. */
 export interface JMAPInput {
-  sessionUrl: string;
+  sessionURL: string;
   token: string;
-  webUrl?: string;
+  webURL?: string;
 }
 
 /** Worker reply envelope. */

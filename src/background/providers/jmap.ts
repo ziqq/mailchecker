@@ -75,7 +75,7 @@ function httpsURL(value: unknown, name: string): string {
 }
 
 /** Returns the session URL of an account. */
-const sessionURL = (account: Pick<Account, 'settings'>): string => account.settings.sessionUrl || '';
+const sessionURL = (account: Pick<Account, 'settings'>): string => account.settings.sessionURL || '';
 
 /** Loads the JMAP session: API URL, mail account ID and username. */
 async function session(account: Pick<Account, 'credentials' | 'settings'>) {
@@ -180,12 +180,12 @@ export const jmap: Provider = {
 
   async connect(input) {
     const settings = {
-      sessionUrl: httpsURL(input?.sessionUrl, 'JMAP Session URL'),
-      webUrl: input?.webUrl ? httpsURL(input.webUrl, 'Ссылка на веб-почту') : '',
+      sessionURL: httpsURL(input?.sessionURL, 'JMAP Session URL'),
+      webURL: input?.webURL ? httpsURL(input.webURL, 'Ссылка на веб-почту') : '',
     };
     const token = String(input?.token || '').trim();
     if (!token || token.length > 4096 || /\s/.test(token)) throw new Error('Укажите API-токен без пробелов.');
-    if (!(await chrome.permissions.contains({origins: [`${new URL(settings.sessionUrl).origin}/*`]})))
+    if (!(await chrome.permissions.contains({origins: [`${new URL(settings.sessionURL).origin}/*`]})))
       throw new Error('Разрешите доступ к серверу JMAP и повторите.');
     const credentials = {token};
     const current = await session({credentials, settings});
@@ -264,5 +264,5 @@ export const jmap: Provider = {
 
   search: (account, text, limit) => query(account, {text}, limit),
 
-  webURL: account => account.settings.webUrl || new URL(sessionURL(account)).origin,
+  webURL: account => account.settings.webURL || new URL(sessionURL(account)).origin,
 };
