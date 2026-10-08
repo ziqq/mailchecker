@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * The wide-layout sidebar: views, accounts and global actions.
  *
  * @module client/components/Sidebar

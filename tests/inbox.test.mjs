@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Unified Inbox model and Smart Inbox categorization regressions.
  */
 import assert from 'node:assert/strict';

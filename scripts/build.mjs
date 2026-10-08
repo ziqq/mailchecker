@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Bundles `src/` into an unpacked Manifest V3 extension.
  *
  * esbuild bundles each TypeScript entry point into one classic script (no

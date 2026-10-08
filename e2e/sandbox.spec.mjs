@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * The client on sandbox fixtures: every layout renders without errors or
  * horizontal scroll, and reading, actions, search and sign-in work.
  */

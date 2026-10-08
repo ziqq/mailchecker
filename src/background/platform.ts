@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Browser differences behind one interface (Chromium and Safari).
  *
  * Feature detection decides at run time; the build-time `__TARGET__`

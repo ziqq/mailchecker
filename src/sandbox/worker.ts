@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * In-memory stand-in for the service worker in the sandbox build.
  *
  * Answers the client's `Request`s from fixtures with no extension APIs and

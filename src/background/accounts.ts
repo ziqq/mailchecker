@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Accounts, credentials and the public state sent to extension pages.
  *
  * Credentials never leave the service worker: `publicState` strips them.
@@ -14,7 +12,7 @@
  * @module background/accounts
  */
 import {preferences} from '../shared/preferences';
-import type {Account, Credentials, JmapInput, ProviderId, PublicState, Store} from '../shared/types';
+import type {Account, Credentials, JMAPInput, ProviderID, PublicState, Store} from '../shared/types';
 import {AuthError} from './http';
 import * as oauth from './oauth/flow';
 import {gmail} from './providers/gmail';
@@ -24,7 +22,7 @@ import {outlook} from './providers/outlook';
 import {readStore, writeStore} from './storage';
 
 /** Provider adapters by ID; IMAP-only providers have none yet. */
-export const providers: Readonly<Partial<Record<ProviderId, Provider>>> = Object.freeze({gmail, outlook, jmap});
+export const providers: Readonly<Partial<Record<ProviderID, Provider>>> = Object.freeze({gmail, outlook, jmap});
 
 /** Maximum connected accounts. */
 const MAX_ACCOUNTS = 20;
@@ -39,7 +37,7 @@ const renewals = new Map<string, Promise<Account>>();
  */
 export function provider(id: unknown): Provider {
   if (typeof id !== 'string' || !Object.hasOwn(providers, id)) throw new Error('Неизвестный тип ящика.');
-  return providers[id as ProviderId]!;
+  return providers[id as ProviderID]!;
 }
 
 /** Returns the state extension pages may see: no credentials. */
@@ -56,7 +54,7 @@ export function publicState(store: Store): PublicState {
     oauth: {
       google: oauth.available('google'),
       microsoft: oauth.available('microsoft'),
-      redirect: {google: oauth.redirectUri('google'), microsoft: oauth.redirectUri('microsoft')},
+      redirect: {google: oauth.redirectURI('google'), microsoft: oauth.redirectURI('microsoft')},
     },
   };
 }
@@ -64,17 +62,17 @@ export function publicState(store: Store): PublicState {
 /**
  * Connects a mailbox; an existing account with the same provider and address is updated.
  *
- * @param providerId The provider.
+ * @param providerID The provider.
  * @param input JMAP form values.
  * @returns The stored account.
  */
-export async function addAccount(providerId: unknown, input?: JmapInput): Promise<Account> {
-  const connected = await provider(providerId).connect(input);
+export async function addAccount(providerID: unknown, input?: JMAPInput): Promise<Account> {
+  const connected = await provider(providerID).connect(input);
   let account!: Account;
   await writeStore(({accounts = []}) => {
-    const existing = accounts.find(item => item.provider === providerId && item.email === connected.email);
+    const existing = accounts.find(item => item.provider === providerID && item.email === connected.email);
     if (!existing && accounts.length >= MAX_ACCOUNTS) throw new Error(`Можно подключить до ${MAX_ACCOUNTS} ящиков.`);
-    account = {id: existing?.id || crypto.randomUUID(), provider: providerId as ProviderId, ...connected};
+    account = {id: existing?.id || crypto.randomUUID(), provider: providerID as ProviderID, ...connected};
     return {
       accounts: existing ? accounts.map(item => (item.id === account.id ? account : item)) : [...accounts, account],
     };

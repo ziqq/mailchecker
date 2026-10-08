@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Gmail and Google Workspace (any domain hosted by Google) through the Gmail API.
  *
  * @module background/providers/gmail

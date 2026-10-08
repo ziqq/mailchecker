@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Mock mailboxes for the sandbox build: six accounts (every provider ID),
  * every Smart Inbox category, notification stacks, pinned messages,
  * attachments, long text, HTML with remote images and a tracker, a

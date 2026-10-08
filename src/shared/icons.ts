@@ -2,16 +2,14 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Original 24×24 line icons and provider marks rendered as inline SVG.
  *
  * Elements are created with DOM APIs only; no markup strings are parsed.
  *
  * @module shared/icons
  */
-import type {ProviderId} from './types';
+import type {ProviderID} from './types';
 
 /** Line-icon path data by name. */
 const paths: Readonly<Record<string, string>> = Object.freeze({
@@ -104,7 +102,7 @@ export function icon(name: string, className = ''): SVGSVGElement {
  *
  * @param provider A provider ID.
  */
-export function providerMark(provider: ProviderId): SVGSVGElement {
+export function providerMark(provider: ProviderID): SVGSVGElement {
   if (!marks[provider]) return icon('server');
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');

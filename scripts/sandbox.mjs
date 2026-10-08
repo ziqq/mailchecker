@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Builds the sandbox (`build-sandbox/`) and serves it on localhost.
  *
  * The client pages run in a plain browser tab and answer their requests from
