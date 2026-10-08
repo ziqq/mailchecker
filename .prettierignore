@@ -1,4 +1,7 @@
 build/
+build-sandbox/
+test-results/
+playwright-report/
 dist/
 node_modules/
 package-lock.json

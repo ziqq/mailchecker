@@ -23,8 +23,8 @@ import type {Provider} from './providers/message';
 import {outlook} from './providers/outlook';
 import {readStore, writeStore} from './storage';
 
-/** Provider adapters by ID. */
-export const providers: Readonly<Record<ProviderId, Provider>> = Object.freeze({gmail, outlook, jmap});
+/** Provider adapters by ID; IMAP-only providers have none yet. */
+export const providers: Readonly<Partial<Record<ProviderId, Provider>>> = Object.freeze({gmail, outlook, jmap});
 
 /** Maximum connected accounts. */
 const MAX_ACCOUNTS = 20;
@@ -39,7 +39,7 @@ const renewals = new Map<string, Promise<Account>>();
  */
 export function provider(id: unknown): Provider {
   if (typeof id !== 'string' || !Object.hasOwn(providers, id)) throw new Error('Неизвестный тип ящика.');
-  return providers[id as ProviderId];
+  return providers[id as ProviderId]!;
 }
 
 /** Returns the state extension pages may see: no credentials. */

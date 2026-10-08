@@ -10,8 +10,14 @@
  * @module shared/types
  */
 
-/** Provider identifiers. */
-export type ProviderId = 'gmail' | 'outlook' | 'jmap';
+/**
+ * Provider identifiers.
+ *
+ * `yandex`, `mailru` and `icloud` are IMAP-only services without an HTTP
+ * mail API. They have no adapter yet (see docs/SAFARI.md, IMAP bridge):
+ * the worker rejects them, and only the sandbox shows them.
+ */
+export type ProviderId = 'gmail' | 'outlook' | 'jmap' | 'yandex' | 'mailru' | 'icloud';
 
 /** Theme preference: follow the system or force a scheme. */
 export type Theme = 'auto' | 'light' | 'dark';

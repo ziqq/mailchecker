@@ -23,6 +23,9 @@ import {Sidebar} from './components/Sidebar';
 import {TopBar} from './components/TopBar';
 import {mode, store} from './store';
 
+/** Set by the build: `true` only in the sandbox build, which has no extension APIs. */
+declare const __SANDBOX__: boolean;
+
 /** Keyboard shortcuts; ignored while typing. */
 function onKey(event: KeyboardEvent): void {
   const target = event.target;
@@ -75,14 +78,13 @@ function App() {
   onMount(() => {
     store.load();
     document.addEventListener('keydown', onKey);
+    onCleanup(() => document.removeEventListener('keydown', onKey));
+    if (__SANDBOX__) return;
     const listener = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
       if (area === 'local' && (changes.mailboxes || changes.accounts || changes.preferences)) store.load();
     };
     chrome.storage.onChanged.addListener(listener);
-    onCleanup(() => {
-      document.removeEventListener('keydown', onKey);
-      chrome.storage.onChanged.removeListener(listener);
-    });
+    onCleanup(() => chrome.storage.onChanged.removeListener(listener));
   });
   return (
     <div class="app" data-mode={mode} data-view={store.selected() ? 'reader' : 'list'}>

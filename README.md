@@ -8,7 +8,7 @@ A Spark-like mail client that lives in the browser toolbar, for mailboxes on **a
 | Microsoft Graph | Outlook.com, Hotmail, any domain on Microsoft 365 / Exchange Online | Microsoft sign-in |
 | JMAP            | Fastmail (including custom domains), Stalwart, Cyrus and others     | API token         |
 
-IMAP-only services (Yandex, Mail.ru and similar) are not supported: an extension cannot open IMAP connections, and these services have no HTTP mail API.
+IMAP-only services (Yandex, Mail.ru, iCloud and similar) are not supported yet: an extension cannot open IMAP connections, and these services have no HTTP mail API. They are planned through the Safari containing app (see [Safari](docs/SAFARI.md)); the sandbox already shows them.
 
 ## Features
 
@@ -31,6 +31,8 @@ npm run build      # build/ → chrome://extensions → Load unpacked
 npm run check      # format, lint, typecheck, tests, repository checks
 npm run build:safari  # build-safari/ → xcrun safari-web-extension-converter
 npm run package    # dist/mailchecker-<version>.zip
+npm run sandbox    # client on mock mailboxes at http://127.0.0.1:8080/, no extension needed
+npm run test:sandbox  # Playwright checks of the client in the sandbox
 ```
 
 Gmail and Outlook need OAuth client IDs: see [OAuth setup](docs/OAUTH.md). See [Architecture](docs/ARCHITECTURE.md), [Safari](docs/SAFARI.md) and [Privacy](PRIVACY.md). Mockups are in `design/`.
