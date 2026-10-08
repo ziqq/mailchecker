@@ -241,8 +241,8 @@ function startWorker({identity = true} = {}) {
     alarms: {clear: async () => {}, create: async () => {}, onAlarm: event()},
     action: {
       setBadgeText: async ({text}) => (badge.text = text),
-      setBadgeBackgroundColor: async () => {},
-      setBadgeTextColor: async () => {},
+      setBadgeBackgroundColor: async ({color}) => (badge.background = color),
+      setBadgeTextColor: async ({color}) => (badge.color = color),
       setTitle: async () => {},
     },
     notifications: {
@@ -451,4 +451,16 @@ test('preferences keep an accent palette and reset the former one to orange', as
   assert.equal(pink.palette, 'pink');
   const former = await w.ok({type: 'PREFERENCES', value: {palette: 'accent'}}, 'popup');
   assert.equal(former.palette, 'orange');
+});
+
+test('the unread badge takes the accent colour', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  assert.deepEqual({...w.badge}, {text: '2', background: '#ff9418', color: '#1a0f00'});
+  await w.ok({type: 'PREFERENCES', value: {palette: 'pink'}}, 'options');
+  assert.deepEqual({...w.badge}, {text: '2', background: '#eb6ca4', color: '#1a0f00'});
+  await w.ok({type: 'PREFERENCES', value: {palette: 'blue'}}, 'options');
+  assert.deepEqual({...w.badge}, {text: '2', background: '#0088ff', color: '#ffffff'});
+  await w.ok({type: 'PREFERENCES', value: {palette: 'neutral'}}, 'options');
+  assert.deepEqual({...w.badge}, {text: '2', background: '#171717', color: '#fafafa'});
 });
