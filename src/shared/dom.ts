@@ -59,6 +59,8 @@ export function applyTheme({theme, palette}: Pick<Preferences, 'theme' | 'palett
   if (theme === 'light' || theme === 'dark') root.dataset.theme = theme;
   else delete root.dataset.theme;
   root.dataset.palette = palette === 'neutral' ? 'neutral' : 'accent';
+  if (palette === 'neutral') delete root.dataset.accent;
+  else root.dataset.accent = palette;
 }
 
 /**

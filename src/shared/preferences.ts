@@ -19,14 +19,25 @@ export const defaults: Readonly<Preferences> = Object.freeze({
   notifications: true,
   limit: 30,
   theme: 'auto',
-  palette: 'accent',
+  palette: 'orange',
 });
 
 /** Allowed theme values, in toggle order. */
 export const themes: readonly Theme[] = Object.freeze(['auto', 'light', 'dark']);
 
-/** Allowed palette values. */
-export const palettes: readonly Palette[] = Object.freeze(['accent', 'neutral']);
+/** Allowed palette values, in picker order; anything else (such as the former `accent`) falls back to orange. */
+export const palettes: readonly Palette[] = Object.freeze([
+  'orange',
+  'blue',
+  'cyan',
+  'green',
+  'pink',
+  'purple',
+  'red',
+  'yellow',
+  'gray',
+  'neutral',
+]);
 
 /** Returns [input] clamped to [min, max], or [fallback] when it is not a finite number. */
 function bounded(input: unknown, min: number, max: number, fallback: number): number {

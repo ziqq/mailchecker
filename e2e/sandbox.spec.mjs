@@ -116,6 +116,14 @@ test.describe('wide tab', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(page.locator('html')).toHaveAttribute('data-palette', 'neutral');
   });
+
+  test('takes the accent colour from the query', async ({page}) => {
+    await page.goto('app.html?palette=pink');
+    await expect(page.locator('html')).toHaveAttribute('data-palette', 'accent');
+    await expect(page.locator('html')).toHaveAttribute('data-accent', 'pink');
+    const primary = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--primary'));
+    expect(primary).toBe('#eb6ca4');
+  });
 });
 
 for (const layout of LAYOUTS) {

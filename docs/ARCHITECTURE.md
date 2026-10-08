@@ -110,7 +110,7 @@ Chromium browsers load `build/`. Safari loads `build-safari/` inside a containin
 
 ## Styles
 
-`src/styles/_tokens.scss` defines two palettes × light/dark as CSS custom properties: `accent` (warm surfaces, orange accent, pill controls) and `neutral` (monochrome graphite, white primary buttons). The root follows the system scheme unless `data-theme` is set; `data-palette` selects the palette. `_components.scss` holds shared controls; `client/client.scss` and `options/options.scss` lay out each page. Design mockups live in `design/`.
+`src/styles/_tokens.scss` defines two palettes × light/dark as CSS custom properties: `accent` (warm surfaces, an accent colour, pill controls) and `neutral` (monochrome graphite, white primary buttons). The root follows the system scheme unless `data-theme` is set; `data-palette` selects the palette and `data-accent` the accent colour. The `palette` preference is one of nine Telegram iOS accents (`orange` by default, also `blue`, `cyan`, `green`, `pink`, `purple`, `red`, `yellow`, `gray`) or `neutral`; the accent tokens are mixed from `--accent`. `_components.scss` holds shared controls; `client/client.scss` and `options/options.scss` lay out each page. Design mockups live in `design/`.
 
 ## Build and package
 

@@ -10,7 +10,7 @@
  * Answers the client's `Request`s from fixtures with no extension APIs and
  * no network, so `popup.html` and `app.html` run in a plain browser tab.
  * Actions change the in-memory state; a reload starts over. Initial
- * preferences come from the page query (`?theme=dark&palette=neutral`).
+ * preferences come from the page query (`?theme=dark&palette=pink`).
  *
  * @module sandbox/worker
  */

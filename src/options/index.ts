@@ -16,7 +16,7 @@
 import {applyTheme, byId, el, errorMessage, request} from '../shared/dom';
 import {initial, shortDate} from '../shared/format';
 import {icon, providerMark} from '../shared/icons';
-import {themes} from '../shared/preferences';
+import {palettes, themes} from '../shared/preferences';
 import type {Palette, Preferences, ProviderId, PublicState, Request, Theme} from '../shared/types';
 
 /** The rendered public state. */
@@ -28,10 +28,18 @@ const statusLine = byId('status');
 /** Theme labels by preference. */
 const themeNames: Record<Theme, string> = {auto: 'Авто', light: 'Светлая', dark: 'Тёмная'};
 
-/** Palette choices: name and preview colours. */
-const paletteChoices: Record<Palette, {name: string; colors: string[]}> = {
-  accent: {name: 'Оранжевый', colors: ['#08090b', '#ff9418', '#f7f6f2']},
-  neutral: {name: 'Нейтральный', colors: ['#0a0a0a', '#262626', '#fafafa']},
+/** Palette names; the swatch colours come from the `data-accent` tokens. */
+const paletteNames: Record<Palette, string> = {
+  orange: 'Оранжевый',
+  blue: 'Синий',
+  cyan: 'Голубой',
+  green: 'Зелёный',
+  pink: 'Розовый',
+  purple: 'Фиолетовый',
+  red: 'Красный',
+  yellow: 'Жёлтый',
+  gray: 'Серый',
+  neutral: 'Графит',
 };
 
 /** Add-mailbox rows. */
@@ -231,17 +239,16 @@ function renderAppearance({theme, palette}: Preferences): void {
     ),
   );
   byId('palette-control').replaceChildren(
-    ...(Object.entries(paletteChoices) as [Palette, (typeof paletteChoices)[Palette]][]).map(([value, choice]) =>
-      el(
-        'button',
-        {type: 'button', 'aria-pressed': String(palette === value), onclick: () => save({palette: value})},
-        el(
-          'span',
-          {class: 'swatch', 'aria-hidden': 'true'},
-          choice.colors.map(color => el('i', {style: `background:${color}`})),
-        ),
-        choice.name,
-      ),
+    ...palettes.map(value =>
+      el('button', {
+        type: 'button',
+        role: 'radio',
+        'aria-checked': String(palette === value),
+        'aria-label': paletteNames[value],
+        title: paletteNames[value],
+        'data-accent': value,
+        onclick: () => save({palette: value}),
+      }),
     ),
   );
   byId('theme').title = `Тема: ${themeNames[theme].toLowerCase()}`;
