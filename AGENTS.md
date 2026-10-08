@@ -50,7 +50,19 @@ Run `npm ci` and `npm run build`, then load `build/` as an unpacked extension in
 - `src/styles/`: design tokens (two palettes × light/dark) and shared components.
 - `scripts/`, `.github/workflows/`: bundling, checks, icons, deterministic packaging and CI.
 - `docs/`, `PRIVACY.md`: architecture, OAuth setup and data handling. Read [Architecture](docs/ARCHITECTURE.md) before changing messages or storage.
-- Document every module and function with JSDoc (Python: docstrings).
+- Document every module and function with JSDoc (Python: docstrings). The module description goes into the license header comment, not a separate block:
+
+```ts
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
+ * The provider contract, message normalization and Smart Inbox categories.
+ *
+ * @module background/providers/message
+ */
+```
 
 ## Important files
 
@@ -91,6 +103,7 @@ npm audit --audit-level=high
 
 - Prettier (two spaces, single quotes, semicolons, 120 columns), strict TypeScript, explicit DOM APIs.
 - Non-obvious Prettier rules: no spaces inside braces (`{a: 1}`, `import {x} from`) and no parentheses around a single arrow parameter (`x => x`).
+- Initialisms are all capitals in our identifiers: `clientID`, `byID`, `ProviderID`, `sessionURL`, `redirectURI`, `textToHTML`, `requestJSON`, `HTTPError`, `JMAPInput`. Fields defined by provider or browser APIs keep their spelling (`threadId`, `labelIds`, `accountId` in JMAP calls, `windowId`).
 - Render server text with `textContent`; no `innerHTML`, `eval` or remote code.
 - Keep tokens and API requests in the worker; pages receive public state only.
 - Validate untrusted provider data and bound its size. Preserve `credentials: 'omit'`, `redirect: 'error'`, timeouts and response limits.

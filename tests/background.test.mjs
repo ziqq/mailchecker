@@ -303,7 +303,7 @@ test('connects all three providers and counts unread mail', async () => {
   await w.ok({
     type: 'ADD_ACCOUNT',
     provider: 'jmap',
-    input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+    input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
   });
   assert.equal(w.badge.text, '8');
   const state = await w.ok({type: 'STATE'}, 'popup');
@@ -330,7 +330,7 @@ test('message actions update the provider, the list and the badge', async () => 
     .ok({
       type: 'ADD_ACCOUNT',
       provider: 'jmap',
-      input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+      input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
     })
     .then(value => value.state);
   const [gmail, jmap] = accounts;
@@ -371,7 +371,7 @@ test('search merges hits from every account', async () => {
   await w.ok({
     type: 'ADD_ACCOUNT',
     provider: 'jmap',
-    input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+    input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
   });
   const hits = await w.ok({type: 'SEARCH', query: 'report'}, 'app');
   assert.equal(
@@ -398,7 +398,7 @@ test('a rejected JMAP token is reported as needing a new token', async () => {
   await w.ok({
     type: 'ADD_ACCOUNT',
     provider: 'jmap',
-    input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+    input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
   });
   w.stores.local.accounts[0].credentials.token = 'revoked';
   await w.ok({type: 'CHECK'}, 'popup');
