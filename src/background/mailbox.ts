@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Mail checks, the toolbar badge, notifications, conversations, search and message actions.
  *
  * A check stores a `Mailbox` per account in `mailboxes`: the latest Inbox
@@ -145,24 +143,24 @@ function lookup(box: Mailbox | undefined, id: string, thread = ''): MailMessage 
  * Archive and trash remove the message from the Inbox list; read, unread,
  * pin and unpin change its flags and the unread count.
  *
- * @param accountId The account ID.
- * @param messageId The provider message ID.
+ * @param accountID The account ID.
+ * @param messageID The provider message ID.
  * @param action The action.
  */
-export async function act(accountId: string, messageId: string, action: MessageAction): Promise<void> {
+export async function act(accountID: string, messageID: string, action: MessageAction): Promise<void> {
   if (!ACTIONS.includes(action)) throw new Error('Неизвестное действие.');
-  if (!messageId || messageId.length > 512) throw new Error('Некорректное письмо.');
+  if (!messageID || messageID.length > 512) throw new Error('Некорректное письмо.');
   const {mailboxes = {}} = await readStore();
-  const item = lookup(mailboxes[accountId], messageId);
-  await withAccount(accountId, (module, account) => module.act(account, item, action));
+  const item = lookup(mailboxes[accountID], messageID);
+  await withAccount(accountID, (module, account) => module.act(account, item, action));
   await writeStore(({mailboxes: current = {}}) => {
-    const box = current[accountId];
-    const listed = box?.messages.find(entry => entry.id === messageId);
+    const box = current[accountID];
+    const listed = box?.messages.find(entry => entry.id === messageID);
     if (!box || !listed) return {};
     let unread = box.unread;
     let messages = box.messages;
     if (action === 'archive' || action === 'trash') {
-      messages = messages.filter(entry => entry.id !== messageId);
+      messages = messages.filter(entry => entry.id !== messageID);
       if (listed.unread) unread -= 1;
     } else {
       const next = {...listed};
@@ -170,9 +168,9 @@ export async function act(accountId: string, messageId: string, action: MessageA
         next.unread = action === 'unread';
         if (next.unread !== listed.unread) unread += next.unread ? 1 : -1;
       } else next.pinned = action === 'pin';
-      messages = messages.map(entry => (entry.id === messageId ? next : entry));
+      messages = messages.map(entry => (entry.id === messageID ? next : entry));
     }
-    return {mailboxes: {...current, [accountId]: {...box, messages, unread: Math.max(0, unread)}}};
+    return {mailboxes: {...current, [accountID]: {...box, messages, unread: Math.max(0, unread)}}};
   });
   await updateBadge();
 }
@@ -180,18 +178,18 @@ export async function act(accountId: string, messageId: string, action: MessageA
 /**
  * Loads a conversation with bodies; opening it marks unread messages as read.
  *
- * @param accountId The account ID.
- * @param messageId The selected message.
- * @param threadId Its conversation ID.
+ * @param accountID The account ID.
+ * @param messageID The selected message.
+ * @param threadID Its conversation ID.
  */
-export async function thread(accountId: string, messageId: string, threadId: string): Promise<ThreadMessage[]> {
-  if (!messageId || messageId.length > 512 || threadId.length > 512) throw new Error('Некорректное письмо.');
+export async function thread(accountID: string, messageID: string, threadID: string): Promise<ThreadMessage[]> {
+  if (!messageID || messageID.length > 512 || threadID.length > 512) throw new Error('Некорректное письмо.');
   const {mailboxes = {}} = await readStore();
-  const item = lookup(mailboxes[accountId], messageId, threadId);
-  const messages = await withAccount(accountId, (module, account) =>
-    module.thread(account, {id: item.id, thread: item.thread || threadId}),
+  const item = lookup(mailboxes[accountID], messageID, threadID);
+  const messages = await withAccount(accountID, (module, account) =>
+    module.thread(account, {id: item.id, thread: item.thread || threadID}),
   );
-  if (item.unread) act(accountId, messageId, 'read').catch(() => {});
+  if (item.unread) act(accountID, messageID, 'read').catch(() => {});
   return messages;
 }
 
@@ -219,10 +217,10 @@ export async function search(query: string): Promise<SearchHit[]> {
 }
 
 /** Opens the webmail Inbox or a listed message in a new tab. */
-export async function open(accountId: string, messageId?: string): Promise<void> {
+export async function open(accountID: string, messageID?: string): Promise<void> {
   const {accounts = [], mailboxes = {}} = await readStore();
-  const account = accounts.find(item => item.id === accountId);
+  const account = accounts.find(item => item.id === accountID);
   if (!account) throw new Error('Ящик не найден.');
-  const item = messageId ? mailboxes[accountId]?.messages?.find(entry => entry.id === messageId) : null;
+  const item = messageID ? mailboxes[accountID]?.messages?.find(entry => entry.id === messageID) : null;
   await chrome.tabs.create({url: provider(account.provider).webURL(account, item)});
 }

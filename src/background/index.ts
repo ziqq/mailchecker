@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Service-worker entry point: the trusted message broker and scheduler.
  *
  * The client (toolbar popup and full-tab app) and Settings send typed
@@ -15,7 +13,7 @@
  * @module background/index
  */
 import {preferences} from '../shared/preferences';
-import type {JmapInput, MessageAction, Preferences, Reply, RequestType} from '../shared/types';
+import type {JMAPInput, MessageAction, Preferences, Reply, RequestType} from '../shared/types';
 import {addAccount, publicState, removeAccount, signIn} from './accounts';
 import {act, checkAccount, checkAll, open, openNotification, search, thread, updateBadge} from './mailbox';
 import {hasNotifications, openApp} from './platform';
@@ -119,7 +117,7 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
     }
     case 'ADD_ACCOUNT': {
       if (message.provider !== 'jmap') await requireIdentity();
-      const added = await addAccount(message.provider, message.input as JmapInput | undefined);
+      const added = await addAccount(message.provider, message.input as JMAPInput | undefined);
       await checkAccount(added.id);
       await updateBadge();
       return {email: added.email, state: publicState(await readStore())};

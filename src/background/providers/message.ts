@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * The provider contract, message normalization and Smart Inbox categories.
  *
  * @module background/providers/message
@@ -16,7 +14,7 @@ import type {
   Category,
   Credentials,
   InboxResult,
-  JmapInput,
+  JMAPInput,
   MailMessage,
   MessageAction,
   ThreadMessage,
@@ -34,7 +32,7 @@ export interface Provider {
   /** Display name. */
   readonly label: string;
   /** Verifies and creates an account; `input` is used by JMAP. */
-  connect(input?: JmapInput): Promise<Connection>;
+  connect(input?: JMAPInput): Promise<Connection>;
   /** Silent renewal; throws `AuthError` when a sign-in is needed. */
   renew(account: Account): Promise<Credentials>;
   /** Interactive sign-in for an existing account. */

@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Repository consistency checks run by `npm run check`.
  *
  * Builds a fresh bundle into a temporary directory and verifies that the

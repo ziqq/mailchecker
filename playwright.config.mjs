@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Playwright configuration for the sandbox suite (`npm run test:sandbox`).
  *
  * Builds and serves the sandbox (`scripts/sandbox.mjs`) and runs `e2e/` in

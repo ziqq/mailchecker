@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Service-worker regressions: the bundled worker runs in a VM with mocked
  * `chrome.*` APIs and mocked Gmail, Microsoft Graph and JMAP servers.
  */

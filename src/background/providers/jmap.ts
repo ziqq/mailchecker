@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * JMAP mail (RFC 8620/8621): Fastmail, Stalwart, Cyrus and other servers on any domain.
  *
  * Accounts use a revocable API token created in the mail service. Access to
@@ -23,22 +21,22 @@ const USING = ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'];
 type Call = [string, Record<string, unknown>, string];
 
 /** JMAP mailbox fields used here. */
-interface JmapMailbox {
+interface JMAPMailbox {
   id: string;
   role?: string | null;
   unreadEmails?: number;
 }
 
 /** JMAP address. */
-type JmapAddress = {name?: string; email?: string};
+type JMAPAddress = {name?: string; email?: string};
 
 /** JMAP email fields used here. */
-interface JmapEmail {
+interface JMAPEmail {
   id: string;
   threadId?: string;
-  from?: JmapAddress[];
-  to?: JmapAddress[];
-  cc?: JmapAddress[];
+  from?: JMAPAddress[];
+  to?: JMAPAddress[];
+  cc?: JMAPAddress[];
   subject?: string;
   preview?: string;
   receivedAt?: string;
@@ -85,26 +83,26 @@ async function session(account: Pick<Account, 'credentials' | 'settings'>) {
     sessionURL(account),
     {token: account.credentials.token, service: 'JMAP'},
   );
-  const accountId = value?.primaryAccounts?.['urn:ietf:params:jmap:mail'];
-  if (typeof value?.apiUrl !== 'string' || typeof accountId !== 'string')
+  const accountID = value?.primaryAccounts?.['urn:ietf:params:jmap:mail'];
+  if (typeof value?.apiUrl !== 'string' || typeof accountID !== 'string')
     throw new Error('Сервер не поддерживает JMAP Mail.');
-  const apiUrl = new URL(value.apiUrl, sessionURL(account)).toString();
-  if (new URL(apiUrl).origin !== new URL(sessionURL(account)).origin)
+  const apiURL = new URL(value.apiUrl, sessionURL(account)).toString();
+  if (new URL(apiURL).origin !== new URL(sessionURL(account)).origin)
     throw new Error('JMAP API находится на другом домене; такой сервер не поддерживается.');
-  return {apiUrl, accountId, username: String(value.username || 'JMAP').slice(0, 320)};
+  return {apiURL, accountID, username: String(value.username || 'JMAP').slice(0, 320)};
 }
 
 /** Runs JMAP method calls and returns responses by call tag. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function run(account: Account, calls: Call[]): Promise<Record<string, any>> {
   const current = await session(account);
-  const value = await requestJSON<{methodResponses?: [string, Record<string, unknown>, string][]}>(current.apiUrl, {
+  const value = await requestJSON<{methodResponses?: [string, Record<string, unknown>, string][]}>(current.apiURL, {
     method: 'POST',
     token: account.credentials.token,
     service: 'JMAP',
     json: {
       using: USING,
-      methodCalls: calls.map(([name, args, tag]) => [name, {accountId: current.accountId, ...args}, tag]),
+      methodCalls: calls.map(([name, args, tag]) => [name, {accountId: current.accountID, ...args}, tag]),
     },
   });
   const replies: Record<string, Record<string, unknown>> = {};
@@ -116,19 +114,19 @@ async function run(account: Account, calls: Call[]): Promise<Record<string, any>
 }
 
 /** Returns mailboxes by role. */
-async function mailboxes(account: Account): Promise<Record<string, JmapMailbox>> {
+async function mailboxes(account: Account): Promise<Record<string, JMAPMailbox>> {
   const replies = await run(account, [
     ['Mailbox/get', {ids: null, properties: ['id', 'role', 'unreadEmails']}, 'mailboxes'],
   ]);
-  const list: JmapMailbox[] = Array.isArray(replies.mailboxes?.list) ? replies.mailboxes.list : [];
-  const roles: Record<string, JmapMailbox> = {};
+  const list: JMAPMailbox[] = Array.isArray(replies.mailboxes?.list) ? replies.mailboxes.list : [];
+  const roles: Record<string, JMAPMailbox> = {};
   for (const box of list) if (box.role) roles[box.role] = box;
   if (!roles.inbox) throw new Error('В ящике нет папки «Входящие».');
   return roles;
 }
 
 /** Converts a JMAP email to a list message. */
-function listMessage(item: JmapEmail): MailMessage {
+function listMessage(item: JMAPEmail): MailMessage {
   const from = addresses(item.from?.slice(0, 1));
   return message({
     id: item.id,
@@ -154,7 +152,7 @@ async function query(account: Account, filter: Record<string, unknown>, limit: n
       'emails',
     ],
   ]);
-  const list: JmapEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
+  const list: JMAPEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
   return list.slice(0, limit).map(listMessage);
 }
 
@@ -181,14 +179,15 @@ export const jmap: Provider = {
   label: 'JMAP',
 
   async connect(input) {
-    const sessionUrl = httpsURL(input?.sessionUrl, 'JMAP Session URL');
-    const webUrl = input?.webUrl ? httpsURL(input.webUrl, 'Ссылка на веб-почту') : '';
+    const settings = {
+      sessionUrl: httpsURL(input?.sessionUrl, 'JMAP Session URL'),
+      webUrl: input?.webUrl ? httpsURL(input.webUrl, 'Ссылка на веб-почту') : '',
+    };
     const token = String(input?.token || '').trim();
     if (!token || token.length > 4096 || /\s/.test(token)) throw new Error('Укажите API-токен без пробелов.');
-    if (!(await chrome.permissions.contains({origins: [`${new URL(sessionUrl).origin}/*`]})))
+    if (!(await chrome.permissions.contains({origins: [`${new URL(settings.sessionUrl).origin}/*`]})))
       throw new Error('Разрешите доступ к серверу JMAP и повторите.');
     const credentials = {token};
-    const settings = {sessionUrl, webUrl};
     const current = await session({credentials, settings});
     return {email: current.username, credentials, settings};
   },
@@ -235,7 +234,7 @@ export const jmap: Provider = {
         'emails',
       ],
     ]);
-    const list: JmapEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
+    const list: JMAPEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
     return list
       .map(entry => {
         const value = (parts?: {partId?: string; type?: string}[], type?: string) =>

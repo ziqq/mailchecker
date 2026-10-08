@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * A sanitized email body in a sandboxed, script-free frame that grows to its content.
  *
  * `allow-same-origin` lets the page measure the frame; without
@@ -14,7 +12,7 @@
  * @module client/components/MailFrame
  */
 import {createEffect, onCleanup} from 'solid-js';
-import {frameDocument, sanitizeEmail, textToHtml} from '../../shared/sanitize';
+import {frameDocument, sanitizeEmail, textToHTML} from '../../shared/sanitize';
 
 /** Frame properties. */
 export interface MailFrameProps {
@@ -40,7 +38,7 @@ export function MailFrame(props: MailFrameProps) {
   createEffect(() => {
     const plain = !props.html.trim();
     const body = plain
-      ? {html: textToHtml(props.text), blocked: 0, trackers: 0}
+      ? {html: textToHTML(props.text), blocked: 0, trackers: 0}
       : sanitizeEmail(props.html, props.allowRemote);
     props.onBlocked?.(body.blocked, body.trackers);
     frame.srcdoc = frameDocument(body.html, {allowRemote: props.allowRemote, dark: props.dark, plain});

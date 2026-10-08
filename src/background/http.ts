@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Bounded HTTP requests shared by the mail providers and OAuth flows.
  *
  * Every request omits cookies, refuses redirects and times out, and every
@@ -30,7 +28,7 @@ export class AuthError extends Error {
 }
 
 /** A non-success HTTP status with its parsed body. */
-export class HttpError extends Error {
+export class HTTPError extends Error {
   constructor(
     message: string,
     readonly status: number,
@@ -102,7 +100,7 @@ export interface RequestOptions {
  * @param options Method, credentials and body.
  * @returns The parsed body, or `null` for an empty reply.
  * @throws {AuthError} On 401 or 403 when a token was sent.
- * @throws {HttpError} On other failures.
+ * @throws {HTTPError} On other failures.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function requestJSON<T = any>(
@@ -149,6 +147,6 @@ export async function requestJSON<T = any>(
   } catch {
     if (response.ok) throw new Error(`${service} вернул некорректный ответ.`);
   }
-  if (!response.ok) throw new HttpError(`${service}: ошибка ${response.status}.`, response.status, value);
+  if (!response.ok) throw new HTTPError(`${service}: ошибка ${response.status}.`, response.status, value);
   return value as T;
 }

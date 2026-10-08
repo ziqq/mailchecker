@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Outlook.com, Hotmail and Microsoft 365 / Exchange Online (any domain) through Microsoft Graph.
  *
  * @module background/providers/outlook

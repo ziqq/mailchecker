@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * Shared data types for the service worker, the popup and Settings.
  *
  * @module shared/types
@@ -17,7 +15,7 @@
  * mail API. They have no adapter yet (see docs/SAFARI.md, IMAP bridge):
  * the worker rejects them, and only the sandbox shows them.
  */
-export type ProviderId = 'gmail' | 'outlook' | 'jmap' | 'yandex' | 'mailru' | 'icloud';
+export type ProviderID = 'gmail' | 'outlook' | 'jmap' | 'yandex' | 'mailru' | 'icloud';
 
 /** Theme preference: follow the system or force a scheme. */
 export type Theme = 'auto' | 'light' | 'dark';
@@ -54,7 +52,7 @@ export interface AccountSettings {
 /** A stored account, including credentials. */
 export interface Account {
   id: string;
-  provider: ProviderId;
+  provider: ProviderID;
   email: string;
   credentials: Credentials;
   settings: AccountSettings;
@@ -134,7 +132,7 @@ export interface Store {
 /** An account as extension pages see it: no credentials. */
 export interface PublicAccount {
   id: string;
-  provider: ProviderId;
+  provider: ProviderID;
   label: string;
   email: string;
 }
@@ -163,7 +161,7 @@ export type Request =
   | {type: 'SEARCH'; query: string}
   | {type: 'SIGN_IN'; account: string}
   | {type: 'PREFERENCES'; value: Partial<Preferences>}
-  | {type: 'ADD_ACCOUNT'; provider: ProviderId; input?: JmapInput}
+  | {type: 'ADD_ACCOUNT'; provider: ProviderID; input?: JMAPInput}
   | {type: 'REMOVE_ACCOUNT'; account: string};
 
 /** A search hit: a message with its account. */
@@ -176,7 +174,7 @@ export interface SearchHit {
 export type RequestType = Request['type'];
 
 /** Settings form values for a JMAP account. */
-export interface JmapInput {
+export interface JMAPInput {
   sessionUrl: string;
   token: string;
   webUrl?: string;

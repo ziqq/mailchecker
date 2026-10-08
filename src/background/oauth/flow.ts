@@ -2,9 +2,7 @@
  * https://github.com/ziqq/mailchecker
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
- */
-
-/**
+ *
  * OAuth sign-in through `chrome.identity.launchWebAuthFlow`.
  *
  * - Google: implicit flow; a new access token is obtained silently with
@@ -17,7 +15,7 @@
  * @module background/oauth/flow
  */
 import type {Credentials} from '../../shared/types';
-import {AuthError, HttpError, requestJSON} from '../http';
+import {AuthError, HTTPError, requestJSON} from '../http';
 import {hasIdentity} from '../platform';
 import {oauthConfig as config} from './config';
 
@@ -39,12 +37,12 @@ export function available(provider: OAuthProvider): boolean {
 }
 
 /** Returns the callback URL registered for a provider: `https://<extension-id>.chromiumapp.org/<provider>`. */
-export function redirectUri(provider: OAuthProvider): string {
+export function redirectURI(provider: OAuthProvider): string {
   return hasIdentity() ? chrome.identity.getRedirectURL(provider) : '';
 }
 
 /** Returns the client ID or throws a user-facing error. */
-function clientId(provider: OAuthProvider): string {
+function clientID(provider: OAuthProvider): string {
   if (!hasIdentity())
     throw new Error(
       'В этом браузере вход выполняется через приложение mailchecker (Safari). Используйте JMAP или Chrome.',
@@ -82,7 +80,7 @@ async function launch(url: URL, provider: OAuthProvider, interactive: boolean): 
     if (!interactive) throw new AuthError();
     throw new Error('Вход отменён или не удался.');
   }
-  if (result.origin + result.pathname !== redirectUri(provider)) throw new Error('Неверный адрес возврата OAuth.');
+  if (result.origin + result.pathname !== redirectURI(provider)) throw new Error('Неверный адрес возврата OAuth.');
   return result;
 }
 
@@ -109,9 +107,9 @@ export async function google({
   const state = random(16);
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.search = new URLSearchParams({
-    client_id: clientId('google'),
+    client_id: clientID('google'),
     response_type: 'token',
-    redirect_uri: redirectUri('google'),
+    redirect_uri: redirectURI('google'),
     scope: GOOGLE_SCOPE,
     state,
     include_granted_scopes: 'true',
@@ -139,9 +137,9 @@ export async function microsoft({loginHint}: {loginHint?: string} = {}): Promise
   const challenge = base64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
   const url = new URL(`${MICROSOFT}/authorize`);
   url.search = new URLSearchParams({
-    client_id: clientId('microsoft'),
+    client_id: clientID('microsoft'),
     response_type: 'code',
-    redirect_uri: redirectUri('microsoft'),
+    redirect_uri: redirectURI('microsoft'),
     scope: MICROSOFT_SCOPE,
     state,
     code_challenge: challenge,
@@ -156,7 +154,7 @@ export async function microsoft({loginHint}: {loginHint?: string} = {}): Promise
   return microsoftToken({
     grant_type: 'authorization_code',
     code,
-    redirect_uri: redirectUri('microsoft'),
+    redirect_uri: redirectURI('microsoft'),
     code_verifier: verifier,
   });
 }
@@ -171,7 +169,7 @@ export async function microsoftRefresh(refreshToken: string): Promise<Credential
   try {
     return await microsoftToken({grant_type: 'refresh_token', refresh_token: refreshToken}, refreshToken);
   } catch (error) {
-    if (error instanceof HttpError && error.status >= 400 && error.status < 500) throw new AuthError();
+    if (error instanceof HTTPError && error.status >= 400 && error.status < 500) throw new AuthError();
     throw error;
   }
 }
@@ -182,7 +180,7 @@ async function microsoftToken(parameters: Record<string, string>, previousRefres
     `${MICROSOFT}/token`,
     {
       method: 'POST',
-      form: {client_id: clientId('microsoft'), scope: MICROSOFT_SCOPE, ...parameters},
+      form: {client_id: clientID('microsoft'), scope: MICROSOFT_SCOPE, ...parameters},
       service: 'Microsoft',
     },
   );
