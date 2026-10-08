@@ -36,7 +36,7 @@ export const accents: Readonly<Record<Exclude<Palette, 'neutral'>, {color: strin
   gray: {color: '#6d839e', text: '#ffffff'},
 });
 
-/** Allowed palette values, in picker order; anything else (such as the former `accent`) falls back to orange. */
+/** Allowed palette values, in picker order. */
 export const palettes: readonly Palette[] = Object.freeze([
   'orange',
   'blue',

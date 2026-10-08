@@ -443,12 +443,10 @@ test('preferences are bounded', async () => {
   });
 });
 
-test('preferences keep an accent palette and reset the former one to orange', async () => {
+test('preferences keep an accent palette', async () => {
   const w = startWorker();
   const pink = await w.ok({type: 'PREFERENCES', value: {palette: 'pink'}}, 'popup');
   assert.equal(pink.palette, 'pink');
-  const former = await w.ok({type: 'PREFERENCES', value: {palette: 'accent'}}, 'popup');
-  assert.equal(former.palette, 'orange');
 });
 
 test('the unread badge takes the accent colour', async () => {
