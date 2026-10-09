@@ -72,6 +72,9 @@ for (const target of ['chromium', 'safari']) {
       'client.css',
       'options.js',
       'options.css',
+      'fonts/inter-latin.woff2',
+      'fonts/inter-cyrillic.woff2',
+      'fonts/OFL.txt',
     ];
     const client = await readFile(join(outdir, 'client.js'), 'utf8');
     expect(!client.includes('createFixtures'), `${target}: sandbox fixtures must not ship.`);

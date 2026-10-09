@@ -46,6 +46,9 @@ export const assets = {
   'icons/icon32.png': 'src/icons/icon32.png',
   'icons/icon48.png': 'src/icons/icon48.png',
   'icons/icon128.png': 'src/icons/icon128.png',
+  'fonts/inter-latin.woff2': 'src/fonts/inter-latin.woff2',
+  'fonts/inter-cyrillic.woff2': 'src/fonts/inter-cyrillic.woff2',
+  'fonts/OFL.txt': 'src/fonts/OFL.txt',
 };
 
 /** Files copied into the sandbox build only: output path → source path. */
