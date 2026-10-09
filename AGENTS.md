@@ -48,6 +48,7 @@ Run `npm ci` and `npm run build`, then load `build/` as an unpacked extension in
 - `e2e/`: Playwright suite run against the sandbox.
 - `design/`: HTML mockups of the client.
 - `src/styles/`: design tokens (two palettes × light/dark) and shared components.
+- `src/fonts/`: bundled Inter (Latin and Cyrillic, SIL OFL 1.1); layouts are measured with it, not a system font.
 - `scripts/`, `.github/workflows/`: bundling, checks, icons, deterministic packaging and CI.
 - `docs/`, `PRIVACY.md`: architecture, OAuth setup and data handling. Read [Architecture](docs/ARCHITECTURE.md) before changing messages or storage.
 - Document every module and function with JSDoc (Python: docstrings). The module description goes into the license header comment, not a separate block:
