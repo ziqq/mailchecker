@@ -8,6 +8,7 @@ flowchart LR
   tab["Full-tab client<br/>app.html"] -- "runtime.sendMessage" --> worker
   settings["Settings<br/>options.html"] -- "runtime.sendMessage" --> worker
   worker -- "fetch (token, no cookies)" --> api["Gmail API · Microsoft Graph · JMAP"]
+  worker -- "fetch (browser sign-in)" --> web["Gmail feed · Yandex lite · Mail.ru checker"]
   worker <--> storage[("chrome.storage<br/>local · session")]
   worker -- "alarms" --> worker
 ```
@@ -26,13 +27,13 @@ The popup and the full-tab app run the same SolidJS client; `data-mode` on `<htm
 
 ### Responsive layout
 
-| Width / context                   | Layout                                   |
-| --------------------------------- | ---------------------------------------- |
-| Full tab ≥ 1100 px                | Sidebar · list · reader                  |
-| Popup (780×600) and tabs 700–1099 | Top bar, then list · reader              |
-| < 700 px, or a phone popup (iOS)  | Top bar, then list **or** reader, with ← |
+| Width / context                                        | Layout                                   |
+| ------------------------------------------------------ | ---------------------------------------- |
+| Full tab ≥ 1100 px                                     | Sidebar · list · reader                  |
+| Popup (780×600) and tabs 700–1099                      | Top bar, then list · reader              |
+| < 700 px, mini popup (400×600), or a phone popup (iOS) | Top bar, then list **or** reader, with ← |
 
-A popup on a phone-sized touch screen sets `data-narrow` and fills the screen instead of the fixed 780×600 window. Row hover actions are hidden on touch screens; the reader toolbar has every action.
+The `popup` preference (`full` or `mini`, set in Settings) sets `data-size` on the popup root; the mini popup is 400×600, narrow enough for the one-column layout. A popup on a phone-sized touch screen sets `data-narrow` and fills the screen instead of the fixed 780×600 window. Row hover actions are hidden on touch screens; the reader toolbar has every action.
 
 | Module                       | Role                                                                                         |
 | ---------------------------- | -------------------------------------------------------------------------------------------- |
@@ -73,19 +74,21 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 
 ## Service worker
 
-| Module                 | Role                                                                                                |
-| ---------------------- | --------------------------------------------------------------------------------------------------- |
-| `index.ts`             | Message router, sender checks, alarm schedule, lifecycle and notification listeners.                |
-| `platform.ts`          | Browser differences (Chromium/Safari): storage access level, badge, notifications, identity, tabs.  |
-| `storage.ts`           | Trusted local storage with serialized read-modify-write updates.                                    |
-| `http.ts`              | Bounded JSON requests: HTTPS only, no cookies or redirects, 25 s timeout, 4 MiB limit, `AuthError`. |
-| `accounts.ts`          | Provider registry, public state, add/remove, deduplicated token renewal, `withAccount`.             |
-| `mailbox.ts`           | Checks, badge, notifications, conversations, search and message actions.                            |
-| `oauth/`               | Public client IDs; Google implicit flow and Microsoft PKCE/refresh with `state` checks.             |
-| `providers/message.ts` | The `Provider` contract, Smart Inbox categories and bounded normalization.                          |
-| `providers/gmail.ts`   | Gmail API: Inbox list with labels, MIME bodies, threads, label actions, search.                     |
-| `providers/outlook.ts` | Microsoft Graph: Inbox list, conversation messages and attachments, PATCH/move, `$search`.          |
-| `providers/jmap.ts`    | JMAP: Mailbox/Email query/get/set, Thread/get with body values, `text` search.                      |
+| Module                                            | Role                                                                                                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.ts`                                        | Message router, sender checks, alarm schedule, lifecycle and notification listeners.                                                                                                |
+| `platform.ts`                                     | Browser differences (Chromium/Safari): storage access level, badge, notifications, identity, tabs.                                                                                  |
+| `storage.ts`                                      | Trusted local storage with serialized read-modify-write updates.                                                                                                                    |
+| `http.ts`                                         | Bounded JSON and text requests: HTTPS only, no cookies or redirects, 25 s timeout, 4 MiB limit, `AuthError`; `session` requests send the browser's cookies to `SESSION_HOSTS` only. |
+| `accounts.ts`                                     | Provider registries (API and browser sign-in; `settings.browser` picks one), public state, add/remove, deduplicated token renewal, `withAccount`.                                   |
+| `mailbox.ts`                                      | Checks, badge, notifications, conversations, search and message actions.                                                                                                            |
+| `oauth/`                                          | Public client IDs; Google implicit flow and Microsoft PKCE/refresh with `state` checks.                                                                                             |
+| `providers/message.ts`                            | The `Provider` contract, Smart Inbox categories and bounded normalization.                                                                                                          |
+| `providers/gmail.ts`                              | Gmail API: Inbox list with labels, MIME bodies, threads, label actions, search.                                                                                                     |
+| `providers/outlook.ts`                            | Microsoft Graph: Inbox list, conversation messages and attachments, PATCH/move, `$search`.                                                                                          |
+| `providers/jmap.ts`                               | JMAP: Mailbox/Email query/get/set, Thread/get with body values, `text` search.                                                                                                      |
+| `providers/session.ts`                            | Mailboxes read through the browser's sign-in: no credentials; Inbox only, actions and bodies in the webmail.                                                                        |
+| `providers/gmailweb.ts`, `yandex.ts`, `mailru.ts` | Gmail unread Atom feed, Yandex lite Inbox page, Mail.ru checker API; parsers are pure and tested.                                                                                   |
 
 ### Stored data
 
@@ -110,7 +113,7 @@ Chromium browsers load `build/`. Safari loads `build-safari/` inside a containin
 
 ## Styles
 
-`src/styles/_tokens.scss` defines two palettes × light/dark as CSS custom properties: `accent` (warm surfaces, an accent colour, pill controls) and `neutral` (monochrome graphite, white primary buttons). The root follows the system scheme unless `data-theme` is set; `data-palette` selects the palette. The `palette` preference is one of nine accents (`orange` by default, and the Telegram iOS `blue`, `cyan`, `green`, `pink`, `purple`, `red`, `yellow`, `gray`) or `neutral`. Their colours live in `accents` in `shared/preferences.ts`: `applyTheme` sets `--accent` and `data-accent` on the root, the accent tokens are mixed from `--accent`, and the worker colours the unread badge with it (graphite for `neutral`). Inter ships in `src/fonts/` (variable weight, Latin and Cyrillic subsets, SIL OFL 1.1 in `OFL.txt`) and is declared in `_tokens.scss`, so layouts measure the same on every system. `_components.scss` holds shared controls; `client/client.scss` and `options/options.scss` lay out each page. Design mockups live in `design/`.
+`src/styles/_tokens.scss` defines two palettes × light/dark as CSS custom properties: `accent` (warm surfaces, an accent colour, pill controls) and `neutral` (monochrome graphite, white primary buttons). The root follows the system scheme unless `data-theme` is set; `data-palette` selects the palette. The `palette` preference is `neutral` (black and white graphite, the default; also set on the pages' `<html>` so nothing flashes before preferences load) or one of nine accents: `orange`, `blue`, `cyan`, `green`, `pink`, `purple`, `red`, `yellow`, `gray`. Their colours live in `accents` in `shared/preferences.ts`: `applyTheme` sets `--accent` and `data-accent` on the root, the accent tokens are mixed from `--accent`, and the worker colours the unread badge with it (graphite for `neutral`). Inter ships in `src/fonts/` (variable weight, Latin and Cyrillic subsets, SIL OFL 1.1 in `OFL.txt`) and is declared in `_tokens.scss`, so layouts measure the same on every system. `_components.scss` holds shared controls; `client/client.scss` and `options/options.scss` lay out each page. Design mockups live in `design/`.
 
 ## Build and package
 
@@ -121,7 +124,7 @@ Chromium browsers load `build/`. Safari loads `build-safari/` inside a containin
 
 ## Sandbox
 
-`npm run sandbox` builds `build-sandbox/` with `__SANDBOX__ = true` and serves it at `http://127.0.0.1:8080/` with the extension's CSP. In this build `request()` in `shared/dom.ts` is answered by `src/sandbox/worker.ts` from `src/sandbox/fixtures.ts` instead of `chrome.runtime.sendMessage`, and the client does not subscribe to `chrome.storage`, so `popup.html` and `app.html` run in a plain tab without the extension, accounts or network. Fixtures cover all six provider IDs (including the IMAP-only `yandex`, `mailru` and `icloud`, which have no adapter yet), every Smart Inbox category, a notification stack, pinned mail, attachments, long text, HTML with remote images and a tracker, a conversation, an expired sign-in and a failed check. Actions change in-memory state; a reload resets it. `?theme=` and `?palette=` set the initial preferences. `index.html` shows the popup (780×600) and a phone (390×844) side by side. Release builds define `__SANDBOX__ = false`, and esbuild drops the fixtures.
+`npm run sandbox` builds `build-sandbox/` with `__SANDBOX__ = true` and serves it at `http://127.0.0.1:8080/` with the extension's CSP. In this build `request()` in `shared/dom.ts` is answered by `src/sandbox/worker.ts` from `src/sandbox/fixtures.ts` instead of `chrome.runtime.sendMessage`, and the client does not subscribe to `chrome.storage`, so `popup.html` and `app.html` run in a plain tab without the extension, accounts or network. Fixtures cover all six provider IDs (including the IMAP-only `yandex`, `mailru` and `icloud`, which have no adapter yet), every Smart Inbox category, a notification stack, pinned mail, attachments, long text, HTML with remote images and a tracker, a conversation, an expired sign-in and a failed check. Actions change in-memory state; a reload resets it. `?theme=`, `?palette=` and `?popup=` set the initial preferences. `index.html` shows the popup (780×600) and a phone (390×844) side by side. Release builds define `__SANDBOX__ = false`, and esbuild drops the fixtures.
 
 ## Tests
 

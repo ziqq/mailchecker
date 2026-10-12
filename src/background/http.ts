@@ -5,9 +5,11 @@
  *
  * Bounded HTTP requests shared by the mail providers and OAuth flows.
  *
- * Every request omits cookies, refuses redirects and times out, and every
- * body is streamed with a byte limit so an unexpected response cannot
- * exhaust memory.
+ * Every request refuses redirects and times out, and every body is streamed
+ * with a byte limit so an unexpected response cannot exhaust memory. API
+ * requests omit cookies; only session requests to the webmail hosts in
+ * [SESSION_HOSTS] send the browser's own sign-in, for mailboxes read through
+ * the browser.
  *
  * @module background/http
  */
@@ -17,6 +19,13 @@ const TIMEOUT = 25000;
 
 /** Default response limit: 4 MiB is far above a page of message metadata. */
 const LIMIT = 4 * 1024 * 1024;
+
+/** Webmail hosts that session requests may send the browser's cookies to. */
+export const SESSION_HOSTS: readonly string[] = Object.freeze([
+  'mail.google.com',
+  'mail.yandex.ru',
+  'mailru-checker-api.e.mail.ru',
+]);
 
 /** An expired or revoked credential; the account needs a new sign-in. */
 export class AuthError extends Error {
@@ -89,26 +98,28 @@ export interface RequestOptions {
   form?: Record<string, string>;
   /** The service name used in error messages. */
   service?: string;
+  /**
+   * Sends the browser's cookies for a host in [SESSION_HOSTS] and follows its
+   * redirects; a 401, or a redirect that leaves [SESSION_HOSTS] (to a
+   * sign-in page), then raises [AuthError], and a 403/429 means the webmail
+   * is limiting requests.
+   */
+  session?: boolean;
 }
 
-/**
- * Sends a request and parses its bounded JSON reply.
- *
- * Replies are untyped server data: callers validate the fields they use.
- *
- * @param url The absolute HTTPS URL.
- * @param options Method, credentials and body.
- * @returns The parsed body, or `null` for an empty reply.
- * @throws {AuthError} On 401 or 403 when a token was sent.
- * @throws {HTTPError} On other failures.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function requestJSON<T = any>(
+/** Sends a bounded request and returns the response with its text body. */
+async function send(
   url: string,
-  {method = 'GET', token, json, form, service = 'Сервер'}: RequestOptions = {},
-): Promise<T> {
-  if (new URL(url).protocol !== 'https:') throw new Error('Разрешены только HTTPS-адреса.');
-  const headers: Record<string, string> = {Accept: 'application/json'};
+  {method = 'GET', token, json, form, service = 'Сервер', session = false}: RequestOptions,
+  accept: string,
+): Promise<{response: Response; text: string}> {
+  const target = new URL(url);
+  if (target.protocol !== 'https:') throw new Error('Разрешены только HTTPS-адреса.');
+  if (session && !SESSION_HOSTS.includes(target.hostname))
+    throw new Error('Этот адрес не может использовать вход в браузере.');
+  if (session && !(await chrome.permissions.contains({origins: [`${target.origin}/*`]})))
+    throw new Error(`Разрешите доступ к сайту «${service}»: добавьте ящик заново в настройках.`);
+  const headers: Record<string, string> = {Accept: accept};
   let body: string | undefined;
   if (token) headers.Authorization = `Bearer ${token}`;
   if (json !== undefined) {
@@ -124,23 +135,62 @@ export async function requestJSON<T = any>(
       method,
       headers,
       body,
-      credentials: 'omit',
-      redirect: 'error',
+      credentials: session ? 'include' : 'omit',
+      redirect: session ? 'follow' : 'error',
       signal: AbortSignal.timeout(TIMEOUT),
     });
   } catch (error) {
-    throw new Error(
-      (error as Error)?.name === 'TimeoutError'
-        ? `${service} не ответил вовремя.`
-        : `${service} недоступен. Проверьте сеть.`,
-      {cause: error},
-    );
+    if ((error as Error)?.name === 'TimeoutError')
+      throw new Error(session ? `«${service}» не отвечает. Повторите позже.` : `${service} не ответил вовремя.`, {
+        cause: error,
+      });
+    // A session request redirected to a sign-in host (no host permission there) fails like a network error.
+    if (session) throw new AuthError(`Войдите в «${service}» в этом браузере (или проверьте сеть) и повторите.`);
+    throw new Error(`${service} недоступен. Проверьте сеть.`, {cause: error});
   }
-  if (token && (response.status === 401 || response.status === 403)) {
+  const signedOut = session && !SESSION_HOSTS.includes(new URL(response.url || url).hostname);
+  // Webmail answers too frequent requests with 403/429 (Yandex: «Доступ к сервису временно запрещён»).
+  if (session && !signedOut && (response.status === 403 || response.status === 429)) {
     await response.body?.cancel().catch(() => {});
-    throw new AuthError();
+    throw new Error(`«${service}» временно ограничил доступ: слишком много запросов. Проверка повторится позже.`);
   }
-  const text = await responseText(response);
+  if (signedOut || ((token || session) && (response.status === 401 || response.status === 403))) {
+    await response.body?.cancel().catch(() => {});
+    throw new AuthError(session ? `Войдите в «${service}» в этом браузере и повторите.` : undefined);
+  }
+  return {response, text: await responseText(response)};
+}
+
+/**
+ * Sends a request and returns its bounded text reply (HTML, XML).
+ *
+ * @param url The absolute HTTPS URL.
+ * @param options Method, session and body.
+ * @throws {AuthError} When a session request is signed out.
+ * @throws {HTTPError} On other failures.
+ */
+export async function requestText(url: string, options: RequestOptions = {}): Promise<string> {
+  const {response, text} = await send(url, options, 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
+  if (!response.ok)
+    throw new HTTPError(`${options.service || 'Сервер'}: ошибка ${response.status}.`, response.status, null);
+  return text;
+}
+
+/**
+ * Sends a request and parses its bounded JSON reply.
+ *
+ * Replies are untyped server data: callers validate the fields they use.
+ *
+ * @param url The absolute HTTPS URL.
+ * @param options Method, credentials, session and body.
+ * @returns The parsed body, or `null` for an empty reply.
+ * @throws {AuthError} On 401 or 403 when a token was sent, or a signed-out session.
+ * @throws {HTTPError} On other failures.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function requestJSON<T = any>(url: string, options: RequestOptions = {}): Promise<T> {
+  const service = options.service || 'Сервер';
+  const {response, text} = await send(url, options, 'application/json');
   let value: unknown = null;
   try {
     value = text ? JSON.parse(text) : null;

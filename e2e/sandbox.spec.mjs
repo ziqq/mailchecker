@@ -146,3 +146,22 @@ for (const layout of LAYOUTS) {
     });
   });
 }
+
+test.describe('mini popup', () => {
+  test.use({viewport: {width: 400, height: 600}});
+
+  test('renders one column and opens a conversation', async ({page}) => {
+    const errors = watchErrors(page);
+    await page.goto('popup.html?popup=mini');
+    await expect(page.locator('html')).toHaveAttribute('data-size', 'mini');
+    await expect(page.locator('.row').first()).toBeVisible();
+    expect(await page.evaluate(() => document.body.getBoundingClientRect().width)).toBe(400);
+    await expectNoHorizontalScroll(page);
+
+    await page.locator('.row[data-id="g1"]').click();
+    await expect(page.locator('.row[data-id="g1"]')).toBeHidden();
+    await page.getByRole('button', {name: 'К списку'}).click();
+    await expect(page.locator('.row[data-id="g1"]')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+});

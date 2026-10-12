@@ -4,7 +4,7 @@
   Copyright (C) 2026 Anton Ustinoff
   https://github.com/ziqq/mailchecker/blob/main/LICENSE
 -->
-<html lang="ru">
+<html lang="ru" data-palette="neutral">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -28,8 +28,8 @@
         <p class="eyebrow">Почтовый ящик в браузере</p>
         <h1>Вся почта<span class="dot">.</span> Сразу<span class="dot">.</span></h1>
         <p class="lead">
-          Счётчик, список и уведомления для Gmail, Microsoft 365 и JMAP на любом домене. Без своего сервера и
-          дополнительных программ.
+          Счётчик, список и уведомления для Gmail, Яндекс Почты, Почты Mail.ru, Microsoft 365 и JMAP. Без своего сервера
+          и дополнительных программ.
         </p>
       </section>
 
@@ -61,6 +61,26 @@
             <button class="btn primary" type="submit">Подключить</button>
           </div>
         </form>
+        <dialog id="address-dialog" class="dialog" aria-labelledby="address-title">
+          <form id="address-form">
+            <div class="dialog-head">
+              <span class="tile" id="address-mark"></span>
+              <div>
+                <h3 id="address-title"></h3>
+                <p>Через вход в этом браузере</p>
+              </div>
+            </div>
+            <label>Адрес ящика<input name="email" type="email" required autocomplete="email" /></label>
+            <p class="dialog-hint">
+              Сначала войдите в этот ящик в браузере. Пароль не нужен: расширение читает почту через ваш вход.
+            </p>
+            <p class="status" id="address-status" role="status"></p>
+            <div class="form-actions">
+              <button class="btn" type="button" id="address-cancel">Отмена</button>
+              <button class="btn primary" type="submit">Подключить</button>
+            </div>
+          </form>
+        </dialog>
         <p id="status" class="status" role="status"></p>
       </section>
 
@@ -77,6 +97,13 @@
             <p>Светлая, тёмная или как в системе.</p>
           </div>
           <div class="segmented" id="theme-control"></div>
+        </div>
+        <div class="field-row">
+          <div>
+            <strong>Окно</strong>
+            <p>Размер окна по кнопке в панели браузера.</p>
+          </div>
+          <div class="segmented" id="popup-control"></div>
         </div>
         <div class="field-row">
           <div>

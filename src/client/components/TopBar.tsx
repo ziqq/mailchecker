@@ -123,37 +123,40 @@ export function TopBar() {
   const expand = () => request({type: 'OPEN_APP'}).then(() => window.close(), store.fail);
   return (
     <header class="topbar">
-      <span class="logo">
-        mailchecker<span class="dot">.</span>
-      </span>
-      <Show when={(store.state()?.accounts.length || 0) > 1}>
-        <AccountSwitcher />
-      </Show>
-      <span class="spacer" />
-      <RefreshButton />
-      <button
-        class="round ghost theme-toggle"
-        type="button"
-        title={THEME_TITLES[store.state()?.preferences.theme || 'auto']}
-        aria-label="Сменить тему"
-        onClick={cycleTheme}
-      >
-        {icon('theme')}
-      </button>
-      <Show when={mode === 'popup'}>
+      <div class="topbar-lead">
+        <span class="logo">
+          mailchecker<span class="dot">.</span>
+        </span>
+        <Show when={(store.state()?.accounts.length || 0) > 1}>
+          <AccountSwitcher />
+        </Show>
+      </div>
+      <div class="topbar-actions">
+        <RefreshButton />
         <button
-          class="round ghost"
+          class="round ghost theme-toggle"
           type="button"
-          title="Открыть во весь экран"
-          aria-label="Открыть во весь экран"
-          onClick={expand}
+          title={THEME_TITLES[store.state()?.preferences.theme || 'auto']}
+          aria-label="Сменить тему"
+          onClick={cycleTheme}
         >
-          {icon('expand')}
+          {icon('theme')}
         </button>
-      </Show>
-      <button class="round ghost" type="button" title="Настройки" aria-label="Настройки" onClick={openSettings}>
-        {icon('settings')}
-      </button>
+        <Show when={mode === 'popup'}>
+          <button
+            class="round ghost"
+            type="button"
+            title="Открыть во весь экран"
+            aria-label="Открыть во весь экран"
+            onClick={expand}
+          >
+            {icon('expand')}
+          </button>
+        </Show>
+        <button class="round ghost" type="button" title="Настройки" aria-label="Настройки" onClick={openSettings}>
+          {icon('settings')}
+        </button>
+      </div>
     </header>
   );
 }

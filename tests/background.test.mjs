@@ -250,7 +250,8 @@ function startWorker({identity = true} = {}) {
     },
     tabs: {create: async ({url}) => tabs.push(url)},
     permissions: {contains: async ({permissions}) => (permissions ? identity : true)},
-    identity: {
+    // Chromium has no `chrome.identity` until the optional permission is granted.
+    identity: identity && {
       getRedirectURL: path => `https://test.chromiumapp.org/${path}`,
       async launchWebAuthFlow({url}) {
         const request = new URL(url);
@@ -428,6 +429,25 @@ test('OAuth accounts need the optional identity permission', async () => {
   assert.match(reply.error, /Разрешите/);
 });
 
+test('OAuth sign-in is offered before the identity permission is granted', async () => {
+  const w = startWorker({identity: false});
+  const {oauth} = await w.ok({type: 'STATE'}, 'options');
+  assert.deepEqual(JSON.parse(JSON.stringify(oauth)), {
+    google: true,
+    microsoft: true,
+    redirect: {google: 'https://test.chromiumapp.org/google', microsoft: 'https://test.chromiumapp.org/microsoft'},
+  });
+});
+
+test('preferences default to graphite and a full popup, and keep a mini popup', async () => {
+  const w = startWorker();
+  const value = await w.ok({type: 'STATE'}, 'popup');
+  assert.equal(value.preferences.palette, 'neutral');
+  assert.equal(value.preferences.popup, 'full');
+  assert.equal((await w.ok({type: 'PREFERENCES', value: {popup: 'mini'}}, 'options')).popup, 'mini');
+  assert.equal((await w.ok({type: 'PREFERENCES', value: {popup: 'huge'}}, 'options')).popup, 'full');
+});
+
 test('preferences are bounded', async () => {
   const w = startWorker();
   const value = await w.ok(
@@ -440,6 +460,7 @@ test('preferences are bounded', async () => {
     limit: 50,
     theme: 'auto',
     palette: 'neutral',
+    popup: 'full',
   });
 });
 
@@ -452,9 +473,11 @@ test('preferences keep an accent palette', async () => {
 test('the unread badge takes the accent colour', async () => {
   const w = startWorker();
   await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  assert.deepEqual({...w.badge}, {text: '2', background: '#171717', color: '#fafafa'});
+  await w.ok({type: 'PREFERENCES', value: {palette: 'orange'}}, 'options');
   assert.deepEqual({...w.badge}, {text: '2', background: '#ff9418', color: '#1a0f00'});
   await w.ok({type: 'PREFERENCES', value: {palette: 'pink'}}, 'options');
-  assert.deepEqual({...w.badge}, {text: '2', background: '#eb6ca4', color: '#1a0f00'});
+  assert.deepEqual({...w.badge}, {text: '2', background: '#eb6ca4', color: '#ffffff'});
   await w.ok({type: 'PREFERENCES', value: {palette: 'blue'}}, 'options');
   assert.deepEqual({...w.badge}, {text: '2', background: '#0088ff', color: '#ffffff'});
   await w.ok({type: 'PREFERENCES', value: {palette: 'neutral'}}, 'options');

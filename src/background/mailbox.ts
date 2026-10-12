@@ -17,7 +17,7 @@
 import {senderName} from '../shared/format';
 import {accents, preferences} from '../shared/preferences';
 import type {Account, MailMessage, Mailbox, MessageAction, SearchHit, ThreadMessage} from '../shared/types';
-import {provider, withAccount} from './accounts';
+import {adapter, withAccount} from './accounts';
 import {message as normalize} from './providers/message';
 import {hasNotifications, setBadge} from './platform';
 import {readStore, writeStore} from './storage';
@@ -108,7 +108,7 @@ async function notify(account: Account, messages: MailMessage[]): Promise<void> 
   if (!messages.length || !hasNotifications()) return;
   const single = messages.length === 1;
   const id = `${account.id}:${Date.now()}`;
-  const url = provider(account.provider).webURL(account, single ? messages[0] : null);
+  const url = adapter(account).webURL(account, single ? messages[0] : null);
   await chrome.storage.session.set({[`notification:${id}`]: url});
   await chrome.notifications.create(id, {
     type: single ? 'basic' : 'list',
@@ -187,7 +187,7 @@ export async function thread(accountID: string, messageID: string, threadID: str
   const {mailboxes = {}} = await readStore();
   const item = lookup(mailboxes[accountID], messageID, threadID);
   const messages = await withAccount(accountID, (module, account) =>
-    module.thread(account, {id: item.id, thread: item.thread || threadID}),
+    module.thread(account, {...item, thread: item.thread || threadID}),
   );
   if (item.unread) act(accountID, messageID, 'read').catch(() => {});
   return messages;
@@ -222,5 +222,5 @@ export async function open(accountID: string, messageID?: string): Promise<void>
   const account = accounts.find(item => item.id === accountID);
   if (!account) throw new Error('Ящик не найден.');
   const item = messageID ? mailboxes[accountID]?.messages?.find(entry => entry.id === messageID) : null;
-  await chrome.tabs.create({url: provider(account.provider).webURL(account, item)});
+  await chrome.tabs.create({url: adapter(account).webURL(account, item)});
 }

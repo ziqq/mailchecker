@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "mailchecker",
-  "version": "0.2.0",
+  "version": "0.0.2",
   "description": "A fast mail client in your toolbar: unified inbox, Smart Inbox and safe reading for Gmail, Microsoft 365 and JMAP on any domain.",
   "minimum_chrome_version": "116",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5fkTQe1OaEeECwQ7YOEj84Lk3J3go/OkajjUdZKT/WLrERyjo2hcnQop5Cv0xsttgwoVHFfncP1ErULRJW303lo3XvZQngMTzP+Jk2NJYxfQ8wfdeJY84FNf4VExhyyP+TC+G7d2m9BmfyLSjlDc/8Dz7YGoZQYCwzt7R2pTZ7QkKBAuJ06SxNn56IzkHSAQnTFAk1TW1UItgGw+6XYvD3ehB8t/Mg/G9NeEfwi6owfUxHa4M48tqhSDbDx5tHZpgg7wS7cgSP4j2V88E00UZNWMWFvg/Yr9y12iPD+j6meTslxx1dZAsxfaCT7zk4JtVOaLqvAneT+LvwaYvpSNOQIDAQAB",

@@ -10,14 +10,16 @@ without compression and use fixed timestamps and permissions, so the
 archive bytes are reproducible. A `.sha256` file is written next to it.
 
 Usage:
-    python3 scripts/package.py [--source build] [--output dist]
+    python3 scripts/package.py [--source build] [--output dist] [--tag vX.Y.Z]
+    python3 scripts/package.py --verify dist/mailchecker-X.Y.Z.zip [--tag vX.Y.Z]
 """
 
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
-from zipfile import ZIP_STORED, ZipFile, ZipInfo
+from zipfile import ZIP_STORED, BadZipFile, ZipFile, ZipInfo
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,6 +46,34 @@ def package_files(source):
     return dict(sorted(files.items()))
 
 
+def validate_tag(tag, version):
+    """Require a stable vX.Y.Z tag matching the manifest and the newest changelog section."""
+    if not re.fullmatch(r'v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)', tag):
+        raise ValueError('Release tags must have the form vX.Y.Z.')
+    if tag != f'v{version}':
+        raise ValueError(f'Tag {tag} does not match manifest version {version}.')
+    sections = re.findall(r'^## (\d+\.\d+\.\d+)$', (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'), re.MULTILINE)
+    if not sections or sections[0] != version:
+        raise ValueError('The newest changelog section must match the release tag.')
+
+
+def verify(path, files):
+    """Verify entry names, deterministic metadata, every byte and the SHA-256 file."""
+    with ZipFile(path) as archive:
+        if archive.namelist() != list(files):
+            raise ValueError('Archive contents differ from the build.')
+        if archive.testzip() is not None:
+            raise ValueError('Archive CRC verification failed.')
+        for entry in archive.infolist():
+            if entry.date_time != TIMESTAMP or entry.compress_type != ZIP_STORED:
+                raise ValueError(f'Non-deterministic ZIP metadata: {entry.filename}')
+            if archive.read(entry) != files[entry.filename].read_bytes():
+                raise ValueError(f'Packaged bytes differ from the build: {entry.filename}')
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if path.with_suffix('.sha256').read_text(encoding='utf-8') != f'{digest}  {path.name}\n':
+        raise ValueError('SHA-256 file does not match the archive.')
+
+
 def write_zip(source, output):
     """Write the reproducible ZIP and its checksum; return the ZIP path."""
     manifest = json.loads((source / 'manifest.json').read_text(encoding='utf-8'))
@@ -61,14 +91,26 @@ def write_zip(source, output):
 
 
 def main():
-    """Parse arguments and package the build."""
+    """Validate the release tag when given, then package or verify the build."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--source', type=Path, default=ROOT / 'build')
     parser.add_argument('--output', type=Path, default=ROOT / 'dist')
+    parser.add_argument('--verify', type=Path, help='Verify an existing ZIP against the build.')
+    parser.add_argument('--tag', help='Validate the stable release tag first.')
     args = parser.parse_args()
-    target = write_zip(args.source.resolve(), args.output.resolve())
+    source = args.source.resolve()
+    if args.tag:
+        validate_tag(args.tag, json.loads((source / 'manifest.json').read_text(encoding='utf-8'))['version'])
+    if args.verify:
+        verify(args.verify, package_files(source))
+        print(f'Verified {args.verify.name}')
+        return
+    target = write_zip(source, args.output.resolve())
     print(f'Packaged {target.relative_to(ROOT) if target.is_relative_to(ROOT) else target}')
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (OSError, ValueError, KeyError, BadZipFile) as error:
+        raise SystemExit(str(error)) from error

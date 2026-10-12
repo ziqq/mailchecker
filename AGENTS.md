@@ -1,6 +1,6 @@
 # mailchecker
 
-mailchecker is a Manifest V3 mail client for Chromium browsers and Safari: a Spark-like client in the toolbar popup and a full-tab mode for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP mailboxes on any domain. It has no backend. SolidJS is the only runtime dependency (bundled). A private npm package provides TypeScript/Sass compilation, esbuild bundling of `src/` into `build/` and `build-safari/`, checks and tests; Python packages the bundled runtime files.
+mailchecker is a Manifest V3 mail client for Chromium browsers and Safari: a full mail client in the toolbar popup and a full-tab mode for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP mailboxes on any domain. It has no backend. SolidJS is the only runtime dependency (bundled). A private npm package provides TypeScript/Sass compilation, esbuild bundling of `src/` into `build/` and `build-safari/`, checks and tests; Python packages the bundled runtime files.
 
 Author: Anton Ustinoff. License: [GPL v3](LICENSE) (`GPL-3.0-only`). Every source file starts with the project, copyright and license header; add it to new files.
 
@@ -30,7 +30,8 @@ Author: Anton Ustinoff. License: [GPL v3](LICENSE) (`GPL-3.0-only`). Every sourc
 1. Commit only when asked. Keep work in the tree while iterating; fold one feature into one commit.
 2. Never duplicate code. Before adding a helper, component, style or constant, search for an existing one and reuse or extend it. The final review must check the change for duplication.
 3. After a context compaction, reread this file in full before continuing.
-4. Report what was verified: automated checks that ran, what was checked by hand in a browser (and at which widths), and what was not checked and why. Passing checks alone do not prove a UI change works.
+4. Every build handed to the maintainer for testing bumps the patch version (`package.json`, `src/manifest.json`, `package-lock.json`) and gets its own `CHANGELOG.md` section, so an installed build can be updated and told apart.
+5. Report what was verified: automated checks that ran, what was checked by hand in a browser (and at which widths), and what was not checked and why. Passing checks alone do not prove a UI change works.
 
 ## Environment setup
 
@@ -107,10 +108,10 @@ npm audit --audit-level=high
 - Initialisms are all capitals in our identifiers: `clientID`, `byID`, `ProviderID`, `sessionURL`, `redirectURI`, `textToHTML`, `requestJSON`, `HTTPError`, `JMAPInput`. Fields defined by provider or browser APIs keep their spelling (`threadId`, `labelIds`, `accountId` in JMAP calls, `windowId`).
 - Render server text with `textContent`; no `innerHTML`, `eval` or remote code.
 - Keep tokens and API requests in the worker; pages receive public state only.
-- Validate untrusted provider data and bound its size. Preserve `credentials: 'omit'`, `redirect: 'error'`, timeouts and response limits.
+- Validate untrusted provider data and bound its size. Preserve `credentials: 'omit'`, `redirect: 'error'`, timeouts and response limits. The only exception is `session` requests for mailboxes read through the browser's sign-in: they send cookies to `SESSION_HOSTS` in `http.ts` and nowhere else.
 - Request optional permissions only from a user gesture in Settings.
 - Email bodies render only through `shared/sanitize.ts` and `MailFrame` (sandbox without scripts, strict frame CSP); never insert them into extension pages.
-- Keep every layout working at popup (780×600), wide tab and phone widths; check Safari limits in [docs/SAFARI.md](docs/SAFARI.md) before using a new browser API.
+- Keep every layout working at popup (780×600), mini popup (400×600), wide tab and phone widths; check Safari limits in [docs/SAFARI.md](docs/SAFARI.md) before using a new browser API.
 
 ## Strict rules
 

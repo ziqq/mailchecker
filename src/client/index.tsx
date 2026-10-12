@@ -71,7 +71,9 @@ function onKey(event: KeyboardEvent): void {
 function App() {
   createEffect(() => {
     const preferences = store.state()?.preferences;
-    if (preferences) applyTheme(preferences);
+    if (!preferences) return;
+    applyTheme(preferences);
+    document.documentElement.dataset.size = preferences.popup;
   });
   onMount(() => {
     store.load();

@@ -18,8 +18,16 @@ declare const __TARGET__: 'chromium' | 'safari';
 /** The package this bundle was built for. */
 export const target: 'chromium' | 'safari' = typeof __TARGET__ === 'string' ? __TARGET__ : 'chromium';
 
-/** Whether the browser can run an OAuth window for the extension. */
+/** Whether the browser can run an OAuth window for the extension right now. */
 export const hasIdentity = (): boolean => typeof chrome.identity?.launchWebAuthFlow === 'function';
+
+/**
+ * Whether OAuth sign-in can work in this browser.
+ *
+ * Chromium declares `identity` as an optional permission: `chrome.identity` is missing until the user grants it from
+ * Settings, so sign-in is offered before the grant. Safari has no `identity` at all.
+ */
+export const supportsIdentity = (): boolean => hasIdentity() || target === 'chromium';
 
 /** Whether system notifications are available to the extension. */
 export const hasNotifications = (): boolean => typeof chrome.notifications?.create === 'function';

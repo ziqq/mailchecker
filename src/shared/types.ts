@@ -20,8 +20,11 @@ export type ProviderID = 'gmail' | 'outlook' | 'jmap' | 'yandex' | 'mailru' | 'i
 /** Theme preference: follow the system or force a scheme. */
 export type Theme = 'auto' | 'light' | 'dark';
 
-/** Palette preference: a warm palette with an accent colour (Telegram iOS accents), or monochrome graphite. */
+/** Palette preference: a warm palette with an accent colour, or monochrome graphite. */
 export type Palette = 'orange' | 'blue' | 'cyan' | 'green' | 'pink' | 'purple' | 'red' | 'yellow' | 'gray' | 'neutral';
+
+/** Toolbar popup size: the two-column client or a narrow one-column client. */
+export type PopupSize = 'full' | 'mini';
 
 /** Normalized user preferences. */
 export interface Preferences {
@@ -33,6 +36,7 @@ export interface Preferences {
   limit: number;
   theme: Theme;
   palette: Palette;
+  popup: PopupSize;
 }
 
 /** Access credentials; only the service worker sees them. */
@@ -43,10 +47,14 @@ export interface Credentials {
   expiresAt?: number;
 }
 
-/** Provider-specific account settings (JMAP URLs). */
+/** Provider-specific account settings. */
 export interface AccountSettings {
+  /** JMAP session URL. */
   sessionURL?: string;
+  /** JMAP webmail URL. */
   webURL?: string;
+  /** Read through the browser's own sign-in instead of an API token (Gmail, Yandex Mail, Mail.ru). */
+  browser?: boolean;
 }
 
 /** A stored account, including credentials. */
@@ -135,6 +143,8 @@ export interface PublicAccount {
   provider: ProviderID;
   label: string;
   email: string;
+  /** Read through the browser's own sign-in. */
+  browser: boolean;
 }
 
 /** State sent to the client pages and Settings. */
@@ -161,7 +171,7 @@ export type Request =
   | {type: 'SEARCH'; query: string}
   | {type: 'SIGN_IN'; account: string}
   | {type: 'PREFERENCES'; value: Partial<Preferences>}
-  | {type: 'ADD_ACCOUNT'; provider: ProviderID; input?: JMAPInput}
+  | {type: 'ADD_ACCOUNT'; provider: ProviderID; input?: AccountInput; browser?: boolean}
   | {type: 'REMOVE_ACCOUNT'; account: string};
 
 /** A search hit: a message with its account. */
@@ -172,6 +182,9 @@ export interface SearchHit {
 
 /** Request type names. */
 export type RequestType = Request['type'];
+
+/** Settings form values for a new account: JMAP fields, or the address of a mailbox read through the browser. */
+export type AccountInput = Partial<JMAPInput> & {email?: string};
 
 /** Settings form values for a JMAP account. */
 export interface JMAPInput {
