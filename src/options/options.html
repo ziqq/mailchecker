@@ -61,19 +61,26 @@
             <button class="btn primary" type="submit">Подключить</button>
           </div>
         </form>
-        <form id="address-form" class="jmap" hidden>
-          <label
-            ><span><span id="address-title"></span>: адрес ящика</span
-            ><input name="email" type="email" required autocomplete="email"
-          /></label>
-          <p class="muted">
-            Сначала войдите в этот ящик в браузере. Пароль не нужен: расширение читает почту через ваш вход.
-          </p>
-          <div class="form-actions">
-            <button class="btn" type="button" id="address-cancel">Отмена</button>
-            <button class="btn primary" type="submit">Подключить</button>
-          </div>
-        </form>
+        <dialog id="address-dialog" class="dialog" aria-labelledby="address-title">
+          <form id="address-form">
+            <div class="dialog-head">
+              <span class="tile" id="address-mark"></span>
+              <div>
+                <h3 id="address-title"></h3>
+                <p>Через вход в этом браузере</p>
+              </div>
+            </div>
+            <label>Адрес ящика<input name="email" type="email" required autocomplete="email" /></label>
+            <p class="dialog-hint">
+              Сначала войдите в этот ящик в браузере. Пароль не нужен: расширение читает почту через ваш вход.
+            </p>
+            <p class="status" id="address-status" role="status"></p>
+            <div class="form-actions">
+              <button class="btn" type="button" id="address-cancel">Отмена</button>
+              <button class="btn primary" type="submit">Подключить</button>
+            </div>
+          </form>
+        </dialog>
         <p id="status" class="status" role="status"></p>
       </section>
 

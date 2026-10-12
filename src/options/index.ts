@@ -21,6 +21,7 @@ import type {Palette, PopupSize, Preferences, ProviderID, PublicState, Request, 
 let state: PublicState | null = null;
 
 const form = byID<HTMLFormElement>('jmap-form');
+const addressDialog = byID<HTMLDialogElement>('address-dialog');
 const addressForm = byID<HTMLFormElement>('address-form');
 const statusLine = byID('status');
 
@@ -95,8 +96,9 @@ type StateReply = PublicState | {email: string; state: PublicState};
 
 /** Shows a status line. */
 function status(text: string, error = false): void {
-  statusLine.textContent = text;
-  statusLine.classList.toggle('error', error);
+  const line = addressDialog.open ? byID('address-status') : statusLine;
+  line.textContent = text;
+  line.classList.toggle('error', error);
 }
 
 /**
@@ -243,10 +245,13 @@ async function connect(button: HTMLButtonElement, row: (typeof providerRows)[num
     if (await allowIdentity()) await run(button, {type: 'ADD_ACCOUNT', provider: row.id}, added);
   } else if (method.address) {
     addressTarget = {id: row.id, title: row.title, origin: method.origin};
-    addressForm.hidden = false;
+    addressForm.reset();
+    byID('address-status').textContent = '';
     byID('address-title').textContent = row.title;
+    byID('address-mark').replaceChildren(providerMark(row.id));
     const input = addressForm.elements.namedItem('email') as HTMLInputElement;
     input.placeholder = method.address;
+    addressDialog.showModal();
     input.focus();
   } else if (await allowSite(method.origin, row.title)) {
     await run(button, {type: 'ADD_ACCOUNT', provider: row.id, browser: true}, added);
@@ -410,13 +415,15 @@ addressForm.addEventListener('submit', async event => {
     value => ('email' in value ? `Подключён ${value.email}` : 'Подключён.'),
   );
   if (ok) {
-    addressForm.reset();
-    addressForm.hidden = true;
+    const done = byID('address-status').textContent || '';
+    addressDialog.close();
+    status(done);
   }
 });
-byID('address-cancel').addEventListener('click', () => {
-  addressForm.reset();
-  addressForm.hidden = true;
+byID('address-cancel').addEventListener('click', () => addressDialog.close());
+// A click on the backdrop (the dialog element itself, outside its form) closes it.
+addressDialog.addEventListener('click', event => {
+  if (event.target === addressDialog) addressDialog.close();
 });
 
 byID<HTMLInputElement>('interval').addEventListener('change', event =>

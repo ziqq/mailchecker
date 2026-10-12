@@ -166,6 +166,67 @@ main {
     font-size: 13px;
   }
 }
+// Modal for a mailbox address; the form reuses the JMAP form layout.
+.dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-solid);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 35%);
+  &::backdrop {
+    background: rgb(0 0 0 / 45%);
+    backdrop-filter: blur(6px);
+  }
+  &[open] {
+    animation: dialog-in 0.16s ease-out;
+  }
+  form {
+    display: grid;
+    gap: 14px;
+    padding: 22px;
+  }
+  label {
+    display: grid;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .status {
+    min-height: 0;
+    margin: 0;
+    &:empty {
+      display: none;
+    }
+  }
+}
+.dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  h3 {
+    margin: 0;
+    font-size: 17px;
+  }
+  p {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+}
+.dialog-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
 .form-actions {
   display: flex;
   justify-content: flex-end;
