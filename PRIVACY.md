@@ -15,9 +15,9 @@ Removing an account deletes its credentials and check result. It does not revoke
 - Gmail / Google Workspace: `https://gmail.googleapis.com`; sign-in through `https://accounts.google.com`.
 - Outlook / Microsoft 365: `https://graph.microsoft.com`; sign-in and token refresh through `https://login.microsoftonline.com`.
 - JMAP: the session URL entered in Settings and its API URL on the same origin, after the user grants that origin.
-- Through the browser's sign-in, after the user grants the site in Settings: Gmail `https://mail.google.com` (the unread feed), Yandex Mail `https://mail.yandex.ru` (the lite Inbox page), Mail.ru `https://e.mail.ru` (the webmail API) and `https://auth.mail.ru` (issues the webmail session cookie from the Mail.ru sign-in).
+- Through the browser's sign-in, after the user grants the site in Settings: Gmail `https://mail.google.com` (the unread feed and the print view of an opened message), Yandex Mail `https://mail.yandex.ru` (the lite Inbox and message pages, and its delete form), Mail.ru `https://e.mail.ru` (the webmail API: messages, read marks and moving to the trash) and `https://auth.mail.ru` (issues the webmail session cookie from the Mail.ru sign-in).
 
-API requests send no cookies, refuse redirects and time out after 25 seconds. Requests through the browser's sign-in send the browser's own cookies, and only to the three hosts above; they follow the site's redirects and treat a redirect away from it as signed out. Responses are read with size limits.
+API requests send no cookies, refuse redirects and time out after 25 seconds. Requests through the browser's sign-in send the browser's own cookies, and only to the hosts above; they follow the site's redirects and treat a redirect away from it as signed out. Responses are read with size limits.
 
 Message bodies are shown in a sandboxed frame without scripts. Remote images, including tracking pixels, are not loaded until the user chooses to show them for that conversation, so senders do not learn that a message was opened.
 

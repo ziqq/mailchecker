@@ -7,13 +7,14 @@
  *
  * Gmail, Yandex Mail and Mail.ru can be read with the session the user
  * already has in this browser: no client ID, token or password is stored.
- * These adapters read the Inbox and open messages in the webmail; actions and
- * search stay in the webmail. Requests go through `http.ts` with `session`,
- * which sends cookies only to the webmail hosts it allows.
+ * These adapters read the Inbox; the full text and actions come from the
+ * webmail's own pages or API where an adapter supports them, everything else
+ * opens in the webmail. Requests go through `http.ts` with `session`, which
+ * sends cookies only to the webmail hosts it allows.
  *
  * @module background/providers/session
  */
-import type {Account, Credentials, InboxResult, MailMessage} from '../../shared/types';
+import type {Account, Credentials, InboxResult, MailMessage, MessageAction} from '../../shared/types';
 import {AuthError} from '../http';
 import {decodeEntities, threadMessage, type Connection, type Provider} from './message';
 
@@ -27,6 +28,57 @@ export interface SessionAdapter {
   inbox(account: Account, limit: number): Promise<InboxResult>;
   /** The webmail page for the Inbox or a message. */
   webURL(account: Account, message?: MailMessage | null): string;
+  /** The full text of a listed message, when the webmail gives it. */
+  body?(account: Account, message: MailMessage): Promise<{html?: string; text?: string}>;
+  /** Actions [act] applies in the webmail; the rest stay in the webmail. */
+  actions?: readonly MessageAction[];
+  /** Applies one of [actions] to a listed message in the webmail. */
+  act?(account: Account, message: MailMessage, action: MessageAction): Promise<void>;
+}
+
+/**
+ * Returns the outer markup of the elements whose opening tag matches [open],
+ * nested tags of the same name included, from [from] on.
+ *
+ * @param html The page.
+ * @param tag The element name, e.g. `div`.
+ * @param open A pattern for the opening tag, e.g. its class.
+ * @param from Where to start.
+ * @param limit The most elements to return.
+ */
+export function elements(html: string, tag: string, open: RegExp, from = 0, limit = 200): string[] {
+  const found: string[] = [];
+  const start = `<${tag}`;
+  const close = `</${tag}`;
+  let position = Math.max(0, from);
+  while (found.length < limit) {
+    const begin = html.indexOf(start, position);
+    if (begin < 0) break;
+    const end = html.indexOf('>', begin);
+    if (end < 0) break;
+    if (!open.test(html.slice(begin, end + 1))) {
+      position = begin + start.length;
+      continue;
+    }
+    let depth = 1;
+    let cursor = end + 1;
+    while (depth > 0) {
+      const nextOpen = html.indexOf(start, cursor);
+      const nextClose = html.indexOf(close, cursor);
+      if (nextClose < 0) break;
+      if (nextOpen >= 0 && nextOpen < nextClose) {
+        depth++;
+        cursor = nextOpen + start.length;
+      } else {
+        depth--;
+        cursor = nextClose + close.length + 1;
+      }
+    }
+    found.push(html.slice(begin, cursor));
+    if (depth > 0) break;
+    position = cursor;
+  }
+  return found;
 }
 
 /** Returns the visible text of a markup fragment: tags dropped, entities decoded, whitespace collapsed. */
@@ -66,9 +118,11 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
       return empty;
     },
     inbox: (account, limit) => adapter.inbox(account, limit),
-    // The stored list already has everything the webmail list gives: no request, so opening
+    // One request for the body at most; without it the stored list entry is shown, so opening
     // messages does not add load on the webmail (Yandex blocks bursts of requests).
-    async thread(_account, item) {
+    async thread(account, item) {
+      const body = adapter.body ? await adapter.body(account, item).catch(() => null) : null;
+      const full = Boolean(body?.html?.trim() || body?.text?.trim());
       return [
         threadMessage({
           id: item.id,
@@ -76,12 +130,14 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
           subject: item.subject,
           date: item.date,
           unread: item.unread,
-          text: `${item.snippet}\n\nПолный текст — в веб-почте: кнопка «Открыть в веб-почте».`,
+          html: full ? body?.html : '',
+          text: full ? body?.text : `${item.snippet}\n\nПолный текст — в веб-почте: кнопка «Открыть в веб-почте».`,
         }),
       ];
     },
-    async act() {
-      throw new Error(IN_WEBMAIL(adapter.label));
+    async act(account, item, action) {
+      if (!adapter.act || !adapter.actions?.includes(action)) throw new Error(IN_WEBMAIL(adapter.label));
+      await adapter.act(account, item, action);
     },
     async search() {
       return [];

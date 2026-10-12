@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.5
+
+- **ADDED**: full text for mailboxes read through the browser's sign-in: Gmail's print view, the Yandex lite message page, the Mail.ru webmail API
+- **ADDED**: Mail.ru marks read and unread and moves to the trash; Yandex Mail deletes with the lite toolbar form and marks read when a message is opened
+- **FIXED**: two Yandex rows could share one ID and be selected together; rows take the ID of their toolbar checkbox
+- **FIXED**: «ResizeObserver loop completed with undelivered notifications» while a message body was sized
+
 ## 0.0.4
 
 - **CHANGED**: «Все» lists pinned messages and then every other message newest first; the «Люди» category and its section are gone, «Уведомления» and «Рассылки» stay

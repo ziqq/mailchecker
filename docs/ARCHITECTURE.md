@@ -87,7 +87,7 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 | `providers/gmail.ts`                              | Gmail API: Inbox list with labels, MIME bodies, threads, label actions, search.                                                                                                     |
 | `providers/outlook.ts`                            | Microsoft Graph: Inbox list, conversation messages and attachments, PATCH/move, `$search`.                                                                                          |
 | `providers/jmap.ts`                               | JMAP: Mailbox/Email query/get/set, Thread/get with body values, `text` search.                                                                                                      |
-| `providers/session.ts`                            | Mailboxes read through the browser's sign-in: no credentials; Inbox only, actions and bodies in the webmail.                                                                        |
+| `providers/session.ts`                            | Mailboxes read through the browser's sign-in: no credentials; the Inbox, the full text and the actions each webmail supports, the rest in the webmail.                              |
 | `providers/gmailweb.ts`, `yandex.ts`, `mailru.ts` | Gmail unread Atom feed, Yandex lite Inbox page, Mail.ru webmail API; parsers are pure and tested.                                                                                   |
 
 ### Stored data

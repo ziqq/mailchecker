@@ -7,14 +7,15 @@
  *
  * `mail.google.com/mail/u/0/feed/atom` lists up to 20 unread Inbox messages
  * of the first signed-in Google account, with the full unread count. The
- * feed has no read mail, bodies or actions: those stay in Gmail.
+ * feed has no read mail or bodies: the full text comes from Gmail's print
+ * view of the message; actions stay in Gmail.
  *
  * @module background/providers/gmailweb
  */
 import type {Account, InboxResult, MailMessage} from '../../shared/types';
 import {requestText} from '../http';
 import {categorize, count, message} from './message';
-import {firstAddress, markupText, sessionProvider} from './session';
+import {elements, firstAddress, markupText, sessionProvider} from './session';
 
 /** The feed of the first signed-in account. */
 const FEED = 'https://mail.google.com/mail/u/0/feed/atom';
@@ -56,6 +57,15 @@ export function parseFeed(xml: string): {email: string} & InboxResult {
   };
 }
 
+/**
+ * Returns the last message of a Gmail print view, or an empty string.
+ *
+ * @param html The print view page.
+ */
+export function parsePrint(html: string): string {
+  return elements(html, 'table', /class="message"/).pop() || '';
+}
+
 /** Reads the feed with the browser's Google sign-in. */
 const feed = async (): Promise<ReturnType<typeof parseFeed>> =>
   parseFeed(await requestText(FEED, {session: true, service: 'Gmail'}));
@@ -76,4 +86,8 @@ export const gmailWeb = sessionProvider({
     item?.id
       ? `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(item.id)}`
       : 'https://mail.google.com/mail/u/0/#inbox',
+  async body(_account, item) {
+    const url = `https://mail.google.com/mail/u/0/?ui=2&view=pt&dsqt=1&search=all&msg=${encodeURIComponent(item.id)}`;
+    return {html: parsePrint(await requestText(url, {session: true, service: 'Gmail'}))};
+  },
 });

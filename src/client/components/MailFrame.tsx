@@ -29,10 +29,12 @@ export function MailFrame(props: MailFrameProps) {
   let frame!: HTMLIFrameElement;
   let observer: ResizeObserver | undefined;
 
-  /** Fits the frame height to its document. */
+  /** Fits the frame height to its document; skips an unchanged height. */
   const fit = () => {
     const doc = frame.contentDocument;
-    if (doc?.documentElement) frame.style.height = `${Math.ceil(doc.documentElement.scrollHeight)}px`;
+    if (!doc?.documentElement) return;
+    const height = `${Math.ceil(doc.documentElement.scrollHeight)}px`;
+    if (frame.style.height !== height) frame.style.height = height;
   };
 
   createEffect(() => {
@@ -49,7 +51,9 @@ export function MailFrame(props: MailFrameProps) {
     observer?.disconnect();
     const body = frame.contentDocument?.body;
     if (body) {
-      observer = new ResizeObserver(fit);
+      // Resizing the frame inside the observer callback loops ("ResizeObserver loop completed
+      // with undelivered notifications"); fit on the next frame instead.
+      observer = new ResizeObserver(() => requestAnimationFrame(fit));
       observer.observe(body);
     }
   };

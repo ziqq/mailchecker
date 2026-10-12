@@ -9,7 +9,9 @@
  * a token for the signed-in address, then the unread Inbox messages. The API
  * also needs the webmail's own session cookie: without it the reply is
  * `nosdc`, and `auth.mail.ru/sdc` issues it from the Mail.ru sign-in,
- * redirecting back to the API. The address is entered by the user; the API refuses
+ * redirecting back to the API. Opening a message reads its full text and
+ * marks it read; trash moves the conversation to the trash folder, the same
+ * requests the webmail sends. The address is entered by the user; the API refuses
  * it unless that mailbox is signed in to Mail.ru in this browser. Replies
  * are untyped and validated field by field.
  *
@@ -60,16 +62,18 @@ export function parseUnread(reply: Reply | null, now = Date.now()): InboxResult 
   const list = Array.isArray(reply?.body) ? (reply.body as Record<string, unknown>[]) : [];
   const messages = list.slice(0, 100).map((item, index) => {
     const id = String(item.id ?? item.mid ?? '');
+    const folder = String(item.fid ?? item.folder ?? '0');
     const from = sender((item.correspondents as {from?: Sender[]} | undefined)?.from?.[0] ?? item.from);
     const seconds = Number(item.date);
     return message({
       id,
-      thread: id,
+      // The webmail's conversation ID for a single message: `0:<message>:<folder>`.
+      thread: `0:${id}:${folder}`,
       from,
       subject: item.subject,
       snippet: item.snippet,
       date: Number.isFinite(seconds) && seconds > 0 ? seconds * (seconds < 1e12 ? 1000 : 1) : now - index * 60_000,
-      link: link(id, String(item.fid ?? item.folder ?? '0')),
+      link: link(id, folder),
       unread: true,
       category: categorize({from}),
     });
@@ -90,16 +94,52 @@ async function call(url: string, options: RequestOptions): Promise<Reply> {
 /** Returns query parameters naming the mailbox. */
 const mailbox = (email: string): string => `email=${encodeURIComponent(email)}&x-email=${encodeURIComponent(email)}`;
 
+/** Session request options. */
+const OPTIONS: RequestOptions = {session: true, service: 'Почта Mail.ru'};
+
+/** The trash folder of a Mail.ru mailbox. */
+const TRASH = '500002';
+
+/** Returns an API token for [email], issued for the browser's Mail.ru sign-in. */
+async function token(email: string): Promise<string> {
+  const reply = await call(`${API}/tokens?${mailbox(email)}`, OPTIONS);
+  if (Number(reply?.status) === 403) throw new AuthError('Войдите в Почту Mail.ru в этом браузере и повторите.');
+  const value = (reply?.body as {token?: unknown} | undefined)?.token;
+  if (typeof value !== 'string' || !value) throw new Error('Почта Mail.ru вернула неожиданный ответ.');
+  return value;
+}
+
 /** Reads the unread Inbox messages of [email] with the browser's Mail.ru sign-in. */
 async function unread(email: string): Promise<InboxResult> {
-  const options = {session: true, service: 'Почта Mail.ru'};
-  const token = await call(`${API}/tokens?${mailbox(email)}`, options);
-  if (Number(token?.status) === 403) throw new AuthError('Войдите в Почту Mail.ru в этом браузере и повторите.');
-  const value = (token?.body as {token?: unknown} | undefined)?.token;
-  if (typeof value !== 'string' || !value) throw new Error('Почта Mail.ru вернула неожиданный ответ.');
+  const value = await token(email);
   return parseUnread(
-    await call(`${API}/messages/status/unread?${mailbox(email)}&token=${encodeURIComponent(value)}&limit=50`, options),
+    await call(`${API}/messages/status/unread?${mailbox(email)}&token=${encodeURIComponent(value)}&limit=50`, OPTIONS),
   );
+}
+
+/**
+ * Returns the HTML and text of a message reply.
+ *
+ * @param reply The `messages/message` reply.
+ */
+export function parseMessage(reply: Reply | null): {html: string; text: string} {
+  if (Number(reply?.status) !== 200) return {html: '', text: ''};
+  const item = (reply?.body || {}) as {body?: {html?: unknown; text?: unknown}; html?: unknown; text?: unknown};
+  const part = item.body && typeof item.body === 'object' ? item.body : item;
+  return {
+    html: typeof part.html === 'string' ? part.html : '',
+    text: typeof part.text === 'string' ? part.text : '',
+  };
+}
+
+/** Posts a webmail action for one listed message; Mail.ru reports failures inside a 200 reply. */
+async function post(email: string, path: string, form: Record<string, string>): Promise<void> {
+  const reply = await call(`${API}/${path}`, {
+    ...OPTIONS,
+    method: 'POST',
+    form: {...form, email, htmlencoded: 'false', token: await token(email)},
+  });
+  if (Number(reply?.status) !== 200) throw new Error('Почта Mail.ru не выполнила действие. Повторите в веб-почте.');
 }
 
 /** Mail.ru through the browser's sign-in. */
@@ -116,4 +156,33 @@ export const mailru = sessionProvider({
     return {unread: total, messages: messages.slice(0, limit)};
   },
   webURL: (_account: Account, item?: MailMessage | null) => item?.link || 'https://e.mail.ru/inbox/',
+  async body(account, item) {
+    const value = await token(account.email);
+    return parseMessage(
+      await call(
+        `${API}/messages/message?${mailbox(account.email)}&id=${encodeURIComponent(item.id)}` +
+          `&htmlencoded=false&token=${encodeURIComponent(value)}`,
+        OPTIONS,
+      ),
+    );
+  },
+  actions: ['read', 'unread', 'trash'],
+  async act(account, item, action) {
+    const last = JSON.stringify({[item.thread]: item.id});
+    if (action === 'trash') {
+      const folder = item.thread.split(':').pop() || '0';
+      await post(account.email, 'threads/move', {
+        ids: JSON.stringify([item.thread]),
+        msg_ids: JSON.stringify([{id: item.thread, folder}]),
+        folder: TRASH,
+        message_id_last: last,
+      });
+      return;
+    }
+    const mark = action === 'unread' ? 'set' : 'unset';
+    await post(account.email, 'threads/marks', {
+      marks: JSON.stringify([{name: 'unread', [mark]: [item.thread], folder: 0}]),
+      message_id_last: last,
+    });
+  },
 });

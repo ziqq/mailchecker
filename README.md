@@ -10,7 +10,7 @@ A mail client that lives in the browser toolbar, for mailboxes on **any domain**
 | Microsoft Graph | Outlook.com, Hotmail, any domain on Microsoft 365 / Exchange Online | Microsoft sign-in                              |
 | JMAP            | Fastmail (including custom domains), Stalwart, Cyrus and others     | API token                                      |
 
-**Through the browser's sign-in** nothing is registered or stored: the extension reads the Inbox with the session you already have in this browser, the way the webmail itself does (Gmail's unread feed, Yandex's lite web Inbox, Mail.ru's webmail API). It lists the Inbox and unread count, notifies and opens messages in the webmail; replies, actions and full bodies stay in the webmail. **Google sign-in** (OAuth) gives the full client for Gmail and needs a client ID in the build (see [OAuth setup](docs/OAUTH.md)). iCloud and other IMAP-only services are planned through the Safari containing app (see [Safari](docs/SAFARI.md)).
+**Through the browser's sign-in** nothing is registered or stored: the extension reads the Inbox with the session you already have in this browser, the way the webmail itself does (Gmail's unread feed, Yandex's lite web Inbox, Mail.ru's webmail API). It lists the Inbox and unread count, notifies and shows the full text (Gmail's print view, the Yandex lite message page, the Mail.ru API); Mail.ru marks read and deletes, Yandex deletes and marks read on opening; replies and other actions open the webmail. **Google sign-in** (OAuth) gives the full client for Gmail and needs a client ID in the build (see [OAuth setup](docs/OAUTH.md)). iCloud and other IMAP-only services are planned through the Safari containing app (see [Safari](docs/SAFARI.md)).
 
 ## Features
 

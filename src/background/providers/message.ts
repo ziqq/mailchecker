@@ -42,7 +42,7 @@ export interface Provider {
   /** Messages of a conversation with bodies, oldest first. */
   thread(account: Account, message: MailMessage): Promise<ThreadMessage[]>;
   /** Applies an action to one message. */
-  act(account: Account, message: Pick<MailMessage, 'id'>, action: MessageAction): Promise<void>;
+  act(account: Account, message: MailMessage, action: MessageAction): Promise<void>;
   /** Searches all mail of the account, newest first. */
   search(account: Account, query: string, limit: number): Promise<MailMessage[]>;
   /** The webmail page for the Inbox or a message. */
