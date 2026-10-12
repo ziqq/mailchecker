@@ -10,7 +10,15 @@
 import type {Account, Credentials, MailMessage, MessageAction} from '../../shared/types';
 import {requestJSON, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
-import {categorize, count, message, threadMessage, type Provider, type RawThreadMessage} from './message';
+import {
+  categorize,
+  count,
+  decodeEntities,
+  message,
+  threadMessage,
+  type Provider,
+  type RawThreadMessage,
+} from './message';
 
 /** Gmail API base for the signed-in user. */
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -55,16 +63,6 @@ const call = <T>(credentials: Credentials, path: string, options: RequestOptions
 /** Returns headers of a part by lower-case name. */
 const headersOf = (part?: GmailPart): Record<string, string> =>
   Object.fromEntries((part?.headers || []).map(h => [String(h.name).toLowerCase(), String(h.value)]));
-
-/** Decodes the HTML entities Gmail uses in snippets. */
-function decodeEntities(value: string): string {
-  return value
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
 
 /** Decodes a base64url body in the part's charset. */
 function decodeBody(data: string, contentType = ''): string {

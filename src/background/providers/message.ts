@@ -14,7 +14,7 @@ import type {
   Category,
   Credentials,
   InboxResult,
-  JMAPInput,
+  AccountInput,
   MailMessage,
   MessageAction,
   ThreadMessage,
@@ -31,8 +31,8 @@ export interface Connection {
 export interface Provider {
   /** Display name. */
   readonly label: string;
-  /** Verifies and creates an account; `input` is used by JMAP. */
-  connect(input?: JMAPInput): Promise<Connection>;
+  /** Verifies and creates an account; JMAP uses the form values, browser-session mailboxes the address. */
+  connect(input?: AccountInput): Promise<Connection>;
   /** Silent renewal; throws `AuthError` when a sign-in is needed. */
   renew(account: Account): Promise<Credentials>;
   /** Interactive sign-in for an existing account. */
@@ -47,6 +47,30 @@ export interface Provider {
   search(account: Account, query: string, limit: number): Promise<MailMessage[]>;
   /** The webmail page for the Inbox or a message. */
   webURL(account: Account, message?: MailMessage | null): string;
+}
+
+/** Named HTML entities used in webmail markup and feeds. */
+const ENTITIES: Readonly<Record<string, string>> = Object.freeze({
+  quot: '"',
+  apos: "'",
+  lt: '<',
+  gt: '>',
+  nbsp: ' ',
+  laquo: '«',
+  raquo: '»',
+  mdash: '—',
+  ndash: '–',
+  hellip: '…',
+  amp: '&',
+});
+
+/** Decodes the HTML entities of provider snippets, feeds and webmail markup. */
+export function decodeEntities(value: string): string {
+  return value.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (entity, name: string) => {
+    if (name[0] !== '#') return ENTITIES[name.toLowerCase()] ?? entity;
+    const code = name[1] === 'x' || name[1] === 'X' ? parseInt(name.slice(2), 16) : Number(name.slice(1));
+    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : entity;
+  });
 }
 
 /** Maximum stored characters of an HTML body (bodies are never persisted). */

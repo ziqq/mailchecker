@@ -8,6 +8,7 @@ flowchart LR
   tab["Full-tab client<br/>app.html"] -- "runtime.sendMessage" --> worker
   settings["Settings<br/>options.html"] -- "runtime.sendMessage" --> worker
   worker -- "fetch (token, no cookies)" --> api["Gmail API · Microsoft Graph · JMAP"]
+  worker -- "fetch (browser sign-in)" --> web["Gmail feed · Yandex lite · Mail.ru checker"]
   worker <--> storage[("chrome.storage<br/>local · session")]
   worker -- "alarms" --> worker
 ```
@@ -73,19 +74,21 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 
 ## Service worker
 
-| Module                 | Role                                                                                                |
-| ---------------------- | --------------------------------------------------------------------------------------------------- |
-| `index.ts`             | Message router, sender checks, alarm schedule, lifecycle and notification listeners.                |
-| `platform.ts`          | Browser differences (Chromium/Safari): storage access level, badge, notifications, identity, tabs.  |
-| `storage.ts`           | Trusted local storage with serialized read-modify-write updates.                                    |
-| `http.ts`              | Bounded JSON requests: HTTPS only, no cookies or redirects, 25 s timeout, 4 MiB limit, `AuthError`. |
-| `accounts.ts`          | Provider registry, public state, add/remove, deduplicated token renewal, `withAccount`.             |
-| `mailbox.ts`           | Checks, badge, notifications, conversations, search and message actions.                            |
-| `oauth/`               | Public client IDs; Google implicit flow and Microsoft PKCE/refresh with `state` checks.             |
-| `providers/message.ts` | The `Provider` contract, Smart Inbox categories and bounded normalization.                          |
-| `providers/gmail.ts`   | Gmail API: Inbox list with labels, MIME bodies, threads, label actions, search.                     |
-| `providers/outlook.ts` | Microsoft Graph: Inbox list, conversation messages and attachments, PATCH/move, `$search`.          |
-| `providers/jmap.ts`    | JMAP: Mailbox/Email query/get/set, Thread/get with body values, `text` search.                      |
+| Module                                            | Role                                                                                                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.ts`                                        | Message router, sender checks, alarm schedule, lifecycle and notification listeners.                                                                                                |
+| `platform.ts`                                     | Browser differences (Chromium/Safari): storage access level, badge, notifications, identity, tabs.                                                                                  |
+| `storage.ts`                                      | Trusted local storage with serialized read-modify-write updates.                                                                                                                    |
+| `http.ts`                                         | Bounded JSON and text requests: HTTPS only, no cookies or redirects, 25 s timeout, 4 MiB limit, `AuthError`; `session` requests send the browser's cookies to `SESSION_HOSTS` only. |
+| `accounts.ts`                                     | Provider registries (API and browser sign-in; `settings.browser` picks one), public state, add/remove, deduplicated token renewal, `withAccount`.                                   |
+| `mailbox.ts`                                      | Checks, badge, notifications, conversations, search and message actions.                                                                                                            |
+| `oauth/`                                          | Public client IDs; Google implicit flow and Microsoft PKCE/refresh with `state` checks.                                                                                             |
+| `providers/message.ts`                            | The `Provider` contract, Smart Inbox categories and bounded normalization.                                                                                                          |
+| `providers/gmail.ts`                              | Gmail API: Inbox list with labels, MIME bodies, threads, label actions, search.                                                                                                     |
+| `providers/outlook.ts`                            | Microsoft Graph: Inbox list, conversation messages and attachments, PATCH/move, `$search`.                                                                                          |
+| `providers/jmap.ts`                               | JMAP: Mailbox/Email query/get/set, Thread/get with body values, `text` search.                                                                                                      |
+| `providers/session.ts`                            | Mailboxes read through the browser's sign-in: no credentials; Inbox only, actions and bodies in the webmail.                                                                        |
+| `providers/gmailweb.ts`, `yandex.ts`, `mailru.ts` | Gmail unread Atom feed, Yandex lite Inbox page, Mail.ru checker API; parsers are pure and tested.                                                                                   |
 
 ### Stored data
 

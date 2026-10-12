@@ -13,7 +13,7 @@
  * @module background/index
  */
 import {preferences} from '../shared/preferences';
-import type {JMAPInput, MessageAction, Preferences, Reply, RequestType} from '../shared/types';
+import type {MessageAction, Preferences, Reply, RequestType} from '../shared/types';
 import {addAccount, publicState, removeAccount, signIn} from './accounts';
 import {act, checkAccount, checkAll, open, openNotification, search, thread, updateBadge} from './mailbox';
 import {hasNotifications, openApp} from './platform';
@@ -100,12 +100,14 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
     case 'OPTIONS':
       await chrome.runtime.openOptionsPage();
       return true;
-    case 'SIGN_IN':
-      await requireIdentity();
+    case 'SIGN_IN': {
+      const stored = ((await readStore()).accounts || []).find(item => item.id === account);
+      if (!stored?.settings?.browser) await requireIdentity();
       await signIn(account);
       await checkAccount(account);
       await updateBadge();
       return publicState(await readStore());
+    }
     case 'PREFERENCES': {
       const value = (message.value ?? {}) as Partial<Preferences>;
       const update = await writeStore(current => ({
@@ -116,8 +118,19 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       return update.preferences;
     }
     case 'ADD_ACCOUNT': {
-      if (message.provider !== 'jmap') await requireIdentity();
-      const added = await addAccount(message.provider, message.input as JMAPInput | undefined);
+      const browser = message.browser === true;
+      if (message.provider !== 'jmap' && !browser) await requireIdentity();
+      const input = (message.input ?? undefined) as Record<string, unknown> | undefined;
+      const added = await addAccount(
+        message.provider,
+        input && {
+          sessionURL: input.sessionURL == null ? undefined : String(input.sessionURL),
+          token: input.token == null ? undefined : String(input.token),
+          webURL: input.webURL == null ? undefined : String(input.webURL),
+          email: input.email == null ? undefined : String(input.email).slice(0, 320),
+        },
+        browser,
+      );
       await checkAccount(added.id);
       await updateBadge();
       return {email: added.email, state: publicState(await readStore())};

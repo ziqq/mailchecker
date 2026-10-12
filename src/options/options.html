@@ -28,8 +28,8 @@
         <p class="eyebrow">Почтовый ящик в браузере</p>
         <h1>Вся почта<span class="dot">.</span> Сразу<span class="dot">.</span></h1>
         <p class="lead">
-          Счётчик, список и уведомления для Gmail, Microsoft 365 и JMAP на любом домене. Без своего сервера и
-          дополнительных программ.
+          Счётчик, список и уведомления для Gmail, Яндекс Почты, Почты Mail.ru, Microsoft 365 и JMAP. Без своего сервера
+          и дополнительных программ.
         </p>
       </section>
 
@@ -58,6 +58,19 @@
           <label>Веб-почта <span class="muted">(необязательно)</span><input name="webURL" type="url" /></label>
           <div class="form-actions">
             <button class="btn" type="button" id="jmap-cancel">Отмена</button>
+            <button class="btn primary" type="submit">Подключить</button>
+          </div>
+        </form>
+        <form id="address-form" class="jmap" hidden>
+          <label
+            ><span><span id="address-title"></span>: адрес ящика</span
+            ><input name="email" type="email" required autocomplete="email"
+          /></label>
+          <p class="muted">
+            Сначала войдите в этот ящик в браузере. Пароль не нужен: расширение читает почту через ваш вход.
+          </p>
+          <div class="form-actions">
+            <button class="btn" type="button" id="address-cancel">Отмена</button>
             <button class="btn primary" type="submit">Подключить</button>
           </div>
         </form>

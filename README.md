@@ -1,14 +1,16 @@
 # mailchecker
 
-A mail client that lives in the browser toolbar, for mailboxes on **any domain**: Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP servers such as Fastmail. It runs entirely in the browser: no backend and no companion app (Safari adds a native containing app; see below).
+A mail client that lives in the browser toolbar, for mailboxes on **any domain**: Gmail / Google Workspace, Yandex Mail, Mail.ru, Outlook / Microsoft 365 and JMAP servers such as Fastmail. It runs entirely in the browser: no backend and no companion app (Safari adds a native containing app; see below).
 
-| Provider        | Mailboxes                                                           | Connection        |
-| --------------- | ------------------------------------------------------------------- | ----------------- |
-| Gmail API       | gmail.com and any domain on Google Workspace                        | Google sign-in    |
-| Microsoft Graph | Outlook.com, Hotmail, any domain on Microsoft 365 / Exchange Online | Microsoft sign-in |
-| JMAP            | Fastmail (including custom domains), Stalwart, Cyrus and others     | API token         |
+| Provider        | Mailboxes                                                           | Connection                                     |
+| --------------- | ------------------------------------------------------------------- | ---------------------------------------------- |
+| Gmail           | gmail.com and any domain on Google Workspace                        | The browser's Gmail sign-in, or Google sign-in |
+| Yandex Mail     | yandex.ru and Yandex 360 domains                                    | The browser's Yandex sign-in                   |
+| Mail.ru         | mail.ru, inbox.ru, list.ru, bk.ru                                   | The browser's Mail.ru sign-in                  |
+| Microsoft Graph | Outlook.com, Hotmail, any domain on Microsoft 365 / Exchange Online | Microsoft sign-in                              |
+| JMAP            | Fastmail (including custom domains), Stalwart, Cyrus and others     | API token                                      |
 
-IMAP-only services (Yandex, Mail.ru, iCloud and similar) are not supported yet: an extension cannot open IMAP connections, and these services have no HTTP mail API. They are planned through the Safari containing app (see [Safari](docs/SAFARI.md)); the sandbox already shows them.
+**Through the browser's sign-in** nothing is registered or stored: the extension reads the Inbox with the session you already have in this browser, the way the webmail itself does (Gmail's unread feed, Yandex's lite web Inbox, Mail.ru's checker API). It lists the Inbox and unread count, notifies and opens messages in the webmail; replies, actions and full bodies stay in the webmail. **Google sign-in** (OAuth) gives the full client for Gmail and needs a client ID in the build (see [OAuth setup](docs/OAUTH.md)). iCloud and other IMAP-only services are planned through the Safari containing app (see [Safari](docs/SAFARI.md)).
 
 ## Features
 

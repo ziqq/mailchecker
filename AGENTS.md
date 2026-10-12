@@ -107,7 +107,7 @@ npm audit --audit-level=high
 - Initialisms are all capitals in our identifiers: `clientID`, `byID`, `ProviderID`, `sessionURL`, `redirectURI`, `textToHTML`, `requestJSON`, `HTTPError`, `JMAPInput`. Fields defined by provider or browser APIs keep their spelling (`threadId`, `labelIds`, `accountId` in JMAP calls, `windowId`).
 - Render server text with `textContent`; no `innerHTML`, `eval` or remote code.
 - Keep tokens and API requests in the worker; pages receive public state only.
-- Validate untrusted provider data and bound its size. Preserve `credentials: 'omit'`, `redirect: 'error'`, timeouts and response limits.
+- Validate untrusted provider data and bound its size. Preserve `credentials: 'omit'`, `redirect: 'error'`, timeouts and response limits. The only exception is `session` requests for mailboxes read through the browser's sign-in: they send cookies to `SESSION_HOSTS` in `http.ts` and nowhere else.
 - Request optional permissions only from a user gesture in Settings.
 - Email bodies render only through `shared/sanitize.ts` and `MailFrame` (sandbox without scripts, strict frame CSP); never insert them into extension pages.
 - Keep every layout working at popup (780×600), mini popup (400×600), wide tab and phone widths; check Safari limits in [docs/SAFARI.md](docs/SAFARI.md) before using a new browser API.

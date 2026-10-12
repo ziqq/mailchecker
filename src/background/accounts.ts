@@ -12,17 +12,27 @@
  * @module background/accounts
  */
 import {preferences} from '../shared/preferences';
-import type {Account, Credentials, JMAPInput, ProviderID, PublicState, Store} from '../shared/types';
+import type {Account, AccountInput, Credentials, ProviderID, PublicState, Store} from '../shared/types';
 import {AuthError} from './http';
 import * as oauth from './oauth/flow';
 import {gmail} from './providers/gmail';
+import {gmailWeb} from './providers/gmailweb';
 import {jmap} from './providers/jmap';
+import {mailru} from './providers/mailru';
 import type {Provider} from './providers/message';
 import {outlook} from './providers/outlook';
 import {readStore, writeStore} from './storage';
+import {yandex} from './providers/yandex';
 
-/** Provider adapters by ID; IMAP-only providers have none yet. */
+/** API adapters by provider ID (OAuth or token). */
 export const providers: Readonly<Partial<Record<ProviderID, Provider>>> = Object.freeze({gmail, outlook, jmap});
+
+/** Adapters reading a mailbox through the browser's own sign-in, by provider ID. */
+export const browserProviders: Readonly<Partial<Record<ProviderID, Provider>>> = Object.freeze({
+  gmail: gmailWeb,
+  yandex,
+  mailru,
+});
 
 /** Maximum connected accounts. */
 const MAX_ACCOUNTS = 20;
@@ -33,12 +43,18 @@ const renewals = new Map<string, Promise<Account>>();
 /**
  * Returns the provider adapter for an untrusted ID.
  *
+ * @param id The provider ID.
+ * @param browser Read through the browser's sign-in instead of an API.
  * @throws For an unknown provider.
  */
-export function provider(id: unknown): Provider {
-  if (typeof id !== 'string' || !Object.hasOwn(providers, id)) throw new Error('Неизвестный тип ящика.');
-  return providers[id as ProviderID]!;
+export function provider(id: unknown, browser = false): Provider {
+  const registry = browser ? browserProviders : providers;
+  if (typeof id !== 'string' || !Object.hasOwn(registry, id)) throw new Error('Неизвестный тип ящика.');
+  return registry[id as ProviderID]!;
 }
+
+/** Returns the adapter of a stored account. */
+export const adapter = (account: Account): Provider => provider(account.provider, account.settings?.browser === true);
 
 /** Returns the state extension pages may see: no credentials. */
 export function publicState(store: Store): PublicState {
@@ -47,8 +63,9 @@ export function publicState(store: Store): PublicState {
     accounts: (store.accounts || []).map(account => ({
       id: account.id,
       provider: account.provider,
-      label: provider(account.provider).label,
+      label: adapter(account).label,
       email: account.email,
+      browser: account.settings?.browser === true,
     })),
     mailboxes: store.mailboxes || {},
     oauth: {
@@ -63,11 +80,12 @@ export function publicState(store: Store): PublicState {
  * Connects a mailbox; an existing account with the same provider and address is updated.
  *
  * @param providerID The provider.
- * @param input JMAP form values.
+ * @param input JMAP form values, or the address of a browser-session mailbox.
+ * @param browser Read the mailbox through the browser's sign-in.
  * @returns The stored account.
  */
-export async function addAccount(providerID: unknown, input?: JMAPInput): Promise<Account> {
-  const connected = await provider(providerID).connect(input);
+export async function addAccount(providerID: unknown, input?: AccountInput, browser = false): Promise<Account> {
+  const connected = await provider(providerID, browser).connect(input);
   let account!: Account;
   await writeStore(({accounts = []}) => {
     const existing = accounts.find(item => item.provider === providerID && item.email === connected.email);
@@ -116,7 +134,7 @@ function renew(account: Account): Promise<Account> {
   let pending = renewals.get(account.id);
   if (!pending) {
     pending = Promise.resolve()
-      .then(() => provider(account.provider).renew(account))
+      .then(() => adapter(account).renew(account))
       .then(credentials => saveCredentials(account, credentials))
       .finally(() => renewals.delete(account.id));
     renewals.set(account.id, pending);
@@ -136,7 +154,7 @@ export async function withAccount<T>(
 ): Promise<T> {
   let account = ((await readStore()).accounts || []).find(item => item.id === id);
   if (!account) throw new Error('Ящик не найден.');
-  const module = provider(account.provider);
+  const module = adapter(account);
   const expires = account.credentials.expiresAt;
   if (expires && expires <= Date.now()) account = await renew(account);
   else {
@@ -154,5 +172,5 @@ export async function withAccount<T>(
 export async function signIn(id: string): Promise<Account> {
   const account = ((await readStore()).accounts || []).find(item => item.id === id);
   if (!account) throw new Error('Ящик не найден.');
-  return saveCredentials(account, await provider(account.provider).signIn(account));
+  return saveCredentials(account, await adapter(account).signIn(account));
 }

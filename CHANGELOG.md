@@ -10,9 +10,11 @@
 - **ADDED**: responsive layouts: three columns in wide tabs, list and reader in the popup, one column with back navigation on narrow screens and iPhone
 - **ADDED**: Safari target (`npm run build:safari`), `background/platform.ts` for browser differences and `docs/SAFARI.md`
 - **ADDED**: palette in Settings: black and white graphite (the default) or nine accent colours; the unread badge takes the accent; button text is dark or white, whichever has the higher APCA contrast
+- **ADDED**: mailboxes through the browser's own sign-in, with nothing to register: Gmail (unread feed), Yandex Mail (lite web Inbox) and Mail.ru (checker API); Inbox, unread count and notifications, messages open in the webmail. Gmail keeps Google sign-in (OAuth) as the full option
 - **ADDED**: mini popup (400×600, one column) chosen in Settings → Оформление → Окно
 - **CHANGED**: stored Inbox lists include read messages (default 30 per account); notifications still cover new unread mail only
 - **CHANGED**: `MARK_READ`/`TRASH` requests replaced by `ACT`
+- **FIXED**: Gmail and Outlook sign-in was unavailable and the redirect URIs blank until the optional `identity` permission was granted
 
 ## 0.1.0
 

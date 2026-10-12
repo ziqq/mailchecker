@@ -130,3 +130,79 @@ test('accent buttons take the text colour with the higher APCA contrast', () => 
   assert.equal(textOn('#ffffff'), '#1a0f00');
   assert.equal(textOn('#000000'), '#ffffff');
 });
+
+const {parseFeed} = await load('src/background/providers/gmailweb.ts');
+const {parseInbox} = await load('src/background/providers/yandex.ts');
+const {parseUnread} = await load('src/background/providers/mailru.ts');
+
+test('the Gmail feed gives the address, unread count and messages', () => {
+  const feed = `<?xml version="1.0" encoding="UTF-8"?>
+<feed version="0.3" xmlns="http://purl.org/atom/ns#">
+<title>Gmail - Inbox for Me@Gmail.com</title><fullcount>7</fullcount>
+<entry><title>Билеты &amp; гостиница</title><summary>Отлично, тогда бронирую&#8230;</summary>
+<link rel="alternate" href="https://mail.google.com/mail/u/0?account_id=me@gmail.com&amp;message_id=18f2a&amp;view=conv&amp;extsrc=atom" type="text/html" />
+<modified>2026-10-12T09:00:00Z</modified><issued>2026-10-12T08:59:00Z</issued><id>tag:gmail.google.com,2004:1</id>
+<author><name>Мария</name><email>maria@example.com</email></author></entry>
+</feed>`;
+  const {email, unread, messages} = parseFeed(feed);
+  assert.equal(email, 'me@gmail.com');
+  assert.equal(unread, 7);
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].id, '18f2a');
+  assert.equal(messages[0].subject, 'Билеты & гостиница');
+  assert.equal(messages[0].snippet, 'Отлично, тогда бронирую…');
+  assert.equal(messages[0].from, 'Мария <maria@example.com>');
+  assert.equal(messages[0].date, Date.parse('2026-10-12T08:59:00Z'));
+  assert.equal(messages[0].unread, true);
+});
+
+test('the Yandex lite Inbox gives the unread count and rows, and a sign-in page needs a sign-in', () => {
+  const page = `<div class="b-folders"><a class="b-folders__folder"><span class="b-folders__folder__num">3</span></a>
+<a href="/lite/inbox">Входящие</a><a href="/lite/sent">Отправленные</a></div>
+<div class="b-messages">
+<div class="b-messages__message b-messages__message_unread"><a href="/lite/message/171"><span class="b-message__from" title="Папа">Папа</span>
+<span class="b-message__subject__text">Без&nbsp;темы</span><span class="b-message__firstline">Позвони, как будет время.</span></a></div>
+<div class="b-messages__message"><a href="/lite/thread/172"><span class="b-message__from__text">Банк</span>
+<span class="b-message__subject__text">Выписка</span></a></div>
+</div>`;
+  const {unread, messages} = parseInbox(page, 1000_000);
+  assert.equal(unread, 3);
+  assert.deepEqual(
+    messages.map(item => [item.id, item.from, item.subject, item.snippet, item.unread, item.link]),
+    [
+      ['171', 'Папа', 'Без темы', 'Позвони, как будет время.', true, 'https://mail.yandex.ru/lite/message/171'],
+      ['172', 'Банк', 'Выписка', '', false, 'https://mail.yandex.ru/lite/thread/172'],
+    ],
+  );
+  assert.ok(messages[0].date > messages[1].date);
+  assert.throws(() => parseInbox('<form><input type="password" name="passwd"></form>'), /Войдите в Яндекс Почту/);
+});
+
+test('the Mail.ru checker reply gives unread messages, and a refused address needs a sign-in', () => {
+  const {unread, messages} = parseUnread({
+    status: 200,
+    body: [
+      {
+        id: '17000:abc',
+        fid: '0',
+        subject: 'Счёт',
+        snippet: 'Оплатите до пятницы',
+        date: 1760000000,
+        correspondents: {from: [{name: 'Магазин', email: 'shop@example.com'}]},
+      },
+    ],
+  });
+  assert.equal(unread, 1);
+  assert.equal(messages[0].from, 'Магазин <shop@example.com>');
+  assert.equal(messages[0].date, 1760000000 * 1000);
+  assert.equal(messages[0].link, 'https://e.mail.ru/0/17000%3Aabc/');
+  assert.throws(() => parseUnread({status: 403, body: 'user'}), /Войдите в Почту Mail\.ru/);
+});
+
+const http = await load('src/background/http.ts');
+
+test('session requests send the browser sign-in only to the allowed webmail hosts', async () => {
+  await assert.rejects(http.requestText('https://example.com/inbox', {session: true}), /не может использовать вход/);
+  await assert.rejects(http.requestText('http://mail.google.com/mail/u/0/feed/atom', {session: true}), /HTTPS/);
+  assert.deepEqual([...http.SESSION_HOSTS], ['mail.google.com', 'mail.yandex.ru', 'mailru-checker-api.e.mail.ru']);
+});
