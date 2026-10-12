@@ -113,18 +113,26 @@ const FILES: Attachment[] = [
 export function createFixtures(now: number): Fixtures {
   const m = (draft: Draft) => message(now, draft);
   const accounts: PublicAccount[] = [
-    {id: 'gmail', provider: 'gmail', label: 'Gmail / Google Workspace', email: 'anton@gmail.com', browser: false},
+    {
+      id: 'gmail',
+      provider: 'gmail',
+      label: 'Gmail / Google Workspace',
+      email: 'anton@gmail.com',
+      browser: false,
+      color: '',
+    },
     {
       id: 'work',
       provider: 'outlook',
       label: 'Outlook / Microsoft 365',
       email: 'a.ustinoff@company.onmicrosoft.com',
       browser: false,
+      color: '',
     },
-    {id: 'fastmail', provider: 'jmap', label: 'JMAP', email: 'anton@fastmail.com', browser: false},
-    {id: 'yandex', provider: 'yandex', label: 'Яндекс Почта', email: 'anton@yandex.ru', browser: true},
-    {id: 'mailru', provider: 'mailru', label: 'Почта Mail.ru', email: 'anton@mail.ru', browser: true},
-    {id: 'icloud', provider: 'icloud', label: 'iCloud Mail', email: 'anton@icloud.com', browser: false},
+    {id: 'fastmail', provider: 'jmap', label: 'JMAP', email: 'anton@fastmail.com', browser: false, color: ''},
+    {id: 'yandex', provider: 'yandex', label: 'Яндекс Почта', email: 'anton@yandex.ru', browser: true, color: ''},
+    {id: 'mailru', provider: 'mailru', label: 'Почта Mail.ru', email: 'anton@mail.ru', browser: true, color: ''},
+    {id: 'icloud', provider: 'icloud', label: 'iCloud Mail', email: 'anton@icloud.com', browser: false, color: ''},
   ];
 
   const inbox: Record<string, MailMessage[]> = {

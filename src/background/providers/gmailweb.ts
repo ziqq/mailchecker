@@ -35,18 +35,32 @@ const CODES: Partial<Record<MessageAction, number>> = {archive: 1, read: 3, pin:
 /** The page key of the Gmail web client, cached for the worker's lifetime. */
 let pageKey = '';
 
-/** Returns the Gmail page key (`ID_KEY`), following one `<meta http-equiv="refresh">`. */
+/**
+ * Returns the page key of a Gmail page: `ID_KEY` in the light client, the
+ * tenth `GLOBALS` entry in the full one; an empty string when absent.
+ *
+ * @param html The page.
+ */
+export function parseKey(html: string): string {
+  const light = /ID_KEY\s*=\s*['"]([^'"]+)['"]/.exec(html)?.[1];
+  const full = /var GLOBALS\s*=\s*\[(?:([^,]*),){10}/.exec(html)?.[1]?.replace(/["'\s]/g, '');
+  return light || full || '';
+}
+
+/** Returns the Gmail page key: the light client (following one `<meta http-equiv="refresh">`), then the full one. */
 async function idKey(): Promise<string> {
   if (pageKey) return pageKey;
   let url = `${BASE}/s/`;
   for (let step = 0; step < 2 && !pageKey; step++) {
     const html = await requestText(url, OPTIONS);
-    pageKey = /ID_KEY\s*=\s*['"]([^'"]+)['"]/.exec(html)?.[1] || '';
+    pageKey = parseKey(html);
     const refresh = /<meta[^>]*http-equiv=["']?refresh["']?[^>]*url=([^"'>]+)/i.exec(html)?.[1];
     if (!refresh) break;
     url = new URL(decodeEntities(refresh), url).href;
   }
-  if (!pageKey) throw new Error('Gmail не дал выполнить действие. Откройте Gmail в этом браузере и повторите.');
+  if (!pageKey) pageKey = parseKey(await requestText(`${BASE}/`, OPTIONS));
+  if (!pageKey)
+    throw new Error('Gmail не отдал ключ страницы для действий. Откройте Gmail в этом браузере и повторите.');
   return pageKey;
 }
 

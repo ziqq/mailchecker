@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.7
+
+- **ADDED**: a colour per mailbox: click the avatar in Settings → Ящики to pick it
+- **CHANGED**: the mailbox of a message is a ring in its colour around the avatar instead of a dot
+- **CHANGED**: archive and trash blur the window under a progress card until the webmail answers
+- **CHANGED**: a larger envelope in the toolbar icon; the version moved to the bottom of Settings
+- **FIXED**: Gmail actions through the browser: the page key is also read from the full Gmail page (`GLOBALS`) when the light client has none
+
 ## 0.0.6
 
 - **ADDED**: Gmail through the browser archives, trashes, marks read and stars from the extension, as Gmail's web client does; the optional `cookies` permission is asked when Gmail is connected through the browser (connect it again to grant it)

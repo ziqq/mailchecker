@@ -14,11 +14,14 @@
 import {applyTheme, byID, el, errorMessage, request} from '../shared/dom';
 import {initial, shortDate} from '../shared/format';
 import {icon, providerMark} from '../shared/icons';
+import {ACCOUNT_COLORS, accountColor} from '../shared/inbox';
 import {accents, palettes, popupSizes, themes} from '../shared/preferences';
 import type {Palette, PopupSize, Preferences, ProviderID, PublicState, Request, Theme} from '../shared/types';
 
 /** The rendered public state. */
 let state: PublicState | null = null;
+/** The account whose colour palette is open, or empty. */
+let colorsFor = '';
 
 const form = byID<HTMLFormElement>('jmap-form');
 const addressDialog = byID<HTMLDialogElement>('address-dialog');
@@ -170,11 +173,51 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
               ? `Непрочитанных: ${box.unread} · проверено ${shortDate(box.checkedAt)}`
               : `${account.label} · ещё не проверялся`,
           );
+      const color = accountColor(accounts, account.id);
+      const colors =
+        colorsFor === account.id &&
+        el(
+          'div',
+          {class: 'accents account-colors', role: 'radiogroup', 'aria-label': `Цвет ${account.email}`},
+          ...ACCOUNT_COLORS.map(value =>
+            el('button', {
+              type: 'button',
+              role: 'radio',
+              'aria-checked': String(value === color),
+              'aria-label': value,
+              style: `--accent: ${value}`,
+              onclick: async () => {
+                colorsFor = '';
+                try {
+                  state = await request<PublicState>({type: 'ACCOUNT_COLOR', account: account.id, color: value});
+                  render();
+                } catch (error) {
+                  status(errorMessage(error), true);
+                }
+              },
+            }),
+          ),
+        );
       return el(
         'div',
         {class: 'account'},
-        el('span', {class: 'avatar', 'aria-hidden': 'true'}, initial(account.email)),
-        el('div', {class: 'account-main'}, el('strong', {}, account.email), detail),
+        el(
+          'button',
+          {
+            class: 'avatar ringed',
+            type: 'button',
+            style: `--ring: ${color}`,
+            title: 'Цвет ящика',
+            'aria-label': `Цвет ${account.email}`,
+            'aria-expanded': String(colorsFor === account.id),
+            onclick: () => {
+              colorsFor = colorsFor === account.id ? '' : account.id;
+              render();
+            },
+          },
+          initial(account.email),
+        ),
+        el('div', {class: 'account-main'}, el('strong', {}, account.email), detail, colors),
         el('span', {class: 'tile', title: account.label}, providerMark(account.provider)),
         el(
           'div',

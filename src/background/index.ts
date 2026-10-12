@@ -14,7 +14,7 @@
  */
 import {preferences} from '../shared/preferences';
 import type {MessageAction, Preferences, Reply, RequestType} from '../shared/types';
-import {addAccount, publicState, removeAccount, signIn} from './accounts';
+import {addAccount, publicState, removeAccount, setAccountColor, signIn} from './accounts';
 import {act, checkAccount, checkAll, open, openNotification, search, thread, updateBadge} from './mailbox';
 import {hasNotifications, openApp} from './platform';
 import {readStore, writeStore} from './storage';
@@ -39,7 +39,16 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'PREFERENCES',
     'OPTIONS',
   ]),
-  options: new Set<RequestType>(['STATE', 'CHECK', 'OPEN', 'SIGN_IN', 'PREFERENCES', 'ADD_ACCOUNT', 'REMOVE_ACCOUNT']),
+  options: new Set<RequestType>([
+    'STATE',
+    'CHECK',
+    'OPEN',
+    'SIGN_IN',
+    'PREFERENCES',
+    'ADD_ACCOUNT',
+    'REMOVE_ACCOUNT',
+    'ACCOUNT_COLOR',
+  ]),
 });
 
 /** Returns which extension page sent a message, or `null`. */
@@ -135,6 +144,9 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       await updateBadge();
       return {email: added.email, state: publicState(await readStore())};
     }
+    case 'ACCOUNT_COLOR':
+      await setAccountColor(account, String(message.color ?? '').slice(0, 16));
+      return publicState(await readStore());
     case 'REMOVE_ACCOUNT':
       await removeAccount(account);
       await updateBadge();

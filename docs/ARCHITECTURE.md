@@ -71,6 +71,7 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 | `PREFERENCES`                   | client, Settings | Save bounded preferences and reschedule checks.                        |
 | `OPTIONS`                       | client           | Open Settings.                                                         |
 | `ADD_ACCOUNT`, `REMOVE_ACCOUNT` | Settings         | Connect or remove a mailbox.                                           |
+| `ACCOUNT_COLOR`                 | Settings         | Set a mailbox colour from `ACCOUNT_COLORS` (empty: by position).       |
 
 ## Service worker
 

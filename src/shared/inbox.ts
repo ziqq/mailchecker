@@ -37,8 +37,9 @@ const TITLES: Record<Section['id'], string> = {
 /** Account accent colours by position. */
 export const ACCOUNT_COLORS = ['#ff9418', '#4f8cff', '#3ecf8e', '#c084fc', '#f472b6', '#facc15', '#22d3ee', '#fb7185'];
 
-/** Returns the colour of an account by its position. */
+/** Returns the colour chosen for an account, or its colour by position. */
 export const accountColor = (accounts: PublicAccount[], id: string): string =>
+  accounts.find(account => account.id === id)?.color ||
   ACCOUNT_COLORS[
     Math.max(
       0,

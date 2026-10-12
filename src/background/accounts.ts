@@ -11,6 +11,7 @@
  *
  * @module background/accounts
  */
+import {ACCOUNT_COLORS} from '../shared/inbox';
 import {preferences} from '../shared/preferences';
 import type {Account, AccountInput, Credentials, ProviderID, PublicState, Store} from '../shared/types';
 import {AuthError} from './http';
@@ -66,6 +67,7 @@ export function publicState(store: Store): PublicState {
       label: adapter(account).label,
       email: account.email,
       browser: account.settings?.browser === true,
+      color: account.settings?.color || '',
     })),
     mailboxes: store.mailboxes || {},
     oauth: {
@@ -96,6 +98,20 @@ export async function addAccount(providerID: unknown, input?: AccountInput, brow
     };
   });
   return account;
+}
+
+/**
+ * Sets the colour of an account, or the colour by position for an empty [color].
+ *
+ * @throws When [color] is not one of `ACCOUNT_COLORS`.
+ */
+export async function setAccountColor(id: string, color: string): Promise<void> {
+  if (color && !ACCOUNT_COLORS.includes(color)) throw new Error('Неизвестный цвет.');
+  await writeStore(({accounts = []}) => ({
+    accounts: accounts.map(account =>
+      account.id === id ? {...account, settings: {...account.settings, color: color || undefined}} : account,
+    ),
+  }));
 }
 
 /**

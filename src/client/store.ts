@@ -39,6 +39,8 @@ export const store = createRoot(() => {
   const [searching, setSearching] = createSignal(false);
   const [refreshing, setRefreshing] = createSignal(false);
   const [toast, setToast] = createSignal('');
+  /** The archive or trash in progress, shown over the window; empty when idle. */
+  const [busy, setBusy] = createSignal('');
 
   /** All Inbox entries of the selected account(s). */
   const entries = createMemo(() => {
@@ -155,6 +157,7 @@ export const store = createRoot(() => {
       const index = items.indexOf(entry);
       next = items[index + 1] || items[index - 1] || null;
     }
+    if (leaving) setBusy(action === 'trash' ? 'Удаляем…' : 'Архивируем…');
     try {
       const value = await request<PublicState>({
         type: 'ACT',
@@ -186,6 +189,8 @@ export const store = createRoot(() => {
       });
     } catch (error) {
       fail(error);
+    } finally {
+      if (leaving) setBusy('');
     }
   }
 
@@ -231,6 +236,7 @@ export const store = createRoot(() => {
     results,
     searching,
     refreshing,
+    busy,
     toast,
     entries,
     list,

@@ -68,7 +68,13 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
       <Show when={message().unread}>
         <span class="unread-dot" />
       </Show>
-      <span class="avatar">{initial(senderName(message().from))}</span>
+      <span
+        class="avatar"
+        classList={{ringed: accounts().length > 1}}
+        style={accounts().length > 1 ? {'--ring': accountColor(accounts(), props.entry.account)} : undefined}
+      >
+        {initial(senderName(message().from))}
+      </span>
       <div class="row-body">
         <div class="row-top">
           <span class="from">{senderName(message().from)}</span>
@@ -79,9 +85,6 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
           <div class="snippet">{message().snippet}</div>
         </Show>
         <div class="row-meta">
-          <Show when={accounts().length > 1}>
-            <span class="account-dot" style={{background: accountColor(accounts(), props.entry.account)}} />
-          </Show>
           <Show when={message().pinned}>
             <span class="meta-icon pinned" title="Закреплено">
               {icon('pin')}

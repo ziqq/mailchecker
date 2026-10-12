@@ -92,6 +92,14 @@ function App() {
       <Sidebar />
       <MessageList />
       <Reader />
+      <Show when={store.busy()}>
+        <div class="busy" role="status">
+          <div class="busy-card">
+            <span class="spinner" />
+            {store.busy()}
+          </div>
+        </div>
+      </Show>
       <Show when={store.toast()}>
         <div class="toast" role="alert">
           {store.toast()}

@@ -94,6 +94,14 @@ main {
     border-top: 0;
   }
 }
+// The account colour: a ring around the avatar; a click opens the palette under the address.
+.account .avatar.ringed {
+  border: 0;
+  cursor: pointer;
+}
+.account-colors {
+  margin-top: 8px;
+}
 .account-main {
   flex: 1;
   min-width: 0;
@@ -289,6 +297,12 @@ main {
         0 0 0 4px var(--text);
     }
   }
+}
+
+.version {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
 }
 
 // Build-time OAuth setup, collapsed: only whoever builds the extension needs it.

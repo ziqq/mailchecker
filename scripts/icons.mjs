@@ -53,19 +53,19 @@ function sample(x, y, n) {
   const cx = Math.min(Math.max(x, r), n - r);
   const cy = Math.min(Math.max(y, r), n - r);
   if ((x - cx) ** 2 + (y - cy) ** 2 > r * r) return null;
-  const left = n * 0.17;
-  const right = n * 0.83;
-  const top = n * 0.27;
-  const bottom = n * 0.73;
+  const left = n * 0.12;
+  const right = n * 0.88;
+  const top = n * 0.24;
+  const bottom = n * 0.76;
   if (x < left || x > right || y < top || y > bottom) return BG;
   // Rounded envelope corners.
-  const corner = n * 0.05;
+  const corner = n * 0.06;
   const ex = Math.min(Math.max(x, left + corner), right - corner);
   const ey = Math.min(Math.max(y, top + corner), bottom - corner);
   if ((x - ex) ** 2 + (y - ey) ** 2 > corner * corner) return BG;
   const u = (x - left) / (right - left);
   const flap = top + (bottom - top) * 0.58 * (1 - Math.abs(u * 2 - 1));
-  return Math.abs(y - flap) < Math.max(n * 0.045, 3) ? FLAP : ENVELOPE;
+  return Math.abs(y - flap) < Math.max(n * 0.05, 3) ? FLAP : ENVELOPE;
 }
 
 /** Renders a PNG of [size] pixels. */
