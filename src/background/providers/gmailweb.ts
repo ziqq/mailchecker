@@ -8,17 +8,66 @@
  * `mail.google.com/mail/u/0/feed/atom` lists up to 20 unread Inbox messages
  * of the first signed-in Google account, with the full unread count. The
  * feed has no read mail or bodies: the full text comes from Gmail's print
- * view of the message; actions stay in Gmail.
+ * view of the message. Actions post the request Gmail's own web client
+ * sends, with the page key (`ID_KEY`) and the `GMAIL_AT` action cookie, read
+ * with the optional `cookies` permission.
  *
  * @module background/providers/gmailweb
  */
-import type {Account, InboxResult, MailMessage} from '../../shared/types';
+import type {Account, InboxResult, MailMessage, MessageAction} from '../../shared/types';
 import {requestText} from '../http';
-import {categorize, count, message} from './message';
+import {readCookie} from '../platform';
+import {categorize, count, decodeEntities, message} from './message';
 import {elements, firstAddress, markupText, sessionProvider} from './session';
 
+/** The first signed-in account in Gmail. */
+const BASE = 'https://mail.google.com/mail/u/0';
+
 /** The feed of the first signed-in account. */
-const FEED = 'https://mail.google.com/mail/u/0/feed/atom';
+const FEED = `${BASE}/feed/atom`;
+
+/** Session request options. */
+const OPTIONS = {session: true, service: 'Gmail'};
+
+/** Gmail web client action codes. */
+const CODES: Partial<Record<MessageAction, number>> = {archive: 1, read: 3, pin: 5, unpin: 6, trash: 9};
+
+/** The page key of the Gmail web client, cached for the worker's lifetime. */
+let pageKey = '';
+
+/** Returns the Gmail page key (`ID_KEY`), following one `<meta http-equiv="refresh">`. */
+async function idKey(): Promise<string> {
+  if (pageKey) return pageKey;
+  let url = `${BASE}/s/`;
+  for (let step = 0; step < 2 && !pageKey; step++) {
+    const html = await requestText(url, OPTIONS);
+    pageKey = /ID_KEY\s*=\s*['"]([^'"]+)['"]/.exec(html)?.[1] || '';
+    const refresh = /<meta[^>]*http-equiv=["']?refresh["']?[^>]*url=([^"'>]+)/i.exec(html)?.[1];
+    if (!refresh) break;
+    url = new URL(decodeEntities(refresh), url).href;
+  }
+  if (!pageKey) throw new Error('Gmail не дал выполнить действие. Откройте Gmail в этом браузере и повторите.');
+  return pageKey;
+}
+
+/** Applies an action to a message as Gmail's web client does. */
+async function act(item: MailMessage, action: MessageAction): Promise<void> {
+  const at = await readCookie(BASE, 'GMAIL_AT');
+  if (!at)
+    throw new Error('Для действий в Gmail подключите ящик заново в настройках и разрешите доступ к cookies Gmail.');
+  const key = await idKey();
+  const update = [null, CODES[action], item.id, item.id, 'l:all', [], [], null];
+  const refresh = [null, null, null, null, null, null, [null, true, false]];
+  const reply = await requestText(
+    `${BASE}/s/?v=or&ik=${encodeURIComponent(key)}&at=${encodeURIComponent(at)}&subui=chrome&hl=en&ts=${Date.now()}`,
+    {
+      ...OPTIONS,
+      method: 'POST',
+      form: {s_jr: JSON.stringify([null, [[null, null, null, update], refresh, refresh], 2, null, null, null, key])},
+    },
+  );
+  if (!reply || reply.includes('/spreauth')) throw new Error('Gmail не дал выполнить действие. Повторите в Gmail.');
+}
 
 /** Returns the text of the first `<tag>` in [xml]. */
 const field = (xml: string, tag: string): string =>
@@ -67,8 +116,7 @@ export function parsePrint(html: string): string {
 }
 
 /** Reads the feed with the browser's Google sign-in. */
-const feed = async (): Promise<ReturnType<typeof parseFeed>> =>
-  parseFeed(await requestText(FEED, {session: true, service: 'Gmail'}));
+const feed = async (): Promise<ReturnType<typeof parseFeed>> => parseFeed(await requestText(FEED, OPTIONS));
 
 /** Gmail through the browser's sign-in. */
 export const gmailWeb = sessionProvider({
@@ -88,6 +136,8 @@ export const gmailWeb = sessionProvider({
       : 'https://mail.google.com/mail/u/0/#inbox',
   async body(_account, item) {
     const url = `https://mail.google.com/mail/u/0/?ui=2&view=pt&dsqt=1&search=all&msg=${encodeURIComponent(item.id)}`;
-    return {html: parsePrint(await requestText(url, {session: true, service: 'Gmail'}))};
+    return {html: parsePrint(await requestText(url, OPTIONS))};
   },
+  actions: Object.keys(CODES) as MessageAction[],
+  act: (_account, item, action) => act(item, action),
 });

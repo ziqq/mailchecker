@@ -144,15 +144,21 @@
         </label>
       </section>
 
-      <section class="card section" aria-labelledby="oauth-title">
-        <div class="section-head">
+      <details class="card section oauth">
+        <summary class="section-head">
           <div>
-            <h2 id="oauth-title">OAuth</h2>
-            <p>Client ID задаются в сборке: <code>src/background/oauth/config.ts</code>.</p>
+            <h2>Вход через Google и Microsoft</h2>
+            <p>Только для сборки расширения: подключение «Через Google» и Outlook.</p>
           </div>
-        </div>
+          <span class="tile" data-icon="chevron"></span>
+        </summary>
+        <p class="muted">
+          Эти способы работают, когда в сборку вписан Client ID (<code>src/background/oauth/config.ts</code>). Создайте
+          OAuth-клиент в Google Cloud или Microsoft Entra и укажите в нём адрес возврата ниже. Ящики, подключённые через
+          браузер, этого не требуют.
+        </p>
         <div id="oauth"></div>
-      </section>
+      </details>
 
       <ul class="features">
         <li>

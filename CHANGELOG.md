@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.6
+
+- **ADDED**: Gmail through the browser archives, trashes, marks read and stars from the extension, as Gmail's web client does; the optional `cookies` permission is asked when Gmail is connected through the browser (connect it again to grant it)
+- **CHANGED**: Settings: the OAuth block is collapsed as «Вход через Google и Microsoft», says it is only for builds with a Client ID and copies the redirect address
+- **FIXED**: Settings at phone width scrolled sideways: the add-mailbox buttons move under the text
+
 ## 0.0.5
 
 - **ADDED**: full text for mailboxes read through the browser's sign-in: Gmail's print view, the Yandex lite message page, the Mail.ru webmail API

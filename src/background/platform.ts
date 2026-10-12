@@ -33,6 +33,19 @@ export const supportsIdentity = (): boolean => hasIdentity() || target === 'chro
 export const hasNotifications = (): boolean => typeof chrome.notifications?.create === 'function';
 
 /**
+ * Returns the value of a cookie, or an empty string without the optional
+ * `cookies` permission (granted in Settings when Gmail is connected through
+ * the browser).
+ *
+ * @param url The cookie's site.
+ * @param name The cookie name.
+ */
+export async function readCookie(url: string, name: string): Promise<string> {
+  if (typeof chrome.cookies?.get !== 'function') return '';
+  return (await chrome.cookies.get({url, name}).catch(() => null))?.value || '';
+}
+
+/**
  * Limits local storage to trusted extension contexts where supported.
  *
  * Safari supports the access level only for session storage, so a

@@ -49,7 +49,11 @@ const paletteNames: Record<Palette, string> = {
  * A way to connect a mailbox: OAuth, the browser's own sign-in (`origin` is the webmail host; `address` is the
  * example shown when the user types the mailbox address), or the JMAP form.
  */
-type Method = {label: string} & ({oauth: 'google' | 'microsoft'} | {origin: string; address?: string} | {jmap: true});
+type Method = {label: string} & (
+  | {oauth: 'google' | 'microsoft'}
+  | {origin: string; address?: string; permissions?: chrome.runtime.ManifestPermission[]}
+  | {jmap: true}
+);
 
 /** Add-mailbox rows; the first method is the primary button. */
 const providerRows: {id: ProviderID; title: string; text: string; methods: Method[]}[] = [
@@ -58,7 +62,8 @@ const providerRows: {id: ProviderID; title: string; text: string; methods: Metho
     title: 'Gmail / Google Workspace',
     text: 'Через вход в Gmail в этом браузере или через аккаунт Google.',
     methods: [
-      {label: 'Через браузер', origin: 'https://mail.google.com/*'},
+      // `cookies` reads Gmail's action cookie (`GMAIL_AT`) for archive, trash, read and star.
+      {label: 'Через браузер', origin: 'https://mail.google.com/*', permissions: ['cookies']},
       {label: 'Через Google', oauth: 'google'},
     ],
   },
@@ -228,9 +233,13 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
   );
 }
 
-/** Requests the webmail host permission inside a click; the browser's sign-in is sent only there. */
-async function allowSite(origin: string, title: string): Promise<boolean> {
-  if (await chrome.permissions.request({origins: [origin]})) return true;
+/** Requests the webmail host permission (and [permissions]) inside a click; the browser's sign-in is sent only there. */
+async function allowSite(
+  origin: string,
+  title: string,
+  permissions: chrome.runtime.ManifestPermission[] = [],
+): Promise<boolean> {
+  if (await chrome.permissions.request({origins: [origin], permissions})) return true;
   status(`Без доступа к сайту «${title}» подключить ящик через браузер нельзя.`, true);
   return false;
 }
@@ -253,7 +262,7 @@ async function connect(button: HTMLButtonElement, row: (typeof providerRows)[num
     input.placeholder = method.address;
     addressDialog.showModal();
     input.focus();
-  } else if (await allowSite(method.origin, row.title)) {
+  } else if (await allowSite(method.origin, row.title, method.permissions)) {
     await run(button, {type: 'ADD_ACCOUNT', provider: row.id, browser: true}, added);
   }
 }
@@ -332,15 +341,41 @@ function renderAppearance({theme, popup, palette}: Preferences): void {
   byID('theme').title = `Тема: ${themeNames[theme].toLowerCase()}`;
 }
 
-/** Renders the OAuth configuration status and redirect URIs. */
+/** Renders the OAuth configuration status and the redirect URIs to register with the providers. */
 function renderOAuth({oauth}: PublicState): void {
   const row = (provider: ProviderID, name: string, configured: boolean, uri: string) =>
     el(
       'div',
       {class: 'oauth-row'},
       el('span', {class: 'tile'}, providerMark(provider)),
-      el('div', {}, el('strong', {}, name), uri && el('code', {}, uri)),
-      el('span', {class: configured ? 'pill strong' : 'pill'}, configured ? 'Настроен' : 'Нет ID'),
+      el(
+        'div',
+        {},
+        el(
+          'strong',
+          {},
+          name,
+          ' ',
+          el('span', {class: 'muted'}, configured ? '· Client ID есть' : '· Client ID не задан'),
+        ),
+        uri && el('code', {}, uri),
+      ),
+      uri &&
+        el(
+          'button',
+          {
+            class: 'round ghost',
+            type: 'button',
+            title: 'Скопировать адрес возврата',
+            'aria-label': `Скопировать адрес возврата ${name}`,
+            onclick: () =>
+              navigator.clipboard.writeText(uri).then(
+                () => status(`Адрес возврата ${name} скопирован.`),
+                () => status('Не удалось скопировать адрес.', true),
+              ),
+          },
+          icon('copy'),
+        ),
     );
   byID('oauth').replaceChildren(
     row('gmail', 'Google', oauth.google, oauth.redirect.google),

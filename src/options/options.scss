@@ -291,6 +291,32 @@ main {
   }
 }
 
+// Build-time OAuth setup, collapsed: only whoever builds the extension needs it.
+.oauth {
+  summary {
+    margin-bottom: 0;
+    cursor: pointer;
+    list-style: none;
+    &::-webkit-details-marker {
+      display: none;
+    }
+    .tile {
+      flex: none;
+      transition: transform 0.15s;
+    }
+  }
+  &[open] summary {
+    margin-bottom: 14px;
+    .tile {
+      transform: rotate(180deg);
+    }
+  }
+  > .muted {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
 .oauth-row {
   display: flex;
   align-items: center;
@@ -305,6 +331,13 @@ main {
     min-width: 0;
     display: grid;
     gap: 4px;
+  }
+  code {
+    overflow-wrap: anywhere;
+  }
+  .muted {
+    font-weight: 400;
+    font-size: 13px;
   }
 }
 
@@ -339,6 +372,15 @@ main {
   }
   .account {
     flex-wrap: wrap;
+  }
+  // The buttons move under the text, lined up with it (a 36px tile and a 12px gap).
+  .provider {
+    flex-wrap: wrap;
+    .provider-actions {
+      flex-basis: 100%;
+      justify-content: flex-start;
+      padding-left: 48px;
+    }
   }
   .section {
     padding: 16px;

@@ -15,7 +15,7 @@ Removing an account deletes its credentials and check result. It does not revoke
 - Gmail / Google Workspace: `https://gmail.googleapis.com`; sign-in through `https://accounts.google.com`.
 - Outlook / Microsoft 365: `https://graph.microsoft.com`; sign-in and token refresh through `https://login.microsoftonline.com`.
 - JMAP: the session URL entered in Settings and its API URL on the same origin, after the user grants that origin.
-- Through the browser's sign-in, after the user grants the site in Settings: Gmail `https://mail.google.com` (the unread feed and the print view of an opened message), Yandex Mail `https://mail.yandex.ru` (the lite Inbox and message pages, and its delete form), Mail.ru `https://e.mail.ru` (the webmail API: messages, read marks and moving to the trash) and `https://auth.mail.ru` (issues the webmail session cookie from the Mail.ru sign-in).
+- Through the browser's sign-in, after the user grants the site in Settings: Gmail `https://mail.google.com` (the unread feed, the print view of an opened message and its actions), Yandex Mail `https://mail.yandex.ru` (the lite Inbox and message pages, and its delete form), Mail.ru `https://e.mail.ru` (the webmail API: messages, read marks and moving to the trash) and `https://auth.mail.ru` (issues the webmail session cookie from the Mail.ru sign-in).
 
 API requests send no cookies, refuse redirects and time out after 25 seconds. Requests through the browser's sign-in send the browser's own cookies, and only to the hosts above; they follow the site's redirects and treat a redirect away from it as signed out. Responses are read with size limits.
 
@@ -25,4 +25,5 @@ Message bodies are shown in a sandboxed frame without scripts. Remote images, in
 
 - `storage`, `alarms`, `notifications`: settings and results, periodic checks, new-mail notifications.
 - `identity` (optional, requested on the first Google or Microsoft connection): the OAuth sign-in window.
+- `cookies` (optional, requested when Gmail is connected through the browser): reads only Gmail's `GMAIL_AT` action cookie on `mail.google.com` to archive, trash, mark read and star from the extension, as Gmail's own web client does. No other cookie is read.
 - Host permissions for the Gmail, Graph, Microsoft login and Fastmail APIs; any other JMAP origin and the webmail sites read through the browser's sign-in are optional and requested in Settings.
