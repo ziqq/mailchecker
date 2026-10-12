@@ -28,7 +28,11 @@ function current(): Fixtures & {preferences: Preferences} {
     const query = new URLSearchParams(location.search);
     data = {
       ...createFixtures(Date.now()),
-      preferences: preferences({theme: query.get('theme') ?? undefined, palette: query.get('palette') ?? undefined}),
+      preferences: preferences({
+        theme: query.get('theme') ?? undefined,
+        palette: query.get('palette') ?? undefined,
+        popup: query.get('popup') ?? undefined,
+      }),
     };
   }
   return data;
@@ -41,7 +45,14 @@ function state(): PublicState {
     preferences,
     accounts,
     mailboxes,
-    oauth: {google: true, microsoft: true, redirect: {google: '', microsoft: ''}},
+    oauth: {
+      google: true,
+      microsoft: true,
+      redirect: {
+        google: 'https://sandbox.chromiumapp.org/google',
+        microsoft: 'https://sandbox.chromiumapp.org/microsoft',
+      },
+    },
   };
 }
 

@@ -16,7 +16,7 @@
  */
 import type {Credentials} from '../../shared/types';
 import {AuthError, HTTPError, requestJSON} from '../http';
-import {hasIdentity} from '../platform';
+import {hasIdentity, supportsIdentity} from '../platform';
 import {oauthConfig as config} from './config';
 
 /** OAuth providers. */
@@ -33,12 +33,13 @@ const MICROSOFT = 'https://login.microsoftonline.com/common/oauth2/v2.0';
 
 /** Returns whether a provider has a client ID in this build. */
 export function available(provider: OAuthProvider): boolean {
-  return hasIdentity() && /^[\w.-]{8,256}$/.test(config[provider]);
+  return supportsIdentity() && /^[\w.-]{8,256}$/.test(config[provider]);
 }
 
 /** Returns the callback URL registered for a provider: `https://<extension-id>.chromiumapp.org/<provider>`. */
 export function redirectURI(provider: OAuthProvider): string {
-  return hasIdentity() ? chrome.identity.getRedirectURL(provider) : '';
+  if (hasIdentity()) return chrome.identity.getRedirectURL(provider);
+  return supportsIdentity() ? `https://${chrome.runtime.id}.chromiumapp.org/${provider}` : '';
 }
 
 /** Returns the client ID or throws a user-facing error. */

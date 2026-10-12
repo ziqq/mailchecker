@@ -9,7 +9,7 @@
  *
  * @module shared/preferences
  */
-import type {Palette, Preferences, Theme} from './types';
+import type {Palette, PopupSize, Preferences, Theme} from './types';
 
 /** Default preferences. */
 export const defaults: Readonly<Preferences> = Object.freeze({
@@ -17,24 +17,71 @@ export const defaults: Readonly<Preferences> = Object.freeze({
   notifications: true,
   limit: 30,
   theme: 'auto',
-  palette: 'orange',
+  palette: 'neutral',
+  popup: 'full',
 });
+
+/** Allowed popup sizes. */
+export const popupSizes: readonly PopupSize[] = Object.freeze(['full', 'mini']);
 
 /** Allowed theme values, in toggle order. */
 export const themes: readonly Theme[] = Object.freeze(['auto', 'light', 'dark']);
 
-/** Accent colours (Telegram iOS accents, our orange) and the text on them: white where it reaches 3:1. */
-export const accents: Readonly<Record<Exclude<Palette, 'neutral'>, {color: string; text: string}>> = Object.freeze({
-  orange: {color: '#ff9418', text: '#1a0f00'},
-  blue: {color: '#0088ff', text: '#ffffff'},
-  cyan: {color: '#00c2ed', text: '#1a0f00'},
-  green: {color: '#29b327', text: '#1a0f00'},
-  pink: {color: '#eb6ca4', text: '#1a0f00'},
-  purple: {color: '#9472ee', text: '#ffffff'},
-  red: {color: '#d33213', text: '#ffffff'},
-  yellow: {color: '#edb400', text: '#1a0f00'},
-  gray: {color: '#6d839e', text: '#ffffff'},
-});
+/** Dark text on light accents, matching the default orange button. */
+const DARK_TEXT = '#1a0f00';
+
+/** Light text on dark accents. */
+const LIGHT_TEXT = '#ffffff';
+
+/** Returns the APCA screen luminance of a `#rrggbb` colour, with the soft clamp for near-black. */
+function luminance(color: string): number {
+  const [r, g, b] = [1, 3, 5].map(index => (parseInt(color.slice(index, index + 2), 16) / 255) ** 2.4);
+  const y = 0.2126729 * r + 0.7151522 * g + 0.072175 * b;
+  return y < 0.022 ? y + (0.022 - y) ** 1.414 : y;
+}
+
+/**
+ * Returns the APCA lightness contrast (Lc, 0.0.98G-4g) of [text] on [background]: positive for dark text on a light
+ * background, negative for light text on a dark one.
+ */
+function contrast(text: string, background: string): number {
+  const [foreground, back] = [luminance(text), luminance(background)];
+  if (Math.abs(back - foreground) < 0.0005) return 0;
+  if (back > foreground) {
+    const value = (back ** 0.56 - foreground ** 0.57) * 1.14;
+    return value < 0.1 ? 0 : (value - 0.027) * 100;
+  }
+  const value = (back ** 0.65 - foreground ** 0.62) * 1.14;
+  return value > -0.1 ? 0 : (value + 0.027) * 100;
+}
+
+/**
+ * Returns the text colour that reads best on [background]: dark or white, whichever has the higher APCA contrast.
+ *
+ * @param background A `#rrggbb` colour.
+ */
+export function textOn(background: string): string {
+  return Math.abs(contrast(LIGHT_TEXT, background)) > Math.abs(contrast(DARK_TEXT, background))
+    ? LIGHT_TEXT
+    : DARK_TEXT;
+}
+
+/** Accent colours and the text on them, chosen by contrast. */
+export const accents: Readonly<Record<Exclude<Palette, 'neutral'>, {color: string; text: string}>> = Object.freeze(
+  Object.fromEntries(
+    Object.entries({
+      orange: '#ff9418',
+      blue: '#0088ff',
+      cyan: '#00c2ed',
+      green: '#29b327',
+      pink: '#eb6ca4',
+      purple: '#9472ee',
+      red: '#d33213',
+      yellow: '#edb400',
+      gray: '#6d839e',
+    }).map(([name, color]) => [name, {color, text: textOn(color)}]),
+  ) as Record<Exclude<Palette, 'neutral'>, {color: string; text: string}>,
+);
 
 /** Allowed palette values, in picker order. */
 export const palettes: readonly Palette[] = Object.freeze([
@@ -68,5 +115,6 @@ export function preferences(value: Partial<Record<keyof Preferences, unknown>> =
     limit: Math.round(bounded(value.limit, 1, 50, defaults.limit)),
     theme: themes.includes(value.theme as Theme) ? (value.theme as Theme) : defaults.theme,
     palette: palettes.includes(value.palette as Palette) ? (value.palette as Palette) : defaults.palette,
+    popup: popupSizes.includes(value.popup as PopupSize) ? (value.popup as PopupSize) : defaults.popup,
   };
 }

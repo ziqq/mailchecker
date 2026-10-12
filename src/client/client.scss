@@ -11,7 +11,7 @@
 //
 // popup (780×600) and medium tabs:  topbar / list | reader
 // wide tabs (≥ 1100px):             sidebar | list | reader
-// narrow (< 700px, iOS popup):      topbar / list ↔ reader (one at a time)
+// narrow (< 700px, mini popup 400×600, iOS popup): topbar / list ↔ reader (one at a time)
 
 html,
 body,
@@ -25,6 +25,10 @@ body {
 html[data-mode='popup']:not([data-narrow='true']) body {
   width: 780px;
   height: 600px;
+}
+// The mini popup is narrow enough for the one-column layout below.
+html[data-mode='popup'][data-size='mini']:not([data-narrow='true']) body {
+  width: 400px;
 }
 html[data-narrow='true'] body {
   width: 100vw;

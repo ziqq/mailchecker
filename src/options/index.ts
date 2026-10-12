@@ -14,8 +14,8 @@
 import {applyTheme, byID, el, errorMessage, request} from '../shared/dom';
 import {initial, shortDate} from '../shared/format';
 import {icon, providerMark} from '../shared/icons';
-import {accents, palettes, themes} from '../shared/preferences';
-import type {Palette, Preferences, ProviderID, PublicState, Request, Theme} from '../shared/types';
+import {accents, palettes, popupSizes, themes} from '../shared/preferences';
+import type {Palette, PopupSize, Preferences, ProviderID, PublicState, Request, Theme} from '../shared/types';
 
 /** The rendered public state. */
 let state: PublicState | null = null;
@@ -25,6 +25,9 @@ const statusLine = byID('status');
 
 /** Theme labels by preference. */
 const themeNames: Record<Theme, string> = {auto: 'Авто', light: 'Светлая', dark: 'Тёмная'};
+
+/** Popup size labels by preference. */
+const popupNames: Record<PopupSize, string> = {full: 'Полное', mini: 'Мини'};
 
 /** Palette names; the swatch colours come from `accents`. */
 const paletteNames: Record<Palette, string> = {
@@ -225,17 +228,29 @@ function renderProviders({oauth}: PublicState): void {
   );
 }
 
-/** Renders the theme and palette controls. */
-function renderAppearance({theme, palette}: Preferences): void {
-  byID('theme-control').replaceChildren(
-    ...themes.map(value =>
+/** Renders a segmented control that saves preference [key]. */
+function renderSegmented<K extends 'theme' | 'popup'>(
+  id: string,
+  key: K,
+  values: readonly Preferences[K][],
+  names: Record<Preferences[K], string>,
+  current: Preferences[K],
+): void {
+  byID(id).replaceChildren(
+    ...values.map(value =>
       el(
         'button',
-        {type: 'button', 'aria-pressed': String(theme === value), onclick: () => save({theme: value})},
-        themeNames[value],
+        {type: 'button', 'aria-pressed': String(current === value), onclick: () => save({[key]: value})},
+        names[value],
       ),
     ),
   );
+}
+
+/** Renders the theme, popup size and palette controls. */
+function renderAppearance({theme, popup, palette}: Preferences): void {
+  renderSegmented('theme-control', 'theme', themes, themeNames, theme);
+  renderSegmented('popup-control', 'popup', popupSizes, popupNames, popup);
   byID('palette-control').replaceChildren(
     ...palettes.map(value =>
       el('button', {
@@ -260,7 +275,7 @@ function renderOAuth({oauth}: PublicState): void {
       'div',
       {class: 'oauth-row'},
       el('span', {class: 'tile'}, providerMark(provider)),
-      el('div', {}, el('strong', {}, name), el('code', {}, uri)),
+      el('div', {}, el('strong', {}, name), uri && el('code', {}, uri)),
       el('span', {class: configured ? 'pill strong' : 'pill'}, configured ? 'Настроен' : 'Нет ID'),
     );
   byID('oauth').replaceChildren(

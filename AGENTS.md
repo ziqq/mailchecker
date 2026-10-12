@@ -1,6 +1,6 @@
 # mailchecker
 
-mailchecker is a Manifest V3 mail client for Chromium browsers and Safari: a Spark-like client in the toolbar popup and a full-tab mode for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP mailboxes on any domain. It has no backend. SolidJS is the only runtime dependency (bundled). A private npm package provides TypeScript/Sass compilation, esbuild bundling of `src/` into `build/` and `build-safari/`, checks and tests; Python packages the bundled runtime files.
+mailchecker is a Manifest V3 mail client for Chromium browsers and Safari: a full mail client in the toolbar popup and a full-tab mode for Gmail / Google Workspace, Outlook / Microsoft 365 and JMAP mailboxes on any domain. It has no backend. SolidJS is the only runtime dependency (bundled). A private npm package provides TypeScript/Sass compilation, esbuild bundling of `src/` into `build/` and `build-safari/`, checks and tests; Python packages the bundled runtime files.
 
 Author: Anton Ustinoff. License: [GPL v3](LICENSE) (`GPL-3.0-only`). Every source file starts with the project, copyright and license header; add it to new files.
 
@@ -110,7 +110,7 @@ npm audit --audit-level=high
 - Validate untrusted provider data and bound its size. Preserve `credentials: 'omit'`, `redirect: 'error'`, timeouts and response limits.
 - Request optional permissions only from a user gesture in Settings.
 - Email bodies render only through `shared/sanitize.ts` and `MailFrame` (sandbox without scripts, strict frame CSP); never insert them into extension pages.
-- Keep every layout working at popup (780×600), wide tab and phone widths; check Safari limits in [docs/SAFARI.md](docs/SAFARI.md) before using a new browser API.
+- Keep every layout working at popup (780×600), mini popup (400×600), wide tab and phone widths; check Safari limits in [docs/SAFARI.md](docs/SAFARI.md) before using a new browser API.
 
 ## Strict rules
 

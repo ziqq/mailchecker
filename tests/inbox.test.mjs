@@ -112,3 +112,21 @@ test('categorizes people, notifications and newsletters', () => {
   assert.equal(categorize({from: 'Ivan <ivan@partner.ru>', labels: ['CATEGORY_PROMOTIONS']}), 'newsletters');
   assert.equal(categorize({from: 'Jira <jira@corp.ru>', labels: ['CATEGORY_UPDATES']}), 'notifications');
 });
+
+const {accents, textOn} = await load('src/shared/preferences.ts');
+
+test('accent buttons take the text colour with the higher APCA contrast', () => {
+  assert.deepEqual(Object.fromEntries(Object.entries(accents).map(([name, {text}]) => [name, text])), {
+    orange: '#1a0f00',
+    blue: '#ffffff',
+    cyan: '#1a0f00',
+    green: '#ffffff',
+    pink: '#ffffff',
+    purple: '#ffffff',
+    red: '#ffffff',
+    yellow: '#1a0f00',
+    gray: '#ffffff',
+  });
+  assert.equal(textOn('#ffffff'), '#1a0f00');
+  assert.equal(textOn('#000000'), '#ffffff');
+});
