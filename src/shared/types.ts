@@ -1,17 +1,27 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * Shared data types for the service worker, the popup and Settings.
  *
  * @module shared/types
  */
 
-/** Provider identifiers. */
-export type ProviderId = 'gmail' | 'outlook' | 'jmap';
+/**
+ * Provider identifiers.
+ *
+ * `yandex`, `mailru` and `icloud` are IMAP-only services without an HTTP
+ * mail API. They have no adapter yet (see docs/SAFARI.md, IMAP bridge):
+ * the worker rejects them, and only the sandbox shows them.
+ */
+export type ProviderID = 'gmail' | 'outlook' | 'jmap' | 'yandex' | 'mailru' | 'icloud';
 
 /** Theme preference: follow the system or force a scheme. */
 export type Theme = 'auto' | 'light' | 'dark';
 
-/** Palette preference: orange accent or monochrome. */
-export type Palette = 'accent' | 'neutral';
+/** Palette preference: a warm palette with an accent colour (Telegram iOS accents), or monochrome graphite. */
+export type Palette = 'orange' | 'blue' | 'cyan' | 'green' | 'pink' | 'purple' | 'red' | 'yellow' | 'gray' | 'neutral';
 
 /** Normalized user preferences. */
 export interface Preferences {
@@ -35,14 +45,14 @@ export interface Credentials {
 
 /** Provider-specific account settings (JMAP URLs). */
 export interface AccountSettings {
-  sessionUrl?: string;
-  webUrl?: string;
+  sessionURL?: string;
+  webURL?: string;
 }
 
 /** A stored account, including credentials. */
 export interface Account {
   id: string;
-  provider: ProviderId;
+  provider: ProviderID;
   email: string;
   credentials: Credentials;
   settings: AccountSettings;
@@ -122,7 +132,7 @@ export interface Store {
 /** An account as extension pages see it: no credentials. */
 export interface PublicAccount {
   id: string;
-  provider: ProviderId;
+  provider: ProviderID;
   label: string;
   email: string;
 }
@@ -151,7 +161,7 @@ export type Request =
   | {type: 'SEARCH'; query: string}
   | {type: 'SIGN_IN'; account: string}
   | {type: 'PREFERENCES'; value: Partial<Preferences>}
-  | {type: 'ADD_ACCOUNT'; provider: ProviderId; input?: JmapInput}
+  | {type: 'ADD_ACCOUNT'; provider: ProviderID; input?: JMAPInput}
   | {type: 'REMOVE_ACCOUNT'; account: string};
 
 /** A search hit: a message with its account. */
@@ -164,10 +174,10 @@ export interface SearchHit {
 export type RequestType = Request['type'];
 
 /** Settings form values for a JMAP account. */
-export interface JmapInput {
-  sessionUrl: string;
+export interface JMAPInput {
+  sessionURL: string;
   token: string;
-  webUrl?: string;
+  webURL?: string;
 }
 
 /** Worker reply envelope. */

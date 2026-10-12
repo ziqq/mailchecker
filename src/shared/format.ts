@@ -1,4 +1,8 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * Text formatting for message lists and notifications.
  *
  * @module shared/format

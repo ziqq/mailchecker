@@ -1,12 +1,12 @@
 # Safari
 
-Mail Checker is built to ship to Safari (macOS and iOS/iPadOS) from the same sources. Safari runs Manifest V3 web extensions, but only inside a native containing app built with Xcode and distributed through the App Store. This document records the API gaps that shape the architecture and the plan to close them.
+mailchecker is built to ship to Safari (macOS and iOS/iPadOS) from the same sources. Safari runs Manifest V3 web extensions, but only inside a native containing app built with Xcode and distributed through the App Store. This document records the API gaps that shape the architecture and the plan to close them.
 
 Support data below is from [MDN browser-compat-data](https://github.com/mdn/browser-compat-data) (`webextensions/`), checked on 2026-10-07. Re-check it and Apple's [browser compatibility guide](https://developer.apple.com/documentation/safariservices/assessing-your-safari-web-extension-s-browser-compatibility) before each Safari release.
 
 ## API support
 
-| API / key                                | Safari (macOS)          | Safari iOS | Effect on Mail Checker                                                       |
+| API / key                                | Safari (macOS)          | Safari iOS | Effect on mailchecker                                                        |
 | ---------------------------------------- | ----------------------- | ---------- | ---------------------------------------------------------------------------- |
 | `identity.launchWebAuthFlow`             | ❌                      | ❌         | No OAuth window: Gmail and Outlook sign-in must run in the containing app.   |
 | `notifications`                          | ❌                      | ❌         | No system notifications from the extension: badge only, or the app notifies. |
@@ -36,14 +36,14 @@ The Xcode project is generated from `build-safari/` and extended with Swift code
 
 1. **OAuth** with `ASWebAuthenticationSession` for Google and Microsoft. The app returns tokens to the extension; refresh tokens live in the Keychain. This needs separate OAuth clients (iOS/macOS app type) with the app's redirect scheme.
 2. **Notifications** through `UNUserNotificationCenter`, triggered by the extension's checks.
-3. **IMAP** (optional) with Network.framework: Yandex, Mail.ru and any IMAP server, which Chromium extensions cannot reach. The extension would talk to it through the same provider contract.
+3. **IMAP** (optional) with Network.framework: Yandex, Mail.ru, iCloud and any IMAP server, which Chromium extensions cannot reach. The extension would talk to it through the same provider contract. The provider IDs `yandex`, `mailru` and `icloud` and their marks already exist; the worker rejects them until an adapter lands.
 
 ## Build and publish
 
 ```sh
 npm ci
 npm run build:safari
-xcrun safari-web-extension-converter build-safari --app-name "Mail Checker" --bundle-identifier <reverse-dns-id>
+xcrun safari-web-extension-converter build-safari --app-name "mailchecker" --bundle-identifier <reverse-dns-id>
 ```
 
 Then open the generated Xcode project, set the team and signing, and run the macOS or iOS target. Safari → Settings → Extensions enables it; unsigned development builds need _Develop → Allow Unsigned Extensions_ on macOS. Publishing requires an Apple Developer Program membership and App Store review for the containing app.

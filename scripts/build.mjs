@@ -1,4 +1,8 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * Bundles `src/` into an unpacked Manifest V3 extension.
  *
  * esbuild bundles each TypeScript entry point into one classic script (no
@@ -9,6 +13,10 @@
  * - `chromium` (default, `build/`): Chrome, Edge, Brave, Opera, Yandex Browser.
  * - `safari` (`build-safari/`): input for `xcrun safari-web-extension-converter`;
  *   drops keys Safari ignores or rejects (see docs/SAFARI.md).
+ *
+ * The sandbox build (`sandbox: true`, `build-sandbox/`) answers client
+ * requests from fixtures (`src/sandbox/`) instead of the service worker; in
+ * other builds `__SANDBOX__` is `false` and the fixtures are tree-shaken.
  *
  * Usage: `node scripts/build.mjs [--target chromium|safari] [--outdir <directory>]`.
  */
@@ -38,6 +46,14 @@ export const assets = {
   'icons/icon32.png': 'src/icons/icon32.png',
   'icons/icon48.png': 'src/icons/icon48.png',
   'icons/icon128.png': 'src/icons/icon128.png',
+  'fonts/inter-latin.woff2': 'src/fonts/inter-latin.woff2',
+  'fonts/inter-cyrillic.woff2': 'src/fonts/inter-cyrillic.woff2',
+  'fonts/OFL.txt': 'src/fonts/OFL.txt',
+};
+
+/** Files copied into the sandbox build only: output path → source path. */
+export const sandboxAssets = {
+  'index.html': 'src/sandbox/index.html',
 };
 
 /** Build targets: output directory and manifest adapter. */
@@ -66,13 +82,14 @@ export const targets = {
  *
  * @param {Object} [options]
  * @param {'chromium'|'safari'} [options.target='chromium'] The browser family.
- * @param {string} [options.outdir] Output directory; defaults to the target's.
+ * @param {string} [options.outdir] Output directory; defaults to the target's, or `build-sandbox/`.
+ * @param {boolean} [options.sandbox=false] Answer client requests from fixtures (see `src/sandbox/`).
  * @returns {Promise<string>} The output directory.
  */
-export async function buildExtension({target = 'chromium', outdir} = {}) {
+export async function buildExtension({target = 'chromium', outdir, sandbox = false} = {}) {
   const config = targets[target];
   if (!config) throw new Error(`Unknown target: ${target}`);
-  const out = outdir || resolve(root, config.outdir);
+  const out = outdir || resolve(root, sandbox ? 'build-sandbox' : config.outdir);
   const styles = compileStyles();
   await rm(out, {recursive: true, force: true});
   await build({
@@ -86,12 +103,12 @@ export async function buildExtension({target = 'chromium', outdir} = {}) {
     charset: 'utf8',
     legalComments: 'none',
     banner: {js: "'use strict';"},
-    define: {__TARGET__: JSON.stringify(target)},
+    define: {__TARGET__: JSON.stringify(target), __SANDBOX__: JSON.stringify(sandbox)},
     logLevel: 'warning',
     plugins: [solidPlugin()],
   });
   for (const [name, {css}] of Object.entries(styles)) await writeFile(resolve(out, name), css);
-  for (const [name, source] of Object.entries(assets)) {
+  for (const [name, source] of Object.entries(sandbox ? {...assets, ...sandboxAssets} : assets)) {
     await mkdir(dirname(resolve(out, name)), {recursive: true});
     await copyFile(resolve(root, source), resolve(out, name));
   }

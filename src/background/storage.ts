@@ -1,4 +1,8 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * Trusted extension storage with serialized writes.
  *
  * Local storage is limited to trusted extension contexts. Writes run one

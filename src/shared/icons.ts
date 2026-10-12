@@ -1,11 +1,15 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * Original 24×24 line icons and provider marks rendered as inline SVG.
  *
  * Elements are created with DOM APIs only; no markup strings are parsed.
  *
  * @module shared/icons
  */
-import type {ProviderId} from './types';
+import type {ProviderID} from './types';
 
 /** Line-icon path data by name. */
 const paths: Readonly<Record<string, string>> = Object.freeze({
@@ -53,6 +57,18 @@ const marks: Readonly<Record<string, ReadonlyArray<readonly [string, string]>>> 
     ['M3 12.5h8.5V21H3z', '#00A4EF'],
     ['M12.5 12.5H21V21h-8.5z', '#FFB900'],
   ],
+  yandex: [
+    ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20', '#FC3F1D'],
+    [
+      'M13.2 6H15v12h-1.8v-4.6h-1.1L9.6 18H7.7l2.8-5.1c-1.4-.5-2.2-1.6-2.2-3.3C8.3 7.3 9.8 6 12.3 6zm0 1.5h-.9c-1.3 0-2.1.7-2.1 2.1s.8 2.3 2.1 2.3h.9z',
+      '#FFFFFF',
+    ],
+  ],
+  mailru: [
+    ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20', '#005FF9'],
+    ['M12 6.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 1 0 0-11zm0 2.5a3 3 0 1 1 0 6 3 3 0 1 1 0-6z', '#FF9E00'],
+  ],
+  icloud: [['M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.3 1.6 3.8 3.8 0 0 1-.5 7.4z', '#3693F3']],
 });
 
 /** SVG namespace. */
@@ -82,11 +98,11 @@ export function icon(name: string, className = ''): SVGSVGElement {
 }
 
 /**
- * Creates a provider mark: the coloured Google or Microsoft logo, or a server icon for JMAP.
+ * Creates a provider mark: a coloured service mark, or a server icon for JMAP.
  *
  * @param provider A provider ID.
  */
-export function providerMark(provider: ProviderId): SVGSVGElement {
+export function providerMark(provider: ProviderID): SVGSVGElement {
   if (!marks[provider]) return icon('server');
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');

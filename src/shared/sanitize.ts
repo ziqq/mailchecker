@@ -1,4 +1,8 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * Email body sanitization and the sandboxed frame document.
  *
  * Runs in extension pages (it needs `DOMParser`). Bodies are untrusted:
@@ -132,7 +136,7 @@ const escape = (value: string): string =>
  *
  * @param text The plain-text body.
  */
-export function textToHtml(text: string): string {
+export function textToHTML(text: string): string {
   const linked = escape(text).replace(
     /\bhttps?:\/\/[^\s<>"']+/g,
     url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`,

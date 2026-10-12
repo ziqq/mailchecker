@@ -1,4 +1,8 @@
-name: Verify Mail Checker
+# https://github.com/ziqq/mailchecker
+# Copyright (C) 2026 Anton Ustinoff
+# https://github.com/ziqq/mailchecker/blob/main/LICENSE
+
+name: Verify mailchecker
 
 on:
   push:
@@ -32,6 +36,11 @@ jobs:
       - name: Check source, types, tests and repository
         run: npm run check
 
+      - name: Test the client in the sandbox
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:sandbox
+
       - name: Audit development dependencies
         run: npm audit --audit-level=high
 
@@ -47,9 +56,9 @@ jobs:
       - name: Upload extension
         uses: actions/upload-artifact@v4
         with:
-          name: mail-checker-${{ github.sha }}
+          name: mailchecker-${{ github.sha }}
           path: |
-            dist/mail-checker-*.zip
-            dist/mail-checker-*.sha256
+            dist/mailchecker-*.zip
+            dist/mailchecker-*.sha256
           if-no-files-found: error
           retention-days: 14

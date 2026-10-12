@@ -1,9 +1,14 @@
 <!doctype html>
+<!--
+  https://github.com/ziqq/mailchecker
+  Copyright (C) 2026 Anton Ustinoff
+  https://github.com/ziqq/mailchecker/blob/main/LICENSE
+-->
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mail Checker · Настройки</title>
+    <title>mailchecker · Настройки</title>
     <link rel="stylesheet" href="options.css" />
     <script src="options.js" defer></script>
   </head>
@@ -40,7 +45,7 @@
         <div class="providers" id="providers"></div>
         <form id="jmap-form" class="jmap" hidden>
           <label
-            >JMAP Session URL<input name="sessionUrl" type="url" required value="https://api.fastmail.com/jmap/session"
+            >JMAP Session URL<input name="sessionURL" type="url" required value="https://api.fastmail.com/jmap/session"
           /></label>
           <label
             >API-токен<input
@@ -50,7 +55,7 @@
               autocomplete="off"
               placeholder="Fastmail: Settings → Privacy &amp; Security → API tokens"
           /></label>
-          <label>Веб-почта <span class="muted">(необязательно)</span><input name="webUrl" type="url" /></label>
+          <label>Веб-почта <span class="muted">(необязательно)</span><input name="webURL" type="url" /></label>
           <div class="form-actions">
             <button class="btn" type="button" id="jmap-cancel">Отмена</button>
             <button class="btn primary" type="submit">Подключить</button>
@@ -75,10 +80,10 @@
         </div>
         <div class="field-row">
           <div>
-            <strong>Палитра</strong>
-            <p>Оранжевый акцент или нейтральная графитовая.</p>
+            <strong>Акцент</strong>
+            <p>Цвет кнопок и выделения или графитовая палитра.</p>
           </div>
-          <div class="palettes" id="palette-control"></div>
+          <div class="accents" id="palette-control" role="radiogroup" aria-label="Акцент"></div>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 # Architecture
 
-Mail Checker is a Manifest V3 mail client that lives in the browser toolbar. It has three execution contexts. Each has one TypeScript entry point in `src/`, bundled by esbuild into one classic script per target (`build/` for Chromium, `build-safari/` for Safari).
+mailchecker is a Manifest V3 mail client that lives in the browser toolbar. It has three execution contexts. Each has one TypeScript entry point in `src/`, bundled by esbuild into one classic script per target (`build/` for Chromium, `build-safari/` for Safari).
 
 ```mermaid
 flowchart LR
@@ -110,14 +110,18 @@ Chromium browsers load `build/`. Safari loads `build-safari/` inside a containin
 
 ## Styles
 
-`src/styles/_tokens.scss` defines two palettes × light/dark as CSS custom properties: `accent` (warm surfaces, orange accent, pill controls) and `neutral` (monochrome graphite, white primary buttons). The root follows the system scheme unless `data-theme` is set; `data-palette` selects the palette. `_components.scss` holds shared controls; `client/client.scss` and `options/options.scss` lay out each page. Design mockups live in `design/`.
+`src/styles/_tokens.scss` defines two palettes × light/dark as CSS custom properties: `accent` (warm surfaces, an accent colour, pill controls) and `neutral` (monochrome graphite, white primary buttons). The root follows the system scheme unless `data-theme` is set; `data-palette` selects the palette. The `palette` preference is one of nine accents (`orange` by default, and the Telegram iOS `blue`, `cyan`, `green`, `pink`, `purple`, `red`, `yellow`, `gray`) or `neutral`. Their colours live in `accents` in `shared/preferences.ts`: `applyTheme` sets `--accent` and `data-accent` on the root, the accent tokens are mixed from `--accent`, and the worker colours the unread badge with it (graphite for `neutral`). Inter ships in `src/fonts/` (variable weight, Latin and Cyrillic subsets, SIL OFL 1.1 in `OFL.txt`) and is declared in `_tokens.scss`, so layouts measure the same on every system. `_components.scss` holds shared controls; `client/client.scss` and `options/options.scss` lay out each page. Design mockups live in `design/`.
 
 ## Build and package
 
 1. `npm run build` / `npm run build:safari` runs `scripts/build.mjs`: esbuild bundles the three entry points (`format: iife`, targets Chrome 116 and Safari 16, unminified) with `esbuild-plugin-solid` compiling JSX ahead of time; Sass compiles SCSS; pages and icons are copied and the manifest is adapted per target.
 2. `npm run typecheck` runs `tsc --noEmit` with `strict` and Solid's JSX types.
-3. `scripts/package.py` packages `build/` with `PRIVACY.md` into a reproducible `dist/mail-checker-<version>.zip` and its SHA-256.
-4. `scripts/check.mjs` validates the manifest, version consistency, strict CSP, the optional `identity` permission, unsafe DOM APIs, and both targets' builds (including Safari manifest adaptations).
+3. `scripts/package.py` packages `build/` with `PRIVACY.md` into a reproducible `dist/mailchecker-<version>.zip` and its SHA-256.
+4. `scripts/check.mjs` validates the manifest, version consistency, strict CSP, the optional `identity` permission, unsafe DOM APIs, and both targets' builds (including Safari manifest adaptations and the absence of sandbox fixtures).
+
+## Sandbox
+
+`npm run sandbox` builds `build-sandbox/` with `__SANDBOX__ = true` and serves it at `http://127.0.0.1:8080/` with the extension's CSP. In this build `request()` in `shared/dom.ts` is answered by `src/sandbox/worker.ts` from `src/sandbox/fixtures.ts` instead of `chrome.runtime.sendMessage`, and the client does not subscribe to `chrome.storage`, so `popup.html` and `app.html` run in a plain tab without the extension, accounts or network. Fixtures cover all six provider IDs (including the IMAP-only `yandex`, `mailru` and `icloud`, which have no adapter yet), every Smart Inbox category, a notification stack, pinned mail, attachments, long text, HTML with remote images and a tracker, a conversation, an expired sign-in and a failed check. Actions change in-memory state; a reload resets it. `?theme=` and `?palette=` set the initial preferences. `index.html` shows the popup (780×600) and a phone (390×844) side by side. Release builds define `__SANDBOX__ = false`, and esbuild drops the fixtures.
 
 ## Tests
 
@@ -126,4 +130,6 @@ Chromium browsers load `build/`. Safari loads `build-safari/` inside a containin
 - `background.test.mjs`: the bundled worker in a Node.js VM with mocked `chrome.*` APIs and mocked Gmail, Graph, Microsoft login and JMAP servers — connections, counts, notifications, actions, conversations, search, token refresh deduplication, rejected tokens, sender checks, the identity permission and preference bounds.
 - `inbox.test.mjs`: account merging, notification stacks, Smart Inbox sections, counts and categorization.
 
-Sanitization needs a DOM and is verified in the browser preview; real sign-in, provider acceptance and installed-browser behavior need manual verification.
+`npm run test:sandbox` runs `e2e/sandbox.spec.mjs` with Playwright in headless Chromium against the sandbox: every layout (popup 780×600, wide tab, phone popup with touch, phone tab) renders without errors or horizontal scroll and opens a conversation; the keyboard archive, search across archived mail, blocked remote images, sign-in after an expired session and theme parameters work.
+
+Sanitization needs a DOM and is verified in the sandbox; real sign-in, provider acceptance and installed-browser behavior need manual verification.

@@ -1,4 +1,8 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * Settings: mailbox connections, appearance, check preferences and OAuth status.
  *
  * Optional permissions (`identity` for OAuth, a JMAP server origin) are
@@ -7,29 +11,37 @@
  *
  * @module options/index
  */
-import {applyTheme, byId, el, errorMessage, request} from '../shared/dom';
+import {applyTheme, byID, el, errorMessage, request} from '../shared/dom';
 import {initial, shortDate} from '../shared/format';
 import {icon, providerMark} from '../shared/icons';
-import {themes} from '../shared/preferences';
-import type {Palette, Preferences, ProviderId, PublicState, Request, Theme} from '../shared/types';
+import {accents, palettes, themes} from '../shared/preferences';
+import type {Palette, Preferences, ProviderID, PublicState, Request, Theme} from '../shared/types';
 
 /** The rendered public state. */
 let state: PublicState | null = null;
 
-const form = byId<HTMLFormElement>('jmap-form');
-const statusLine = byId('status');
+const form = byID<HTMLFormElement>('jmap-form');
+const statusLine = byID('status');
 
 /** Theme labels by preference. */
 const themeNames: Record<Theme, string> = {auto: 'Авто', light: 'Светлая', dark: 'Тёмная'};
 
-/** Palette choices: name and preview colours. */
-const paletteChoices: Record<Palette, {name: string; colors: string[]}> = {
-  accent: {name: 'Оранжевый', colors: ['#08090b', '#ff9418', '#f7f6f2']},
-  neutral: {name: 'Нейтральный', colors: ['#0a0a0a', '#262626', '#fafafa']},
+/** Palette names; the swatch colours come from `accents`. */
+const paletteNames: Record<Palette, string> = {
+  orange: 'Оранжевый',
+  blue: 'Синий',
+  cyan: 'Голубой',
+  green: 'Зелёный',
+  pink: 'Розовый',
+  purple: 'Фиолетовый',
+  red: 'Красный',
+  yellow: 'Жёлтый',
+  gray: 'Серый',
+  neutral: 'Графит',
 };
 
 /** Add-mailbox rows. */
-const providerRows: {id: ProviderId; title: string; text: string; oauth?: 'google' | 'microsoft'}[] = [
+const providerRows: {id: ProviderID; title: string; text: string; oauth?: 'google' | 'microsoft'}[] = [
   {id: 'gmail', title: 'Gmail / Google Workspace', text: 'Gmail и почта на своём домене в Google.', oauth: 'google'},
   {
     id: 'outlook',
@@ -89,19 +101,19 @@ function render(): void {
   renderProviders(state);
   renderAppearance(state.preferences);
   renderOAuth(state);
-  byId<HTMLInputElement>('interval').value = String(state.preferences.interval);
-  byId<HTMLInputElement>('limit').value = String(state.preferences.limit);
-  byId<HTMLInputElement>('notifications').checked = state.preferences.notifications;
+  byID<HTMLInputElement>('interval').value = String(state.preferences.interval);
+  byID<HTMLInputElement>('limit').value = String(state.preferences.limit);
+  byID<HTMLInputElement>('notifications').checked = state.preferences.notifications;
 }
 
 /** Renders the connected accounts. */
 function renderAccounts({accounts, mailboxes}: PublicState): void {
-  byId('accounts-count').textContent = String(accounts.length);
+  byID('accounts-count').textContent = String(accounts.length);
   if (!accounts.length) {
-    byId('accounts').replaceChildren(el('p', {class: 'empty-accounts'}, 'Пока ни одного ящика. Добавьте первый ниже.'));
+    byID('accounts').replaceChildren(el('p', {class: 'empty-accounts'}, 'Пока ни одного ящика. Добавьте первый ниже.'));
     return;
   }
-  byId('accounts').replaceChildren(
+  byID('accounts').replaceChildren(
     ...accounts.map(account => {
       const box = mailboxes[account.id];
       const detail = box?.error
@@ -178,7 +190,7 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
 
 /** Renders the add-mailbox rows. */
 function renderProviders({oauth}: PublicState): void {
-  byId('providers').replaceChildren(
+  byID('providers').replaceChildren(
     ...providerRows.map(row => {
       const configured = !row.oauth || oauth[row.oauth];
       return el(
@@ -215,7 +227,7 @@ function renderProviders({oauth}: PublicState): void {
 
 /** Renders the theme and palette controls. */
 function renderAppearance({theme, palette}: Preferences): void {
-  byId('theme-control').replaceChildren(
+  byID('theme-control').replaceChildren(
     ...themes.map(value =>
       el(
         'button',
@@ -224,26 +236,26 @@ function renderAppearance({theme, palette}: Preferences): void {
       ),
     ),
   );
-  byId('palette-control').replaceChildren(
-    ...(Object.entries(paletteChoices) as [Palette, (typeof paletteChoices)[Palette]][]).map(([value, choice]) =>
-      el(
-        'button',
-        {type: 'button', 'aria-pressed': String(palette === value), onclick: () => save({palette: value})},
-        el(
-          'span',
-          {class: 'swatch', 'aria-hidden': 'true'},
-          choice.colors.map(color => el('i', {style: `background:${color}`})),
-        ),
-        choice.name,
-      ),
+  byID('palette-control').replaceChildren(
+    ...palettes.map(value =>
+      el('button', {
+        type: 'button',
+        role: 'radio',
+        'aria-checked': String(palette === value),
+        'aria-label': paletteNames[value],
+        title: paletteNames[value],
+        'data-accent': value,
+        style: value === 'neutral' ? null : `--accent: ${accents[value].color}`,
+        onclick: () => save({palette: value}),
+      }),
     ),
   );
-  byId('theme').title = `Тема: ${themeNames[theme].toLowerCase()}`;
+  byID('theme').title = `Тема: ${themeNames[theme].toLowerCase()}`;
 }
 
 /** Renders the OAuth configuration status and redirect URIs. */
 function renderOAuth({oauth}: PublicState): void {
-  const row = (provider: ProviderId, name: string, configured: boolean, uri: string) =>
+  const row = (provider: ProviderID, name: string, configured: boolean, uri: string) =>
     el(
       'div',
       {class: 'oauth-row'},
@@ -251,7 +263,7 @@ function renderOAuth({oauth}: PublicState): void {
       el('div', {}, el('strong', {}, name), el('code', {}, uri)),
       el('span', {class: configured ? 'pill strong' : 'pill'}, configured ? 'Настроен' : 'Нет ID'),
     );
-  byId('oauth').replaceChildren(
+  byID('oauth').replaceChildren(
     row('gmail', 'Google', oauth.google, oauth.redirect.google),
     row('outlook', 'Microsoft', oauth.microsoft, oauth.redirect.microsoft),
   );
@@ -282,13 +294,13 @@ form.addEventListener('submit', async event => {
   event.preventDefault();
   const data = new FormData(form);
   const input = {
-    sessionUrl: String(data.get('sessionUrl') || ''),
+    sessionURL: String(data.get('sessionURL') || ''),
     token: String(data.get('token') || ''),
-    webUrl: String(data.get('webUrl') || ''),
+    webURL: String(data.get('webURL') || ''),
   };
   let origin: string;
   try {
-    origin = `${new URL(input.sessionUrl).origin}/*`;
+    origin = `${new URL(input.sessionURL).origin}/*`;
   } catch {
     status('Некорректный JMAP Session URL.', true);
     return;
@@ -306,26 +318,26 @@ form.addEventListener('submit', async event => {
     form.hidden = true;
   }
 });
-byId('jmap-cancel').addEventListener('click', () => {
+byID('jmap-cancel').addEventListener('click', () => {
   form.reset();
   form.hidden = true;
 });
 
-byId<HTMLInputElement>('interval').addEventListener('change', event =>
+byID<HTMLInputElement>('interval').addEventListener('change', event =>
   save({interval: Number((event.target as HTMLInputElement).value)}),
 );
-byId<HTMLInputElement>('limit').addEventListener('change', event =>
+byID<HTMLInputElement>('limit').addEventListener('change', event =>
   save({limit: Number((event.target as HTMLInputElement).value)}),
 );
-byId<HTMLInputElement>('notifications').addEventListener('change', event =>
+byID<HTMLInputElement>('notifications').addEventListener('change', event =>
   save({notifications: (event.target as HTMLInputElement).checked}),
 );
-byId('theme').addEventListener('click', () => {
+byID('theme').addEventListener('click', () => {
   if (state) save({theme: themes[(themes.indexOf(state.preferences.theme) + 1) % themes.length]});
 });
 
-byId('theme').append(icon('theme'));
-byId('version').textContent = `v${chrome.runtime.getManifest().version}`;
+byID('theme').append(icon('theme'));
+byID('version').textContent = `v${chrome.runtime.getManifest().version}`;
 for (const tile of document.querySelectorAll<HTMLElement>('[data-icon]')) tile.append(icon(tile.dataset.icon || ''));
 
 chrome.storage.onChanged.addListener((changes, area) => {

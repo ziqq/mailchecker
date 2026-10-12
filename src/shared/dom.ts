@@ -1,10 +1,19 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * DOM helpers for extension pages: element creation with `textContent`
  * only, theme application and worker messaging.
  *
  * @module shared/dom
  */
+import {handle} from '../sandbox/worker';
+import {accents} from './preferences';
 import type {Preferences, Reply, Request} from './types';
+
+/** Set by the build: `true` only in the sandbox build (`npm run sandbox`). */
+declare const __SANDBOX__: boolean;
 
 /** A child accepted by [el]: nodes, text, nested lists or skipped empty values. */
 export type Child = Node | string | null | undefined | false | Child[];
@@ -49,17 +58,28 @@ export function applyTheme({theme, palette}: Pick<Preferences, 'theme' | 'palett
   if (theme === 'light' || theme === 'dark') root.dataset.theme = theme;
   else delete root.dataset.theme;
   root.dataset.palette = palette === 'neutral' ? 'neutral' : 'accent';
+  if (palette === 'neutral') {
+    delete root.dataset.accent;
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent-text');
+  } else {
+    root.dataset.accent = palette;
+    root.style.setProperty('--accent', accents[palette].color);
+    root.style.setProperty('--accent-text', accents[palette].text);
+  }
 }
 
 /**
- * Sends a request to the service worker.
+ * Sends a request to the service worker; the sandbox build answers from fixtures instead.
  *
  * @param message The typed request.
  * @returns The reply value.
  * @throws With the worker's user-facing message.
  */
 export async function request<R = unknown>(message: Request): Promise<R> {
-  const reply: Reply<R> | undefined = await chrome.runtime.sendMessage(message);
+  const reply: Reply<R> | undefined = __SANDBOX__
+    ? ((await handle(message)) as Reply<R>)
+    : await chrome.runtime.sendMessage(message);
   if (!reply || !reply.ok) throw new Error(reply?.error || 'Расширение не ответило. Перезагрузите страницу.');
   return reply.value;
 }
@@ -69,7 +89,7 @@ export async function request<R = unknown>(message: Request): Promise<R> {
  *
  * @throws When the page is missing the element.
  */
-export function byId<T extends HTMLElement = HTMLElement>(id: string): T {
+export function byID<T extends HTMLElement = HTMLElement>(id: string): T {
   const element = document.getElementById(id);
   if (!element) throw new Error(`Missing #${id}.`);
   return element as T;

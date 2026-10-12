@@ -1,4 +1,10 @@
-/** Compiles the extension's SCSS with the same options for builds and checks. */
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
+ * Compiles the extension's SCSS with the same options for builds and checks.
+ */
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {compile} from 'sass';

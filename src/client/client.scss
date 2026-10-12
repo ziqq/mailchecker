@@ -1,3 +1,9 @@
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ */
+
 @use '../styles/tokens';
 @use '../styles/components';
 
@@ -82,9 +88,6 @@ html[data-narrow='true'] body {
   .app .reader-bar .back {
     display: inline-grid;
   }
-  .switcher-label {
-    max-width: 120px;
-  }
 }
 
 // ---------- Top bar ----------
@@ -103,6 +106,13 @@ html[data-narrow='true'] body {
   }
   .spacer {
     flex: 1;
+  }
+  // Room for the switcher label; the theme is also set in Settings.
+  @media (max-width: 699px) {
+    gap: 2px;
+    .theme-toggle {
+      display: none;
+    }
   }
 }
 .round.busy .icon {
@@ -129,12 +139,19 @@ html[data-narrow='true'] body {
     width: 12px;
     height: 12px;
   }
+  @media (max-width: 699px) {
+    gap: 6px;
+    padding-right: 8px;
+  }
 }
 .switcher-label {
   overflow: hidden;
   max-width: 220px;
   text-overflow: ellipsis;
   white-space: nowrap;
+  @media (max-width: 699px) {
+    max-width: 120px;
+  }
 }
 .stack {
   display: flex;
@@ -269,8 +286,12 @@ html[data-narrow='true'] body {
   display: grid;
   gap: 10px;
   padding: 14px 12px 8px;
+  // Every category fits the popup list column; spare width is shared.
   .segmented button {
-    padding: 5px 9px;
+    flex: 1 0 auto;
+    justify-content: center;
+    gap: 4px;
+    padding: 5px 6px;
   }
 }
 .list-title {

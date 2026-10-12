@@ -1,4 +1,8 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * The compact header: logo, account switcher and global actions.
  *
  * Shown in the popup and in narrow tabs; wide tabs use the sidebar instead.
@@ -128,7 +132,7 @@ export function TopBar() {
       <span class="spacer" />
       <RefreshButton />
       <button
-        class="round ghost"
+        class="round ghost theme-toggle"
         type="button"
         title={THEME_TITLES[store.state()?.preferences.theme || 'auto']}
         aria-label="Сменить тему"

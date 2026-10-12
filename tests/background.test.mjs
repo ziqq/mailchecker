@@ -1,4 +1,8 @@
-/**
+/*
+ * https://github.com/ziqq/mailchecker
+ * Copyright (C) 2026 Anton Ustinoff
+ * https://github.com/ziqq/mailchecker/blob/main/LICENSE
+ *
  * Service-worker regressions: the bundled worker runs in a VM with mocked
  * `chrome.*` APIs and mocked Gmail, Microsoft Graph and JMAP servers.
  */
@@ -235,8 +239,8 @@ function startWorker({identity = true} = {}) {
     alarms: {clear: async () => {}, create: async () => {}, onAlarm: event()},
     action: {
       setBadgeText: async ({text}) => (badge.text = text),
-      setBadgeBackgroundColor: async () => {},
-      setBadgeTextColor: async () => {},
+      setBadgeBackgroundColor: async ({color}) => (badge.background = color),
+      setBadgeTextColor: async ({color}) => (badge.color = color),
       setTitle: async () => {},
     },
     notifications: {
@@ -299,7 +303,7 @@ test('connects all three providers and counts unread mail', async () => {
   await w.ok({
     type: 'ADD_ACCOUNT',
     provider: 'jmap',
-    input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+    input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
   });
   assert.equal(w.badge.text, '8');
   const state = await w.ok({type: 'STATE'}, 'popup');
@@ -326,7 +330,7 @@ test('message actions update the provider, the list and the badge', async () => 
     .ok({
       type: 'ADD_ACCOUNT',
       provider: 'jmap',
-      input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+      input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
     })
     .then(value => value.state);
   const [gmail, jmap] = accounts;
@@ -367,7 +371,7 @@ test('search merges hits from every account', async () => {
   await w.ok({
     type: 'ADD_ACCOUNT',
     provider: 'jmap',
-    input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+    input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
   });
   const hits = await w.ok({type: 'SEARCH', query: 'report'}, 'app');
   assert.equal(
@@ -394,7 +398,7 @@ test('a rejected JMAP token is reported as needing a new token', async () => {
   await w.ok({
     type: 'ADD_ACCOUNT',
     provider: 'jmap',
-    input: {sessionUrl: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+    input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
   });
   w.stores.local.accounts[0].credentials.token = 'revoked';
   await w.ok({type: 'CHECK'}, 'popup');
@@ -437,4 +441,22 @@ test('preferences are bounded', async () => {
     theme: 'auto',
     palette: 'neutral',
   });
+});
+
+test('preferences keep an accent palette', async () => {
+  const w = startWorker();
+  const pink = await w.ok({type: 'PREFERENCES', value: {palette: 'pink'}}, 'popup');
+  assert.equal(pink.palette, 'pink');
+});
+
+test('the unread badge takes the accent colour', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  assert.deepEqual({...w.badge}, {text: '2', background: '#ff9418', color: '#1a0f00'});
+  await w.ok({type: 'PREFERENCES', value: {palette: 'pink'}}, 'options');
+  assert.deepEqual({...w.badge}, {text: '2', background: '#eb6ca4', color: '#1a0f00'});
+  await w.ok({type: 'PREFERENCES', value: {palette: 'blue'}}, 'options');
+  assert.deepEqual({...w.badge}, {text: '2', background: '#0088ff', color: '#ffffff'});
+  await w.ok({type: 'PREFERENCES', value: {palette: 'neutral'}}, 'options');
+  assert.deepEqual({...w.badge}, {text: '2', background: '#171717', color: '#fafafa'});
 });
