@@ -88,6 +88,7 @@ export function parseInbox(html: string, now = Date.now()): InboxResult {
         pick(block, [
           /class="[^"]*b-message__from__text[^"]*"[^>]*>([^<]+)<\/span>/,
           /class="[^"]*b-messages__message__sender[^"]*"[^>]*>([^<]+)<\/span>/,
+          /class="[^"]*b-messages__from__text[^"]*"[^>]*>(?:<span[^>]*>)?([^<]+)<\/span>/,
         ]);
       return {
         href,
@@ -95,10 +96,12 @@ export function parseInbox(html: string, now = Date.now()): InboxResult {
         subject: pick(block, [
           /class="[^"]*b-message__subject__text[^"]*"[^>]*>([\s\S]*?)<\/span>/,
           /class="[^"]*b-messages__message__subject[^"]*"[^>]*>([\s\S]*?)<\/span>/,
+          /class="[^"]*b-messages__subject[^"]*"[^>]*>(?:<span[^>]*>)?([\s\S]*?)<\/span>/,
         ]),
         snippet: pick(block, [
           /class="[^"]*b-message__firstline[^"]*"[^>]*>([\s\S]*?)<\/span>/,
           /class="[^"]*b-messages__message__firstline[^"]*"[^>]*>([\s\S]*?)<\/span>/,
+          /class="[^"]*b-messages__firstline[^"]*"[^>]*>([\s\S]*?)<\/span>/,
         ]),
         unread: block.includes('b-message_unread') || block.includes('b-messages__message_unread'),
       };
