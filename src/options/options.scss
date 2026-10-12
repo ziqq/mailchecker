@@ -17,7 +17,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 12px 16px;
+  padding: 12px 0;
   background: color-mix(in srgb, var(--bg) 80%, transparent);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
@@ -28,6 +28,8 @@ body {
   justify-content: space-between;
   max-width: 760px;
   margin: 0 auto;
+  // The same width and gutter as `main`, so the logo lines up with the content.
+  padding: 0 16px;
 }
 .bar-actions {
   display: flex;

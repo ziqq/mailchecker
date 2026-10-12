@@ -226,21 +226,14 @@ function SearchField() {
 export function MessageList() {
   const accounts = () => store.state()?.accounts || [];
   const total = () => store.unread().all;
-  const eyebrow = () => {
-    const account = accounts().find(item => item.id === store.account());
-    return account ? account.email : accounts().length > 1 ? `Smart Inbox · ${accounts().length} ящика` : 'Smart Inbox';
-  };
   return (
     <section class="list-pane" aria-label="Письма">
       <header class="list-head">
         <div class="list-title">
-          <div>
-            <p class="eyebrow">{store.results() ? 'Поиск' : eyebrow()}</p>
-            <h1>
-              {store.results() ? `«${store.query()}»` : TITLES[store.filter()]}
-              <span class="dot">.</span>
-            </h1>
-          </div>
+          <h1>
+            {store.results() ? `«${store.query()}»` : TITLES[store.filter()]}
+            <span class="dot">.</span>
+          </h1>
           <Show when={!store.results() && total()}>
             <span class="pill strong">
               {total()} {plural(total(), ['новое', 'новых', 'новых'])}

@@ -30,7 +30,8 @@ Author: Anton Ustinoff. License: [GPL v3](LICENSE) (`GPL-3.0-only`). Every sourc
 1. Commit only when asked. Keep work in the tree while iterating; fold one feature into one commit.
 2. Never duplicate code. Before adding a helper, component, style or constant, search for an existing one and reuse or extend it. The final review must check the change for duplication.
 3. After a context compaction, reread this file in full before continuing.
-4. Report what was verified: automated checks that ran, what was checked by hand in a browser (and at which widths), and what was not checked and why. Passing checks alone do not prove a UI change works.
+4. Every build handed to the maintainer for testing bumps the patch version (`package.json`, `src/manifest.json`, `package-lock.json`) and gets its own `CHANGELOG.md` section, so an installed build can be updated and told apart.
+5. Report what was verified: automated checks that ran, what was checked by hand in a browser (and at which widths), and what was not checked and why. Passing checks alone do not prove a UI change works.
 
 ## Environment setup
 

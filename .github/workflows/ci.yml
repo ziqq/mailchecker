@@ -9,6 +9,12 @@ on:
     branches: ['**']
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Stable tag to validate before producing release artifacts
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -45,9 +51,15 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Build and package
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           npm run build
-          python3 scripts/package.py
+          if [ -n "$RELEASE_TAG" ]; then
+            python3 scripts/package.py --tag "$RELEASE_TAG"
+          else
+            python3 scripts/package.py
+          fi
           # An independent bundle must produce the same ZIP bytes.
           node scripts/build.mjs --outdir "$RUNNER_TEMP/rebuild"
           python3 scripts/package.py --source "$RUNNER_TEMP/rebuild" --output "$RUNNER_TEMP/repackage"
