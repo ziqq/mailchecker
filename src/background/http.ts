@@ -100,8 +100,9 @@ export interface RequestOptions {
   service?: string;
   /**
    * Sends the browser's cookies for a host in [SESSION_HOSTS] and follows its
-   * redirects; a 401/403, or a redirect that leaves [SESSION_HOSTS] (to a
-   * sign-in page), then raises [AuthError].
+   * redirects; a 401, or a redirect that leaves [SESSION_HOSTS] (to a
+   * sign-in page), then raises [AuthError], and a 403/429 means the webmail
+   * is limiting requests.
    */
   session?: boolean;
 }
@@ -148,6 +149,11 @@ async function send(
     throw new Error(`${service} недоступен. Проверьте сеть.`, {cause: error});
   }
   const signedOut = session && !SESSION_HOSTS.includes(new URL(response.url || url).hostname);
+  // Webmail answers too frequent requests with 403/429 (Yandex: «Доступ к сервису временно запрещён»).
+  if (session && !signedOut && (response.status === 403 || response.status === 429)) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error(`«${service}» временно ограничил доступ: слишком много запросов. Проверка повторится позже.`);
+  }
   if (signedOut || ((token || session) && (response.status === 401 || response.status === 403))) {
     await response.body?.cancel().catch(() => {});
     throw new AuthError(session ? `Войдите в «${service}» в этом браузере и повторите.` : undefined);

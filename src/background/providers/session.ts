@@ -66,9 +66,9 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
       return empty;
     },
     inbox: (account, limit) => adapter.inbox(account, limit),
-    async thread(account, {id}) {
-      const item = (await adapter.inbox(account, 50)).messages.find(entry => entry.id === id);
-      if (!item) throw new Error('Письмо больше не во входящих. Откройте веб-почту.');
+    // The stored list already has everything the webmail list gives: no request, so opening
+    // messages does not add load on the webmail (Yandex blocks bursts of requests).
+    async thread(_account, item) {
       return [
         threadMessage({
           id: item.id,

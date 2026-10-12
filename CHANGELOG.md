@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.2
+
+- **CHANGED**: the list title is the size of the logo; the mailbox switcher lines up with the right edge of the list, the actions sit over the reader
+- **FIXED**: opening a message of a mailbox read through the browser's sign-in reloaded the whole webmail Inbox; Yandex Mail blocked such bursts of requests
+- **FIXED**: a webmail that limits requests (403/429) was reported as signed out; it now reads as a temporary limit
+
 ## 0.0.1
 
 - **ADDED**: a full mail client in the toolbar popup (780×600), a mini popup (400×600, one column, Settings → Оформление → Окно) and a full-tab mode (⤢), built with SolidJS

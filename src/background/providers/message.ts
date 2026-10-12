@@ -40,7 +40,7 @@ export interface Provider {
   /** The latest Inbox messages, newest first, and the Inbox unread count. */
   inbox(account: Account, limit: number): Promise<InboxResult>;
   /** Messages of a conversation with bodies, oldest first. */
-  thread(account: Account, message: Pick<MailMessage, 'id' | 'thread'>): Promise<ThreadMessage[]>;
+  thread(account: Account, message: MailMessage): Promise<ThreadMessage[]>;
   /** Applies an action to one message. */
   act(account: Account, message: Pick<MailMessage, 'id'>, action: MessageAction): Promise<void>;
   /** Searches all mail of the account, newest first. */

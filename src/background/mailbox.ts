@@ -187,7 +187,7 @@ export async function thread(accountID: string, messageID: string, threadID: str
   const {mailboxes = {}} = await readStore();
   const item = lookup(mailboxes[accountID], messageID, threadID);
   const messages = await withAccount(accountID, (module, account) =>
-    module.thread(account, {id: item.id, thread: item.thread || threadID}),
+    module.thread(account, {...item, thread: item.thread || threadID}),
   );
   if (item.unread) act(accountID, messageID, 'read').catch(() => {});
   return messages;

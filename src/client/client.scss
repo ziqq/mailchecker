@@ -96,28 +96,46 @@ html[data-narrow='true'] body {
 
 // ---------- Top bar ----------
 
+// The same columns as `.app`: the logo and the switcher sit over the list,
+// lined up with its title and counter; the actions sit over the reader.
 .topbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
   min-width: 0;
-  padding: 9px 12px;
+  padding: 9px 0;
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 85%, transparent);
   backdrop-filter: blur(14px);
-  .logo {
-    margin-right: 4px;
-  }
-  .spacer {
-    flex: 1;
-  }
   // Room for the switcher label; the theme is also set in Settings.
   @media (max-width: 699px) {
-    gap: 2px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    .topbar-lead {
+      justify-content: flex-start;
+      gap: 4px;
+      padding-right: 2px;
+    }
+    .topbar-actions {
+      gap: 2px;
+      padding-left: 0;
+    }
     .theme-toggle {
       display: none;
     }
   }
+}
+.topbar-lead,
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 12px;
+}
+.topbar-lead {
+  justify-content: space-between;
+}
+.topbar-actions {
+  justify-content: flex-end;
 }
 .round.busy .icon {
   animation: spin 0.9s linear infinite;
@@ -303,13 +321,14 @@ html[data-narrow='true'] body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  // The size of the logo.
   h1 {
     margin: 0;
     overflow: hidden;
-    font-size: 30px;
+    font-size: 18px;
     font-weight: 800;
     line-height: 1.05;
-    letter-spacing: -0.055em;
+    letter-spacing: -0.045em;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
