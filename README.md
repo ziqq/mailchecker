@@ -21,6 +21,34 @@ IMAP-only services (Yandex, Mail.ru, iCloud and similar) are not supported yet: 
 - **Badge and notifications** for new mail; theme (auto/light/dark) and accent colour (nine Telegram iOS accents, orange by default, or neutral graphite).
 - **Chromium and Safari** from one codebase — see [Safari](docs/SAFARI.md).
 
+## Screenshots
+
+From the sandbox (`npm run sandbox`) on mock mailboxes.
+
+**Toolbar popup (780×600)**, light and dark:
+
+<p>
+  <img src="docs/screenshots/popup-light.webp" width="49%" alt="Popup in the light theme with a conversation open" />
+  <img src="docs/screenshots/popup-dark.webp" width="49%" alt="Popup in the dark theme" />
+</p>
+
+**Full-screen tab (1440×900):** sidebar, list and reader; light, dark with the pink accent, and the neutral graphite palette:
+
+<img src="docs/screenshots/tab-wide-light.webp" alt="Full-screen tab in the light theme with a conversation open" />
+<img src="docs/screenshots/tab-wide-dark-pink.webp" alt="Full-screen tab in the dark theme with the pink accent" />
+<img src="docs/screenshots/tab-neutral.webp" alt="Full-screen tab with the neutral graphite palette" />
+
+**Phone (390×844):** the list and, in the dark theme, a conversation:
+
+<p>
+  <img src="docs/screenshots/phone-list.webp" width="32%" alt="Phone layout: the message list" />
+  <img src="docs/screenshots/phone-reader-dark.webp" width="32%" alt="Phone layout in the dark theme: a conversation" />
+</p>
+
+**Settings:** mailboxes, theme and accent colour, checks and OAuth:
+
+<img src="docs/screenshots/settings.webp" width="60%" alt="Settings page" />
+
 ## Development
 
 Requires Node.js 20.19+ (24 recommended) and Python 3.
