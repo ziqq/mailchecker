@@ -52,7 +52,7 @@ export const store = createRoot(() => {
     if (hits)
       return [
         {
-          id: 'people' as const,
+          id: 'inbox' as const,
           title: 'Результаты поиска',
           items: hits.map(entry => ({kind: 'message' as const, entry})),
         },

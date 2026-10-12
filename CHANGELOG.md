@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.4
+
+- **CHANGED**: «Все» lists pinned messages and then every other message newest first; the «Люди» category and its section are gone, «Уведомления» and «Рассылки» stay
+- **CHANGED**: toolbar icon: a white rounded envelope on the near-black square
+- **FIXED**: Mail.ru answered `nosdc` while signed in: the webmail session cookie is now issued by `auth.mail.ru/sdc` from the Mail.ru sign-in (add the mailbox again to grant the site)
+
+## 0.0.3
+
+- **FIXED**: Mail.ru stayed «Войдите» while signed in: requests now go to the webmail host `e.mail.ru`, which receives the sign-in cookies (add the mailbox again to grant the site)
+
 ## 0.0.2
 
 - **CHANGED**: the list title is the size of the logo; the mailbox switcher lines up with the right edge of the list, the actions sit over the reader

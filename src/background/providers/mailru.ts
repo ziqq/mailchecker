@@ -3,23 +3,25 @@
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
  *
- * Mail.ru read through the browser's sign-in: the Mail.ru checker API.
+ * Mail.ru read through the browser's sign-in: the Mail.ru webmail API.
  *
- * Mail.ru has no public HTTP mail API; its own browser checkers use
- * `mailru-checker-api.e.mail.ru`: a token for the signed-in address, then the
- * unread Inbox messages. The address is entered by the user; the API refuses
+ * Mail.ru has no public HTTP mail API; its webmail API on `e.mail.ru` gives
+ * a token for the signed-in address, then the unread Inbox messages. The API
+ * also needs the webmail's own session cookie: without it the reply is
+ * `nosdc`, and `auth.mail.ru/sdc` issues it from the Mail.ru sign-in,
+ * redirecting back to the API. The address is entered by the user; the API refuses
  * it unless that mailbox is signed in to Mail.ru in this browser. Replies
  * are untyped and validated field by field.
  *
  * @module background/providers/mailru
  */
 import type {Account, InboxResult, MailMessage} from '../../shared/types';
-import {AuthError, requestJSON} from '../http';
+import {AuthError, requestJSON, type RequestOptions} from '../http';
 import {categorize, message} from './message';
 import {firstAddress, sessionProvider} from './session';
 
-/** The checker API. */
-const API = 'https://mailru-checker-api.e.mail.ru/api/v1';
+/** The webmail API. */
+const API = 'https://e.mail.ru/api/v1';
 
 /** A reply envelope: Mail.ru reports its own status inside a 200 response. */
 interface Reply {
@@ -75,21 +77,28 @@ export function parseUnread(reply: Reply | null, now = Date.now()): InboxResult 
   return {unread: messages.length, messages};
 }
 
+/** Mail.ru's sign-in service that issues the webmail session cookie. */
+const SDC = 'https://auth.mail.ru/sdc';
+
+/** Calls the API; on `nosdc` gets the webmail session cookie through [SDC] and repeats the call once. */
+async function call(url: string, options: RequestOptions): Promise<Reply> {
+  const reply = await requestJSON<Reply>(url, options);
+  if (Number(reply?.status) !== 403 || reply?.body !== 'nosdc') return reply;
+  return requestJSON<Reply>(`${SDC}?from=${encodeURIComponent(url)}`, options);
+}
+
 /** Returns query parameters naming the mailbox. */
 const mailbox = (email: string): string => `email=${encodeURIComponent(email)}&x-email=${encodeURIComponent(email)}`;
 
 /** Reads the unread Inbox messages of [email] with the browser's Mail.ru sign-in. */
 async function unread(email: string): Promise<InboxResult> {
   const options = {session: true, service: 'Почта Mail.ru'};
-  const token = await requestJSON<Reply>(`${API}/tokens?${mailbox(email)}`, options);
+  const token = await call(`${API}/tokens?${mailbox(email)}`, options);
   if (Number(token?.status) === 403) throw new AuthError('Войдите в Почту Mail.ru в этом браузере и повторите.');
   const value = (token?.body as {token?: unknown} | undefined)?.token;
   if (typeof value !== 'string' || !value) throw new Error('Почта Mail.ru вернула неожиданный ответ.');
   return parseUnread(
-    await requestJSON<Reply>(
-      `${API}/messages/status/unread?${mailbox(email)}&token=${encodeURIComponent(value)}&limit=50`,
-      options,
-    ),
+    await call(`${API}/messages/status/unread?${mailbox(email)}&token=${encodeURIComponent(value)}&limit=50`, options),
   );
 }
 

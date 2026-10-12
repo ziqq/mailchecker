@@ -18,7 +18,6 @@ import {openSettings} from './TopBar';
 /** Category filter labels. */
 const FILTERS: {id: Filter; label: string}[] = [
   {id: 'all', label: 'Все'},
-  {id: 'people', label: 'Люди'},
   {id: 'notifications', label: 'Уведомления'},
   {id: 'newsletters', label: 'Рассылки'},
 ];
@@ -27,7 +26,7 @@ const FILTERS: {id: Filter; label: string}[] = [
 const TITLES: Record<Filter, string> = {
   all: 'Входящие',
   pinned: 'Закреплённые',
-  people: 'Люди',
+  people: 'Личные',
   notifications: 'Уведомления',
   newsletters: 'Рассылки',
 };
@@ -117,11 +116,18 @@ function Stack(props: {item: Extract<Item, {kind: 'stack'}>}) {
   const open = () => store.expanded().has(props.item.key);
   const first = () => props.item.entries[0].message;
   const unread = () => props.item.entries.filter(entry => entry.message.unread).length;
+  // A collapsed stack shows the selection of any of its messages (keyboard or after an archive).
+  const selected = () =>
+    !open() &&
+    props.item.entries.some(
+      entry => store.selected()?.id === entry.message.id && store.selected()?.account === entry.account,
+    );
   return (
     <div class="stack-card" classList={{open: open()}}>
       <button
         class="row stack-head"
         type="button"
+        aria-selected={selected()}
         aria-expanded={open()}
         onClick={() => store.toggleStack(props.item.key)}
       >
@@ -296,7 +302,7 @@ export function MessageList() {
             <For each={store.list()}>
               {section => (
                 <div class="section">
-                  <Show when={store.list().length > 1 || store.filter() === 'all'}>
+                  <Show when={store.list().length > 1 || store.results()}>
                     <div class="section-head">
                       <span class="eyebrow">{section.title}</span>
                     </div>

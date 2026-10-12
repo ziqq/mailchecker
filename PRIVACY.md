@@ -15,7 +15,7 @@ Removing an account deletes its credentials and check result. It does not revoke
 - Gmail / Google Workspace: `https://gmail.googleapis.com`; sign-in through `https://accounts.google.com`.
 - Outlook / Microsoft 365: `https://graph.microsoft.com`; sign-in and token refresh through `https://login.microsoftonline.com`.
 - JMAP: the session URL entered in Settings and its API URL on the same origin, after the user grants that origin.
-- Through the browser's sign-in, after the user grants the site in Settings: Gmail `https://mail.google.com` (the unread feed), Yandex Mail `https://mail.yandex.ru` (the lite Inbox page), Mail.ru `https://mailru-checker-api.e.mail.ru` (Mail.ru's checker API).
+- Through the browser's sign-in, after the user grants the site in Settings: Gmail `https://mail.google.com` (the unread feed), Yandex Mail `https://mail.yandex.ru` (the lite Inbox page), Mail.ru `https://e.mail.ru` (the webmail API) and `https://auth.mail.ru` (issues the webmail session cookie from the Mail.ru sign-in).
 
 API requests send no cookies, refuse redirects and time out after 25 seconds. Requests through the browser's sign-in send the browser's own cookies, and only to the three hosts above; they follow the site's redirects and treat a redirect away from it as signed out. Responses are read with size limits.
 

@@ -24,7 +24,8 @@ const LIMIT = 4 * 1024 * 1024;
 export const SESSION_HOSTS: readonly string[] = Object.freeze([
   'mail.google.com',
   'mail.yandex.ru',
-  'mailru-checker-api.e.mail.ru',
+  'e.mail.ru',
+  'auth.mail.ru',
 ]);
 
 /** An expired or revoked credential; the account needs a new sign-in. */

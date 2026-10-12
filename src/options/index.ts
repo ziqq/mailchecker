@@ -72,7 +72,7 @@ const providerRows: {id: ProviderID; title: string; text: string; methods: Metho
     id: 'mailru',
     title: 'Почта Mail.ru',
     text: 'Через вход в Почту Mail.ru в этом браузере.',
-    methods: [{label: 'Добавить', origin: 'https://mailru-checker-api.e.mail.ru/*', address: 'name@mail.ru'}],
+    methods: [{label: 'Добавить', origin: 'https://*.mail.ru/*', address: 'name@mail.ru'}],
   },
   {
     id: 'outlook',

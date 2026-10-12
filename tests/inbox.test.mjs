@@ -86,7 +86,7 @@ test('stacks repeated notifications from the same sender and subject', () => {
   );
 });
 
-test('Smart Inbox sections put pinned first and skip empty sections', () => {
+test('Smart Inbox puts pinned first, then one list of the rest, and skips empty sections', () => {
   const entries = [message('1', {pinned: true}), message('2', {category: 'newsletters'}), message('3')].map(m => ({
     account: 'a',
     message: m,
@@ -96,7 +96,7 @@ test('Smart Inbox sections put pinned first and skip empty sections', () => {
       .sections(entries, 'all')
       .map(section => section.id)
       .join(),
-    'pinned,people,newsletters',
+    'pinned,inbox',
   );
   assert.equal(inbox.sections(entries, 'pinned')[0].items.length, 1);
   assert.equal(inbox.sections(entries, 'notifications')[0].items.length, 0);
@@ -204,5 +204,5 @@ const http = await load('src/background/http.ts');
 test('session requests send the browser sign-in only to the allowed webmail hosts', async () => {
   await assert.rejects(http.requestText('https://example.com/inbox', {session: true}), /не может использовать вход/);
   await assert.rejects(http.requestText('http://mail.google.com/mail/u/0/feed/atom', {session: true}), /HTTPS/);
-  assert.deepEqual([...http.SESSION_HOSTS], ['mail.google.com', 'mail.yandex.ru', 'mailru-checker-api.e.mail.ru']);
+  assert.deepEqual([...http.SESSION_HOSTS], ['mail.google.com', 'mail.yandex.ru', 'e.mail.ru', 'auth.mail.ru']);
 });

@@ -48,7 +48,7 @@ Keyboard: `J`/`K` or arrows move, `E` archives, `#`/`Delete` trashes, `U` toggle
 
 ### Smart Inbox
 
-`providers/message.ts#categorize` assigns **people**, **notifications** or **newsletters** from Gmail category labels, `List-Unsubscribe`/`Precedence` headers (Graph: `unsubscribeEnabled`) and automated sender addresses. `shared/inbox.ts` merges accounts newest first, shows pinned messages first and stacks notifications with the same sender and subject into one `×N` item.
+`providers/message.ts#categorize` assigns **people**, **notifications** or **newsletters** from Gmail category labels, `List-Unsubscribe`/`Precedence` headers (Graph: `unsubscribeEnabled`) and automated sender addresses. `shared/inbox.ts` merges accounts newest first into one list (pinned messages first; «Уведомления» and «Рассылки» filter by category) and stacks notifications with the same sender and subject into one `×N` item.
 
 ### Reading safely
 
@@ -88,7 +88,7 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 | `providers/outlook.ts`                            | Microsoft Graph: Inbox list, conversation messages and attachments, PATCH/move, `$search`.                                                                                          |
 | `providers/jmap.ts`                               | JMAP: Mailbox/Email query/get/set, Thread/get with body values, `text` search.                                                                                                      |
 | `providers/session.ts`                            | Mailboxes read through the browser's sign-in: no credentials; Inbox only, actions and bodies in the webmail.                                                                        |
-| `providers/gmailweb.ts`, `yandex.ts`, `mailru.ts` | Gmail unread Atom feed, Yandex lite Inbox page, Mail.ru checker API; parsers are pure and tested.                                                                                   |
+| `providers/gmailweb.ts`, `yandex.ts`, `mailru.ts` | Gmail unread Atom feed, Yandex lite Inbox page, Mail.ru webmail API; parsers are pure and tested.                                                                                   |
 
 ### Stored data
 
