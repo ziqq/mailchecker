@@ -18,7 +18,7 @@ import type {Account, InboxResult, MailMessage, MessageAction} from '../../share
 import {requestText} from '../http';
 import {readCookie} from '../platform';
 import {categorize, count, decodeEntities, message} from './message';
-import {elements, firstAddress, markupText, sessionProvider} from './session';
+import {elements, firstAddress, markupText, sessionProvider, verifyMailbox} from './session';
 import {t} from '../../shared/i18n';
 
 /** The first signed-in account in Gmail. */
@@ -35,6 +35,8 @@ const CODES: Partial<Record<MessageAction, number>> = {archive: 1, read: 3, pin:
 
 /** The page key of the Gmail web client, cached for the worker's lifetime. */
 let pageKey = '';
+/** The mailbox whose page key is cached. */
+let pageOwner = '';
 
 /**
  * Returns the page key of a Gmail page: `ID_KEY` in the light client, the
@@ -134,28 +136,41 @@ export function parsePrint(html: string): string {
 }
 
 /** Reads the feed with the browser's Google sign-in. */
-const feed = async (): Promise<ReturnType<typeof parseFeed>> => parseFeed(await requestText(FEED, OPTIONS));
+async function feed(account?: Account): Promise<ReturnType<typeof parseFeed>> {
+  const value = parseFeed(await requestText(FEED, OPTIONS));
+  if (account) verifyMailbox(account.email, value.email);
+  if (pageOwner !== value.email) {
+    pageOwner = value.email;
+    pageKey = '';
+  }
+  return value;
+}
 
 /** Gmail through the browser's sign-in. */
 export const gmailWeb = sessionProvider({
   label: 'Gmail',
+  unreadOnly: true,
   async connect() {
     const {email} = await feed();
     if (!email) throw new Error(t('error_gmail_address'));
     return email;
   },
-  async inbox(_account: Account, limit: number) {
-    const {unread, messages} = await feed();
+  async inbox(account: Account, limit: number) {
+    const {unread, messages} = await feed(account);
     return {unread, messages: messages.slice(0, limit)};
   },
   webURL: (_account: Account, item?: MailMessage | null) =>
     item?.id
       ? `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(item.id)}`
       : 'https://mail.google.com/mail/u/0/#inbox',
-  async body(_account, item) {
+  async body(account, item) {
+    await feed(account);
     const url = `https://mail.google.com/mail/u/0/?ui=2&view=pt&dsqt=1&search=all&msg=${encodeURIComponent(item.id)}`;
     return {html: parsePrint(await requestText(url, OPTIONS))};
   },
   actions: Object.keys(CODES) as MessageAction[],
-  act: (_account, item, action) => act(item, action),
+  async act(account, item, action) {
+    await feed(account);
+    await act(item, action);
+  },
 });

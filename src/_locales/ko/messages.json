@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "로그인 중에 메일함이 변경되었습니다. 다시 시도하세요."
   },
+  "error_account_mismatch": {
+    "message": "연결된 메일함으로 로그인하세요: $1."
+  },
   "error_account_missing": {
     "message": "메일함을 찾을 수 없습니다."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "고정됨"
+  },
+  "label_resize_list": {
+    "message": "메일 목록 너비 조절"
   },
   "label_sections": {
     "message": "섹션"

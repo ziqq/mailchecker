@@ -47,6 +47,14 @@ const LIST_FIELDS =
 const call = <T>(credentials: Credentials, path: string, options: RequestOptions = {}) =>
   requestJSON<T>(API + path, {...options, token: credentials.token, service: 'Microsoft Graph'});
 
+/** Returns the mailbox address authenticated by [credentials]. */
+async function address(credentials: Credentials): Promise<string> {
+  const me = await call<{mail?: unknown; userPrincipalName?: unknown}>(credentials, '?$select=mail,userPrincipalName');
+  const email = me?.mail || me?.userPrincipalName;
+  if (typeof email !== 'string' || !email.trim()) throw new Error(t('error_no_address', 'Microsoft'));
+  return email;
+}
+
 /** Formats a Graph recipient. */
 const sender = (value?: Recipient): string => addresses(value?.emailAddress ? [value.emailAddress] : []);
 
@@ -82,14 +90,10 @@ export const outlook: Provider = {
 
   async connect() {
     const credentials = await oauth.microsoft();
-    const me = await call<{mail?: unknown; userPrincipalName?: unknown}>(
-      credentials,
-      '?$select=mail,userPrincipalName',
-    );
-    const email = me?.mail || me?.userPrincipalName;
-    if (typeof email !== 'string') throw new Error(t('error_no_address', 'Microsoft'));
-    return {email, credentials, settings: {}};
+    return {email: await address(credentials), credentials, settings: {}};
   },
+
+  address,
 
   async renew(account) {
     if (!account.credentials.refreshToken) throw new AuthError();

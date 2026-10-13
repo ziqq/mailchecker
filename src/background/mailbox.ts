@@ -32,10 +32,22 @@ const NOTIFY_WINDOW = 24 * 60 * 60 * 1000;
 /** Allowed message actions. */
 const ACTIONS: readonly MessageAction[] = ['archive', 'trash', 'read', 'unread', 'pin', 'unpin'];
 
+/** Account mutation generations and actions still waiting for the provider. */
+const revisions = new Map<string, {version: number; actions: number}>();
+
+/** Returns the current mutation generation of an account. */
+function revision(id: string): {version: number; actions: number} {
+  let value = revisions.get(id);
+  if (!value) revisions.set(id, (value = {version: 0, actions: 0}));
+  return value;
+}
+
 /** Checks every account, sharing an in-flight run. */
 export function checkAll(): Promise<void> {
   running ??= (async () => {
     const store = await readStore();
+    const connected = new Set((store.accounts || []).map(account => account.id));
+    for (const id of revisions.keys()) if (!connected.has(id)) revisions.delete(id);
     await Promise.all((store.accounts || []).map(account => checkAccount(account.id)));
     await updateBadge();
   })().finally(() => {
@@ -46,12 +58,18 @@ export function checkAll(): Promise<void> {
 
 /** Checks one account and records the result or error. */
 export async function checkAccount(id: string): Promise<void> {
+  const changes = revision(id);
+  const version = changes.version;
   const before = await readStore();
   const settings = preferences(before.preferences);
   const previous = before.mailboxes?.[id];
   let result: Mailbox;
+  let unreadOnly = false;
   try {
-    const value = await withAccount(id, (module, account) => module.inbox(account, settings.limit));
+    const value = await withAccount(id, (module, account) => {
+      unreadOnly = module.unreadOnly === true;
+      return module.inbox(account, settings.limit);
+    });
     result = {...value, error: '', reauth: false, checkedAt: Date.now(), notified: true};
   } catch (error) {
     const failure = error as Error & {reauth?: boolean};
@@ -67,8 +85,20 @@ export async function checkAccount(id: string): Promise<void> {
   let account: Account | undefined;
   await writeStore(({accounts = [], mailboxes = {}}) => {
     account = accounts.find(item => item.id === id);
-    // The account may have been removed while the check ran.
-    return account ? {mailboxes: {...mailboxes, [id]: result}} : {};
+    // A check cannot restore mail changed by an action while its provider snapshot was in flight.
+    if (!account || changes.version !== version || changes.actions) {
+      account = undefined;
+      return {};
+    }
+    if (unreadOnly && !result.error) {
+      const listed = new Set(result.messages.map(item => item.id));
+      const read = (mailboxes[id]?.messages || []).filter(item => !item.unread && !listed.has(item.id));
+      result = {
+        ...result,
+        messages: [...result.messages, ...read].sort((a, b) => b.date - a.date).slice(0, settings.limit),
+      };
+    }
+    return {mailboxes: {...mailboxes, [id]: result}};
   });
   if (account && previous?.notified && !result.error && settings.notifications) {
     const known = new Set(previous.messages.map(item => item.id));
@@ -151,9 +181,23 @@ function lookup(box: Mailbox | undefined, id: string, thread = ''): MailMessage 
 export async function act(accountID: string, messageID: string, action: MessageAction): Promise<void> {
   if (!ACTIONS.includes(action)) throw new Error(t('error_unknown_action'));
   if (!messageID || messageID.length > 512) throw new Error(t('error_bad_message'));
-  const {mailboxes = {}} = await readStore();
-  const item = lookup(mailboxes[accountID], messageID);
-  await withAccount(accountID, (module, account) => module.act(account, item, action));
+  const changes = revision(accountID);
+  changes.version++;
+  changes.actions++;
+  try {
+    const {mailboxes = {}} = await readStore();
+    const item = lookup(mailboxes[accountID], messageID);
+    await withAccount(accountID, (module, account) => module.act(account, item, action));
+    await updateMessage(accountID, messageID, action);
+  } finally {
+    changes.actions--;
+    changes.version++;
+  }
+}
+
+/** Reconciles a provider-confirmed action with the stored list and badge. */
+async function updateMessage(accountID: string, messageID: string, action: MessageAction): Promise<void> {
+  revision(accountID).version++;
   await writeStore(({mailboxes: current = {}}) => {
     const box = current[accountID];
     const listed = box?.messages.find(entry => entry.id === messageID);
@@ -190,7 +234,16 @@ export async function thread(accountID: string, messageID: string, threadID: str
   const messages = await withAccount(accountID, (module, account) =>
     module.thread(account, {...item, thread: item.thread || threadID}),
   );
-  if (item.unread) act(accountID, messageID, 'read').catch(() => {});
+  const target = messages.find(message => message.id === messageID);
+  if (item.unread || target?.unread) {
+    try {
+      if (target && !target.unread) await updateMessage(accountID, messageID, 'read');
+      else await act(accountID, messageID, 'read');
+      if (target) target.unread = false;
+    } catch (error) {
+      if ((error as {reauth?: boolean})?.reauth) throw error;
+    }
+  }
   return messages;
 }
 

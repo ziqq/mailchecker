@@ -22,6 +22,7 @@ import {jmap} from './providers/jmap';
 import {mailru} from './providers/mailru';
 import type {Provider} from './providers/message';
 import {outlook} from './providers/outlook';
+import {verifyMailbox} from './providers/session';
 import {readStore, writeStore} from './storage';
 import {yandex} from './providers/yandex';
 import {t} from '../shared/i18n';
@@ -133,9 +134,13 @@ export async function removeAccount(id: string): Promise<void> {
 /**
  * Stores new credentials if the account still has the credentials they replace.
  *
- * @throws When the account was removed or replaced meanwhile.
+ * OAuth credentials must resolve to the connected mailbox before they are saved.
+ *
+ * @throws When the authenticated mailbox differs, or the account was removed or replaced meanwhile.
  */
 async function saveCredentials(account: Account, credentials: Credentials): Promise<Account> {
+  const address = adapter(account).address;
+  if (address) verifyMailbox(account.email, await address(credentials));
   let updated!: Account;
   await writeStore(({accounts = []}) => {
     const current = accounts.find(item => item.id === account.id);

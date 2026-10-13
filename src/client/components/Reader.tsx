@@ -170,7 +170,10 @@ function Composer(props: {entry: Entry}) {
 export function Reader() {
   const [allowed, setAllowed] = createSignal<ReadonlySet<string>>(new Set());
   const [conversation] = createResource(
-    () => store.selected(),
+    () => {
+      const selection = store.selected();
+      return selection ? {...selection, version: store.threadVersion()} : null;
+    },
     selection => store.thread(selection),
   );
   const entry = () => store.current();

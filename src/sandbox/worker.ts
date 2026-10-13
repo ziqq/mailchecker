@@ -15,6 +15,7 @@
 import {preferences} from '../shared/preferences';
 import type {MailMessage, Preferences, PublicState, Reply, Request, SearchHit, ThreadMessage} from '../shared/types';
 import {createFixtures, type Fixtures} from './fixtures';
+import {t} from '../shared/i18n';
 
 /** Simulated worker latency, so loading states are visible. */
 const LATENCY = 120;
@@ -34,6 +35,14 @@ function current(): Fixtures & {preferences: Preferences} {
         popup: query.get('popup') ?? undefined,
       }),
     };
+    const signedOut = query.get('reauth');
+    if (signedOut && data.mailboxes[signedOut])
+      data.mailboxes[signedOut] = {
+        ...data.mailboxes[signedOut],
+        error: t('error_account_mismatch', data.accounts.find(account => account.id === signedOut)!.email),
+        reauth: true,
+      };
+    if (query.get('mail') === 'percentage') data.threads['gmail/g5'][0].html += '<style>html,body{height:100%}</style>';
   }
   return data;
 }
@@ -113,9 +122,13 @@ function check(): void {
 function thread(id: string, message: string, key: string): ThreadMessage[] {
   const {mailboxes, archive, threads, accounts} = current();
   const fixture = threads[`${account(id)}/${key || message}`];
-  if (fixture) return fixture;
   const item = [...mailboxes[id].messages, ...(archive[id] || [])].find(entry => entry.id === message);
   if (!item) throw new Error('Письмо не найдено.');
+  if (item.unread) {
+    if (mailboxes[id].messages.includes(item)) act(id, message, 'read');
+    else archive[id] = archive[id].map(entry => (entry.id === message ? {...entry, unread: false} : entry));
+  }
+  if (fixture) return fixture.map(entry => (entry.id === message ? {...entry, unread: false} : entry));
   const email = accounts.find(entry => entry.id === id)!.email;
   return [
     {
@@ -127,7 +140,7 @@ function thread(id: string, message: string, key: string): ThreadMessage[] {
       date: item.date,
       html: '',
       text: item.snippet,
-      unread: item.unread,
+      unread: false,
       attachments: item.attachments ? [{name: 'Вложение.pdf', size: 120_000, type: 'application/pdf'}] : [],
     },
   ];
@@ -170,8 +183,18 @@ function answer(message: Request): unknown {
       return sandbox.preferences;
     }
     case 'SIGN_IN': {
-      const {mailboxes} = current();
+      const {accounts, mailboxes} = current();
       const id = account(message.account);
+      const stored = accounts.find(item => item.id === id)!;
+      if (stored.browser) {
+        const webmail = {
+          gmail: 'https://mail.google.com/mail/u/0/#inbox',
+          yandex: 'https://mail.yandex.ru/',
+          mailru: 'https://e.mail.ru/inbox/',
+        };
+        window.open(webmail[stored.provider as keyof typeof webmail], '_blank', 'noopener');
+        return state();
+      }
       mailboxes[id] = {...mailboxes[id], error: '', reauth: false, checkedAt: Date.now()};
       return state();
     }

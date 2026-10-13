@@ -64,6 +64,14 @@ const METADATA = ['From', 'Subject', 'Date', 'List-Unsubscribe', 'Precedence']
 const call = <T>(credentials: Credentials, path: string, options: RequestOptions = {}) =>
   requestJSON<T>(API + path, {...options, token: credentials.token, service: 'Gmail'});
 
+/** Returns the mailbox address authenticated by [credentials]. */
+async function address(credentials: Credentials): Promise<string> {
+  const profile = await call<{emailAddress?: unknown}>(credentials, '/profile');
+  if (typeof profile?.emailAddress !== 'string' || !profile.emailAddress.trim())
+    throw new Error(t('error_no_address', 'Gmail'));
+  return profile.emailAddress;
+}
+
 /** Returns headers of a part by lower-case name. */
 const headersOf = (part?: GmailPart): Record<string, string> =>
   Object.fromEntries((part?.headers || []).map(h => [String(h.name).toLowerCase(), String(h.value)]));
@@ -138,10 +146,10 @@ export const gmail: Provider = {
 
   async connect() {
     const credentials = await oauth.google({interactive: true});
-    const profile = await call<{emailAddress?: unknown}>(credentials, '/profile');
-    if (typeof profile?.emailAddress !== 'string') throw new Error(t('error_no_address', 'Gmail'));
-    return {email: profile.emailAddress, credentials, settings: {}};
+    return {email: await address(credentials), credentials, settings: {}};
   },
+
+  address,
 
   renew: account => oauth.google({loginHint: account.email, interactive: false}),
 

@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.0.21
+
+- **ADDED**: regression coverage for audit #6: mailbox identity, provider acknowledgements, concurrent actions, conversation caches, read persistence, empty lists and responsive mail-frame sizing
+- **CHANGED**: toolbar icon fills its square canvas with a blue tile and a bold white envelope
+- **FIXED**: Yandex recognises the lite account menu and equivalent dot/dash mailbox aliases instead of rejecting a valid session
+- **FIXED**: browser-session sign-in buttons open the webmail instead of repeating the failed background check
+- **FIXED**: Settings leaves a compact 24 px bottom inset below the version
+
+## 0.0.20
+
+- **CHANGED**: read mail from unread-only Gmail and Mail.ru feeds stays in the bounded Inbox cache until archived or deleted
+- **FIXED**: Gmail and Yandex browser sessions verify the connected mailbox before reading bodies or applying actions
+- **FIXED**: an old Inbox check cannot restore mail changed by a concurrent action
+- **FIXED**: conversations refresh when Inbox contents change or a reply is sent; unread search hits are marked read and reconciled in the client
+- **FIXED**: Yandex's mark-read action opens the verified message page instead of only changing the local flag
+- **FIXED**: empty searches and categories show their existing empty-state message
+- **FIXED**: HTML mail tables and blocked images fit the reader; iframe sizing uses intrinsic body height and the observed document's animation frame to avoid ResizeObserver feedback
+- **FIXED**: unread dots are centred in the gap between the row edge and the avatar's account ring
+
+## 0.0.19
+
+- **FIXED**: Gmail and Outlook verify the authenticated mailbox before replacing credentials during sign-in or silent renewal
+- **FIXED**: JMAP archive preserves other mailbox memberships; rejected or unacknowledged message actions leave local mail unchanged
+
+## 0.0.18
+
+- **FIXED**: message-list avatars and unread dots share the vertical centre of each row, including notification stacks and nested messages
+
+## 0.0.17
+
+- **FIXED**: the reader keeps its action buttons after a read message leaves an unread-only Inbox feed or the visible list; delete and archive still target the open message
+
+## 0.0.16
+
+- **FIXED**: the blocked-images notice and the mail body use the same horizontal inset, aligning the notice controls with the body content
+
+## 0.0.15
+
+- **CHANGED**: toolbar icon: a larger blue envelope with a white flap and a transparent background, readable on light and dark browser toolbars with the unread badge
+
+## 0.0.14
+
+- **ADDED**: a draggable boundary between the message list and reader, with a bounded range and keyboard resizing; the top bar stays in place
+
 ## 0.0.13
 
 - **FIXED**: dark HTML mail drew grey bands; every grey or near-white background is now the page colour, so the message is one dark surface

@@ -230,7 +230,12 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
                   onclick: async (event: Event) => {
                     const button = event.currentTarget as HTMLButtonElement;
                     if (account.browser || (await allowIdentity()))
-                      await run(button, {type: 'SIGN_IN', account: account.id}, () => t('signed_in', account.email));
+                      await run(button, {type: 'SIGN_IN', account: account.id}, () =>
+                        t(
+                          account.browser ? 'error_sign_in_webmail' : 'signed_in',
+                          account.browser ? account.label : account.email,
+                        ),
+                      );
                   },
                 },
                 t('action_sign_in_again'),

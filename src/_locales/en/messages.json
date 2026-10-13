@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "The mailbox changed during sign-in. Try again."
   },
+  "error_account_mismatch": {
+    "message": "Sign in with the connected mailbox: $1."
+  },
   "error_account_missing": {
     "message": "Mailbox not found."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Pinned"
+  },
+  "label_resize_list": {
+    "message": "Resize message list"
   },
   "label_sections": {
     "message": "Sections"

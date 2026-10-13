@@ -66,9 +66,6 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
       onClick={() => store.select(props.entry)}
       onKeyDown={event => event.key === 'Enter' && store.select(props.entry)}
     >
-      <Show when={message().unread}>
-        <span class="unread-dot" />
-      </Show>
       <span
         class="avatar"
         classList={{ringed: accounts().length > 1}}
@@ -76,6 +73,9 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
       >
         {initial(senderName(message().from))}
       </span>
+      <Show when={message().unread}>
+        <span class="unread-dot" />
+      </Show>
       <div class="row-body">
         <div class="row-top">
           <span class="from">{senderName(message().from)}</span>
@@ -298,7 +298,7 @@ export function MessageList() {
               </button>
             </div>
           </Match>
-          <Match when={!store.list().length}>
+          <Match when={!store.list().some(section => section.items.length)}>
             <div class="empty small">
               <h2>
                 {store.results() ? t('search_empty') : t('inbox_empty')}

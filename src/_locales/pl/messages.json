@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "Skrzynka zmieniła się podczas logowania. Spróbuj ponownie."
   },
+  "error_account_mismatch": {
+    "message": "Zaloguj się do połączonej skrzynki: $1."
+  },
   "error_account_missing": {
     "message": "Nie znaleziono skrzynki."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Przypięte"
+  },
+  "label_resize_list": {
+    "message": "Zmień szerokość listy wiadomości"
   },
   "label_sections": {
     "message": "Sekcje"

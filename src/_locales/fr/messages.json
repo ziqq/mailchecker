@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "La boîte a changé pendant la connexion. Réessayez."
   },
+  "error_account_mismatch": {
+    "message": "Connectez-vous avec la boîte mail associée : $1."
+  },
   "error_account_missing": {
     "message": "Boîte introuvable."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Épinglés"
+  },
+  "label_resize_list": {
+    "message": "Modifier la largeur de la liste des messages"
   },
   "label_sections": {
     "message": "Sections"

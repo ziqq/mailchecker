@@ -23,6 +23,10 @@ import {t} from '../../shared/i18n';
 export interface SessionAdapter {
   /** Display name, also used in sign-in messages. */
   label: string;
+  /** The Inbox feed omits read messages. */
+  unreadOnly?: boolean;
+  /** Successfully loading a body marks that message read in the webmail. */
+  bodyMarksRead?: boolean;
   /** Verifies the session and returns the mailbox address; [email] is the address the user entered, if any. */
   connect(email?: string): Promise<string>;
   /** The latest Inbox messages and the unread count. */
@@ -99,6 +103,12 @@ export function firstAddress(value: string): string {
 /** A message for features the browser session cannot do; the webmail has them. */
 const IN_WEBMAIL = (label: string) => t('error_in_webmail', label);
 
+/** Rejects a session owned by a different or unidentified mailbox. */
+export function verifyMailbox(expected: string, actual: string): void {
+  if (!actual || actual.trim().toLowerCase() !== expected.trim().toLowerCase())
+    throw new AuthError(t('error_account_mismatch', expected));
+}
+
 /**
  * Returns a [Provider] for a mailbox read through the browser's sign-in.
  *
@@ -109,6 +119,7 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
   const empty: Credentials = {token: ''};
   return {
     label: adapter.label,
+    unreadOnly: adapter.unreadOnly,
     async connect(input): Promise<Connection> {
       return {email: await adapter.connect(input?.email), credentials: empty, settings: {browser: true}};
     },
@@ -123,7 +134,12 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
     // One request for the body at most; without it the stored list entry is shown, so opening
     // messages does not add load on the webmail (Yandex blocks bursts of requests).
     async thread(account, item) {
-      const body = adapter.body ? await adapter.body(account, item).catch(() => null) : null;
+      const body = adapter.body
+        ? await adapter.body(account, item).catch(error => {
+            if (error instanceof AuthError) throw error;
+            return null;
+          })
+        : null;
       const full = Boolean(body?.html?.trim() || body?.text?.trim());
       return [
         threadMessage({
@@ -131,7 +147,7 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
           from: item.from,
           subject: item.subject,
           date: item.date,
-          unread: item.unread,
+          unread: adapter.bodyMarksRead && body ? false : item.unread,
           html: full ? body?.html : '',
           text: full ? body?.text : t('snippet_full_text', item.snippet),
         }),

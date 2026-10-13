@@ -32,12 +32,16 @@ export interface Connection {
 export interface Provider {
   /** Display name. */
   readonly label: string;
+  /** The Inbox endpoint lists unread mail only; known read metadata must be retained locally. */
+  readonly unreadOnly?: boolean;
   /** Verifies and creates an account; JMAP uses the form values, browser-session mailboxes the address. */
   connect(input?: AccountInput): Promise<Connection>;
   /** Silent renewal; throws `AuthError` when a sign-in is needed. */
   renew(account: Account): Promise<Credentials>;
   /** Interactive sign-in for an existing account. */
   signIn(account: Account): Promise<Credentials>;
+  /** Resolves the mailbox address for new OAuth credentials before they replace an existing account. */
+  address?(credentials: Credentials): Promise<string>;
   /** The latest Inbox messages, newest first, and the Inbox unread count. */
   inbox(account: Account, limit: number): Promise<InboxResult>;
   /** Messages of a conversation with bodies, oldest first. */

@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "登录过程中邮箱发生了变化。请重试。"
   },
+  "error_account_mismatch": {
+    "message": "请使用已连接的邮箱登录：$1。"
+  },
   "error_account_missing": {
     "message": "找不到邮箱。"
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "已置顶"
+  },
+  "label_resize_list": {
+    "message": "调整邮件列表宽度"
   },
   "label_sections": {
     "message": "分区"

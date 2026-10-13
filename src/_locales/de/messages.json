@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "Das Postfach hat sich während der Anmeldung geändert. Versuchen Sie es erneut."
   },
+  "error_account_mismatch": {
+    "message": "Melden Sie sich mit dem verbundenen Postfach an: $1."
+  },
   "error_account_missing": {
     "message": "Postfach nicht gefunden."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Angeheftet"
+  },
+  "label_resize_list": {
+    "message": "Breite der Nachrichtenliste ändern"
   },
   "label_sections": {
     "message": "Bereiche"

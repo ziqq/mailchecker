@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "El buzón cambió durante el inicio de sesión. Inténtalo de nuevo."
   },
+  "error_account_mismatch": {
+    "message": "Inicia sesión con el buzón conectado: $1."
+  },
   "error_account_missing": {
     "message": "Buzón no encontrado."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Fijados"
+  },
+  "label_resize_list": {
+    "message": "Cambiar el ancho de la lista de mensajes"
   },
   "label_sections": {
     "message": "Secciones"

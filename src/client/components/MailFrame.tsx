@@ -29,13 +29,38 @@ export interface MailFrameProps {
 export function MailFrame(props: MailFrameProps) {
   let frame!: HTMLIFrameElement;
   let observer: ResizeObserver | undefined;
+  let animation: number | undefined;
+  let view: (Window & typeof globalThis) | null = null;
+  let disposed = false;
 
   /** Fits the frame height to its document; skips an unchanged height. */
   const fit = () => {
-    const doc = frame.contentDocument;
-    if (!doc?.documentElement) return;
-    const height = `${Math.ceil(doc.documentElement.scrollHeight)}px`;
-    if (frame.style.height !== height) frame.style.height = height;
+    animation = undefined;
+    const body = frame.contentDocument?.body;
+    if (disposed || !body || !frame.isConnected) return;
+    const height = `${Math.ceil(Math.max(body.scrollHeight, body.getBoundingClientRect().height))}px`;
+    if (frame.style.height === height) return;
+    observer?.disconnect();
+    frame.style.height = height;
+    if (view) {
+      const observed = observer;
+      animation = view.requestAnimationFrame(() => {
+        animation = undefined;
+        if (observer === observed && frame.contentDocument?.body === body) observed?.observe(body);
+      });
+    }
+  };
+
+  /** Schedules one fit in the observed document's next frame, outside its resize-delivery cycle. */
+  const scheduleFit = () => {
+    if (!disposed && animation === undefined && view) animation = view.requestAnimationFrame(fit);
+  };
+
+  /** Cancels work owned by the previous frame document. */
+  const disconnect = () => {
+    observer?.disconnect();
+    if (animation !== undefined) view?.cancelAnimationFrame(animation);
+    animation = undefined;
   };
 
   createEffect(() => {
@@ -48,17 +73,21 @@ export function MailFrame(props: MailFrameProps) {
   });
 
   const onLoad = () => {
-    fit();
-    observer?.disconnect();
+    if (disposed || !frame.isConnected) return;
+    disconnect();
+    view = frame.contentDocument?.defaultView || null;
     const body = frame.contentDocument?.body;
-    if (body) {
-      // Resizing the frame inside the observer callback loops ("ResizeObserver loop completed
-      // with undelivered notifications"); fit on the next frame instead.
-      observer = new ResizeObserver(() => requestAnimationFrame(fit));
+    if (body && view) {
+      observer = new view.ResizeObserver(scheduleFit);
       observer.observe(body);
+      scheduleFit();
     }
   };
-  onCleanup(() => observer?.disconnect());
+  onCleanup(() => {
+    disposed = true;
+    disconnect();
+    view = null;
+  });
 
   return (
     <iframe

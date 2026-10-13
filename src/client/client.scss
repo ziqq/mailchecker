@@ -37,7 +37,7 @@ html[data-narrow='true'] body {
 
 .app {
   display: grid;
-  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  grid-template-columns: var(--list-width, 340px) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     'top top'
@@ -57,11 +57,41 @@ html[data-narrow='true'] body {
 .reader {
   grid-area: reader;
 }
+.pane-divider {
+  grid-area: list;
+  justify-self: end;
+  position: relative;
+  z-index: 2;
+  width: 9px;
+  margin-right: -4px;
+  cursor: col-resize;
+  touch-action: none;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0 4px;
+  }
+  &:hover::after,
+  &:focus-visible::after,
+  .resizing &::after {
+    background: var(--primary);
+  }
+  &:focus-visible {
+    outline: none;
+  }
+}
+.app.resizing {
+  cursor: col-resize;
+  user-select: none;
+  .mail-frame {
+    pointer-events: none;
+  }
+}
 
 @media (min-width: 1100px) {
   html[data-mode='app'] {
     .app {
-      grid-template-columns: 236px minmax(320px, 400px) minmax(0, 1fr);
+      grid-template-columns: 236px var(--list-width, 400px) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
       grid-template-areas: 'side list reader';
     }
@@ -75,6 +105,9 @@ html[data-narrow='true'] body {
 }
 
 @media (max-width: 699px) {
+  .pane-divider {
+    display: none;
+  }
   .app {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
@@ -96,8 +129,7 @@ html[data-narrow='true'] body {
 
 // ---------- Top bar ----------
 
-// The same columns as `.app`: the logo and the switcher sit over the list,
-// lined up with its title and counter; the actions sit over the reader.
+// Fixed columns keep the logo, mailbox switcher and actions in place when the list is resized.
 .topbar {
   display: grid;
   grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
@@ -394,6 +426,7 @@ kbd {
 .row {
   position: relative;
   display: flex;
+  align-items: center;
   gap: 10px;
   width: 100%;
   padding: 9px 10px 9px 16px;
@@ -421,12 +454,17 @@ kbd {
 }
 .unread-dot {
   position: absolute;
-  top: 16px;
+  top: 50%;
   left: 5px;
+  transform: translateY(-50%);
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--primary);
+}
+// The account ring extends 4 px outside the avatar; centre the dot in the remaining 12 px gutter.
+.avatar.ringed + .unread-dot {
+  left: 3px;
 }
 .avatar {
   width: 32px;
@@ -544,9 +582,6 @@ kbd {
       0 4px 0 -1px var(--surface-2),
       0 4px 0 0 var(--border);
   }
-}
-.stack-head {
-  align-items: center;
 }
 .count-badge {
   display: grid;
@@ -753,7 +788,7 @@ kbd {
   align-items: center;
   gap: 8px;
   margin: 0 14px 10px;
-  padding: 7px 10px;
+  padding: 7px 18px;
   border-radius: 10px;
   background: var(--surface-2);
   color: var(--muted);

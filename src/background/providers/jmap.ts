@@ -174,8 +174,12 @@ async function patch(account: Account, action: string): Promise<Record<string, u
   const roles = await mailboxes(account);
   const target = roles[action === 'archive' ? 'archive' : 'trash'];
   if (!target) throw new Error(t('error_no_folder', t(action === 'archive' ? 'folder_archive' : 'folder_trash')));
+  if (action === 'archive') return {[mailboxPath(roles.inbox.id)]: null, [mailboxPath(target.id)]: true};
   return {mailboxIds: {[target.id]: true}};
 }
+
+/** Returns a JSON Pointer patch path for a mailbox membership. */
+const mailboxPath = (id: string): string => `mailboxIds/${id.replace(/~/g, '~0').replace(/\//g, '~1')}`;
 
 /** JMAP provider. */
 export const jmap: Provider = {
@@ -262,7 +266,14 @@ export const jmap: Provider = {
   },
 
   async act(account, item, action) {
-    await run(account, [['Email/set', {update: {[item.id]: await patch(account, action)}}, 'set']]);
+    const replies = await run(account, [['Email/set', {update: {[item.id]: await patch(account, action)}}, 'set']]);
+    const failure = replies.set?.notUpdated?.[item.id];
+    if (
+      Object.hasOwn(replies.set?.notUpdated || {}, item.id) ||
+      !replies.set?.updated ||
+      !Object.hasOwn(replies.set.updated, item.id)
+    )
+      throw new Error(t('error_jmap_generic', String(failure?.description || failure?.type || t('error_generic'))));
   },
 
   search: (account, text, limit) => query(account, {text}, limit),
@@ -319,8 +330,8 @@ export const jmap: Provider = {
             create: {send: {identityId: identity.id, emailId: '#draft'}},
             onSuccessUpdateEmail: {
               '#send': {
-                [`mailboxIds/${roles.drafts.id}`]: null,
-                [`mailboxIds/${roles.sent.id}`]: true,
+                [mailboxPath(roles.drafts.id)]: null,
+                [mailboxPath(roles.sent.id)]: true,
                 'keywords/$draft': null,
               },
             },

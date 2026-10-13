@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "Скринька змінилася під час входу. Спробуйте ще раз."
   },
+  "error_account_mismatch": {
+    "message": "Увійдіть у підключену скриньку: $1."
+  },
   "error_account_missing": {
     "message": "Скриньку не знайдено."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Закріплено"
+  },
+  "label_resize_list": {
+    "message": "Змінити ширину списку листів"
   },
   "label_sections": {
     "message": "Розділи"

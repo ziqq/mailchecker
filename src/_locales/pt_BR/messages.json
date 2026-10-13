@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "A caixa de e-mail mudou durante o login. Tente novamente."
   },
+  "error_account_mismatch": {
+    "message": "Entre com a caixa de e-mail conectada: $1."
+  },
   "error_account_missing": {
     "message": "Caixa de e-mail não encontrada."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Fixadas"
+  },
+  "label_resize_list": {
+    "message": "Alterar a largura da lista de mensagens"
   },
   "label_sections": {
     "message": "Seções"

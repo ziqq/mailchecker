@@ -17,7 +17,7 @@
 import type {Account, InboxResult, MailMessage} from '../../shared/types';
 import {AuthError, requestText} from '../http';
 import {categorize, count, message} from './message';
-import {elements, firstAddress, markupText, sessionProvider} from './session';
+import {elements, firstAddress, markupText, sessionProvider, verifyMailbox} from './session';
 import {t} from '../../shared/i18n';
 
 /** The lite web interface. */
@@ -110,27 +110,58 @@ export function parseInbox(html: string, now = Date.now()): InboxResult {
 /** Session request options. */
 const OPTIONS = {session: true, service: t('service_yandex')};
 
-/** Reads the lite Inbox page with the browser's Yandex sign-in. */
-const page = (): Promise<string> => requestText(`${ORIGIN}/lite/inbox`, OPTIONS);
+/** Reads the mailbox address from the lite page's account header, never from message senders. */
+export function parseOwner(html: string): string {
+  const [account] = elements(html, 'div', /class=["'][^"']*\bb-head-user\b[^"']*["']/, 0, 1);
+  const login = account
+    ? pick(account, [
+        /<a\b[^>]*href=["']https:\/\/passport\.yandex\.(?:ru|com)\/profile\/avatars\/?["'][^>]*>([\s\S]*?)<\/a>/,
+      ])
+    : '';
+  if (/^[\w.-]+$/.test(login)) return `${login.toLowerCase()}@yandex.ru`;
+  const header =
+    login ||
+    pick(html, [
+      /class="[^"]*b-head-user__login[^"]*"[^>]*>([\s\S]*?)<\//,
+      /class="[^"]*b-header__user[^"]*"[^>]*>([\s\S]*?)<\//,
+    ]);
+  return firstAddress(header);
+}
 
-/** Reads the lite Inbox with the browser's Yandex sign-in. */
-const inbox = async (): Promise<InboxResult> => parseInbox(await page());
+/** Normalizes Yandex's documented dot/dash and public-domain mailbox aliases. */
+function canonicalAddress(address: string): string {
+  const [login, domain] = address.trim().toLowerCase().split('@');
+  const aliases = ['yandex.ru', 'yandex.com', 'yandex.by', 'yandex.kz', 'yandex.com.tr', 'ya.ru'];
+  return domain ? `${login.replace(/\./g, '-')}@${aliases.includes(domain) ? 'yandex.ru' : domain}` : '';
+}
+
+/** Reads and verifies the lite Inbox's owner before using session-specific message links or forms. */
+async function page(email: string): Promise<string> {
+  const html = await requestText(`${ORIGIN}/lite/inbox`, OPTIONS);
+  parseInbox(html);
+  const owner = parseOwner(html);
+  // Preserve the connected spelling in errors when a documented alias resolves to the same mailbox.
+  verifyMailbox(email, owner && canonicalAddress(email) === canonicalAddress(owner) ? email : owner);
+  return html;
+}
 
 /**
- * Returns the body of a lite message page, or an empty string.
+ * Returns the body of a lite message page, rejecting sign-in and unexpected pages.
  *
  * @param html The message page.
  */
 export function parseMessage(html: string): string {
+  if (/type=["']password["']/.test(html)) throw new AuthError(t('error_sign_in_yandex'));
   const [body] = elements(html, 'div', /class="[^"]*b-message-body(?:__content)?[" ]/);
-  return body ? body.slice(body.indexOf('>') + 1, body.lastIndexOf('</div')) : '';
+  if (!body) throw new Error(t('error_unexpected_page', t('service_yandex')));
+  return body.slice(body.indexOf('>') + 1, body.lastIndexOf('</div'));
 }
 
 /** Deletes a listed message with the lite toolbar form, as its «Удалить» button does. */
-async function remove(item: MailMessage): Promise<void> {
+async function remove(account: Account, item: MailMessage): Promise<void> {
   const [field, value] = item.thread.split('=');
   if (!value || (field !== 'ids' && field !== 'tids')) throw new Error(t('error_delete_in_webmail'));
-  const ckey = /name="_ckey" value="([^"]+)"/.exec(await page())?.[1];
+  const ckey = /name="_ckey" value="([^"]+)"/.exec(await page(account.email))?.[1];
   if (!ckey) throw new Error(t('error_unexpected_page', t('service_yandex')));
   await requestText(`${ORIGIN}/lite/messages-action.xml`, {
     ...OPTIONS,
@@ -139,28 +170,34 @@ async function remove(item: MailMessage): Promise<void> {
   });
 }
 
+/** Opens a verified single-message page, which marks that message read in the lite webmail. */
+async function read(account: Account, item: MailMessage): Promise<{html: string}> {
+  if (!item.link.startsWith(`${ORIGIN}/lite/message/`)) throw new Error(t('error_in_webmail', t('service_yandex')));
+  await page(account.email);
+  return {html: parseMessage(await requestText(item.link, OPTIONS))};
+}
+
 /** Yandex Mail through the browser's sign-in. */
 export const yandex = sessionProvider({
   label: t('service_yandex'),
+  bodyMarksRead: true,
   async connect(email) {
     const address = firstAddress(email || '');
     if (!address) throw new Error(t('error_yandex_address'));
-    await inbox();
+    await page(address);
     return address;
   },
-  async inbox(_account: Account, limit: number) {
-    const {unread, messages} = await inbox();
+  async inbox(account: Account, limit: number) {
+    const {unread, messages} = parseInbox(await page(account.email));
     return {unread, messages: messages.slice(0, limit)};
   },
   webURL: (_account: Account, item?: MailMessage | null) => item?.link || `${ORIGIN}/`,
   // Opening a message page marks the message read, as in the lite web interface.
-  async body(_account, item) {
-    if (!item.link.startsWith(`${ORIGIN}/lite/message/`)) return {};
-    return {html: parseMessage(await requestText(item.link, OPTIONS))};
-  },
+  body: read,
   // `read` happens when the message page is opened for its body.
   actions: ['trash', 'read'],
-  async act(_account, item, action) {
-    if (action === 'trash') await remove(item);
+  async act(account, item, action) {
+    if (action === 'trash') await remove(account, item);
+    else await read(account, item);
   },
 });

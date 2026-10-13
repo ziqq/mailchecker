@@ -33,6 +33,8 @@ The popup and the full-tab app run the same SolidJS client; `data-mode` on `<htm
 | Popup (780×600) and tabs 700–1099                      | Top bar, then list · reader              |
 | < 700 px, mini popup (400×600), or a phone popup (iOS) | Top bar, then list **or** reader, with ← |
 
+In two-column layouts the boundary between the list and reader can be dragged horizontally, or adjusted with the left/right arrow keys when focused. Its range keeps at least 320 px for the reader; the top bar uses fixed columns and stays in place. The chosen width lasts for the current page, and the divider is hidden in one-column layouts.
+
 The `popup` preference (`full` or `mini`, set in Settings) sets `data-size` on the popup root; the mini popup is 400×600, narrow enough for the one-column layout. A popup on a phone-sized touch screen sets `data-narrow` and fills the screen instead of the fixed 780×600 window. Row hover actions are hidden on touch screens; the reader toolbar has every action.
 
 | Module                       | Role                                                                                         |
@@ -41,10 +43,13 @@ The `popup` preference (`full` or `mini`, set in Settings) sets `data-size` on t
 | `components/TopBar.tsx`      | Logo, account switcher, refresh, theme, full screen (popup), Settings.                       |
 | `components/Sidebar.tsx`     | Wide layout: views, accounts, global actions.                                                |
 | `components/MessageList.tsx` | Title, search, category filter, Smart Inbox sections, rows, notification stacks, notices.    |
+| `components/PaneDivider.tsx` | Bounded pointer and keyboard resizing of the list, below the fixed top bar.                  |
 | `components/Reader.tsx`      | Toolbar actions, conversation with collapsed earlier messages, privacy bar, attachments.     |
 | `components/MailFrame.tsx`   | Sanitized body in a sandboxed frame sized to its content.                                    |
 
 Keyboard: `J`/`K` or arrows move, `E` archives, `#`/`Delete` trashes, `U` toggles read, `S` pins, `/` searches, `Esc` goes back.
+
+The open message keeps its last known metadata in page memory when it leaves the visible list. Reader actions use the selected account and message ID independently of list visibility; new public state supplies fresh metadata whenever the message is still listed. Clearing the selection releases the retained entry. Conversation caches are invalidated when Inbox content metadata changes or a reply is sent; the open reader refreshes with the new cache generation. Reopening unread mail performs a new thread request. Successful read state returned with a conversation also updates matching search hits.
 
 ### Smart Inbox
 
@@ -67,7 +72,7 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 | `SEARCH`                        | client           | Search every account; hits merged newest first. Not stored.            |
 | `OPEN`                          | client, Settings | Open webmail at the Inbox or a message.                                |
 | `OPEN_APP`                      | client           | Open or focus the full-tab client.                                     |
-| `SIGN_IN`                       | client, Settings | Interactive OAuth sign-in for an account that needs it.                |
+| `SIGN_IN`                       | client, Settings | OAuth sign-in, or open the connected browser-session webmail.          |
 | `PREFERENCES`                   | client, Settings | Save bounded preferences and reschedule checks.                        |
 | `OPTIONS`                       | client           | Open Settings.                                                         |
 | `ADD_ACCOUNT`, `REMOVE_ACCOUNT` | Settings         | Connect or remove a mailbox.                                           |
@@ -103,11 +108,17 @@ Message bodies, attachments metadata and search results stay in page memory (a 3
 
 ### Checks and notifications
 
-The `check` alarm runs every `interval` minutes. A check stores `{unread, messages, error, reauth, checkedAt, notified}` where `messages` are the latest Inbox messages, read and unread, and `unread` is the provider's Inbox count. Errors keep the last known list. Notifications cover unread messages absent from the previous successful check and received within 24 hours, so connecting an account is silent.
+The `check` alarm runs every `interval` minutes. A check stores `{unread, messages, error, reauth, checkedAt, notified}` where `messages` are the latest Inbox messages, read and unread, and `unread` is the provider's Inbox count. Gmail and Mail.ru browser feeds declare `unreadOnly`: checks merge their unread results with known read metadata, newest first within the configured list limit. Read mail therefore survives refreshes and reopening the client; archive and trash remove it explicitly. The unread count still comes from the provider feed. Errors keep the last known list. Transient per-account mutation generations prevent a successful or failed in-flight check from overwriting an action. Notifications cover unread messages absent from the previous successful check and received within 24 hours, so connecting an account is silent.
 
 ### Credentials
 
 Expired tokens are renewed before a call; a token the provider rejects is renewed once and the call retried. Concurrent renewals share one request, and a renewal is discarded if the account was removed or replaced meanwhile. Google renews silently through the browser session (`prompt=none`); Microsoft uses its refresh token; JMAP tokens do not expire and a rejected token needs a new account entry.
+
+Before replacing Gmail or Outlook credentials, the worker reads the authenticated mailbox address through the provider's `address` callback and compares it with the connected address. A mismatch rejects both interactive sign-in and silent renewal without storing the new credentials.
+
+JMAP archive patches only the Inbox and Archive memberships, preserving other folders. Trash replaces memberships with Trash. Message actions update local state only after `Email/set` acknowledges the target ID in `updated`; a per-record `notUpdated` result or a missing acknowledgement fails the action.
+
+Gmail browser requests check the feed owner before using the current session. Yandex checks the lite page's account header, including the profile link's bare login, and normalizes documented dot/dash and public-domain aliases; missing or mismatched identity raises an authentication error rather than trusting the entered address or a message sender. Browser-session SIGN_IN opens the webmail for the user to sign in; it leaves the stored error and credentials intact until a subsequent successful check. Settings shows the sign-in instruction rather than claiming authentication completed. Session body loading propagates authentication errors. Yandex and Mail.ru declare that loading a body marks it read, so the worker reconciles that result without sending a duplicate read operation. Other unread messages, including search hits outside the Inbox cache, are marked read through their provider action before the thread reply returns.
 
 ## Browsers
 
@@ -130,15 +141,16 @@ Interface strings live in `src/_locales/<locale>/messages.json` (13 locales, `en
 
 ## Sandbox
 
-`npm run sandbox` builds `build-sandbox/` with `__SANDBOX__ = true` and serves it at `http://127.0.0.1:8080/` with the extension's CSP. In this build `request()` in `shared/dom.ts` is answered by `src/sandbox/worker.ts` from `src/sandbox/fixtures.ts` instead of `chrome.runtime.sendMessage`, and the client does not subscribe to `chrome.storage`, so `popup.html` and `app.html` run in a plain tab without the extension, accounts or network. Fixtures cover all six provider IDs (including the IMAP-only `yandex`, `mailru` and `icloud`, which have no adapter yet), every Smart Inbox category, a notification stack, pinned mail, attachments, long text, HTML with remote images and a tracker, a conversation, an expired sign-in and a failed check. Actions change in-memory state; a reload resets it. `?theme=`, `?palette=` and `?popup=` set the initial preferences. `index.html` shows the popup (780×600) and a phone (390×844) side by side. Release builds define `__SANDBOX__ = false`, and esbuild drops the fixtures.
+`npm run sandbox` builds `build-sandbox/` with `__SANDBOX__ = true` and serves it at `http://127.0.0.1:8080/` with the extension's CSP. In this build `request()` in `shared/dom.ts` is answered by `src/sandbox/worker.ts` from `src/sandbox/fixtures.ts` instead of `chrome.runtime.sendMessage`, and the client does not subscribe to `chrome.storage`, so `popup.html` and `app.html` run in a plain tab without the extension, accounts or network. Fixtures cover all six provider IDs (including the IMAP-only `yandex`, `mailru` and `icloud`, which have no adapter yet), every Smart Inbox category, a notification stack, pinned mail, attachments, long text, HTML with remote images and a tracker, a conversation, an expired sign-in and a failed check. Actions change in-memory state, and opening a conversation marks its selected message read; a reload resets it. The reauth=yandex query parameter supplies a browser-session sign-in error for UI regression checks. `?theme=`, `?palette=` and `?popup=` set the initial preferences. `index.html` shows the popup (780×600) and a phone (390×844) side by side. Release builds define `__SANDBOX__ = false`, and esbuild drops the fixtures.
 
 ## Tests
 
 `npm test` runs:
 
-- `background.test.mjs`: the bundled worker in a Node.js VM with mocked `chrome.*` APIs and mocked Gmail, Graph, Microsoft login and JMAP servers — connections, counts, notifications, actions, conversations, search, token refresh deduplication, rejected tokens, sender checks, the identity permission and preference bounds.
+- `background.test.mjs`: the bundled worker in a Node.js VM with mocked browser APIs and provider responses — connections, counts, notifications, actions, conversations, search, token renewal, sender checks and preference bounds; audit regressions verify OAuth/browser mailbox ownership, JMAP membership and acknowledgements, delayed checks, search-hit read actions, unread-only feed persistence and browser-session sign-in navigation.
+- `client.test.mjs`: the real Solid store with only its worker transport replaced — conversation freshness after refresh/reply, unread reopening, late response isolation, search-flag reconciliation and retained reader metadata.
 - `inbox.test.mjs`: account merging, notification stacks, Smart Inbox sections, counts and categorization.
 
-`npm run test:sandbox` runs `e2e/sandbox.spec.mjs` with Playwright in headless Chromium against the sandbox: every layout (popup 780×600, wide tab, phone popup with touch, phone tab) renders without errors or horizontal scroll and opens a conversation; the keyboard archive, search across archived mail, blocked remote images, sign-in after an expired session and theme parameters work.
+`npm run test:sandbox` runs `e2e/sandbox.spec.mjs` with Playwright in headless Chromium against the sandbox: every layout (popup 780×600, wide tab, phone popup with touch, phone tab) renders without errors or horizontal scroll and opens a conversation; the keyboard archive, search across archived mail, blocked remote images, sign-in after an expired session and theme parameters work. Audit regressions also cover the mini popup, empty searches/categories, read rows and reader actions after checks, avatar/dot alignment, newsletter frame overflow, stable frame shrinkage and ResizeObserver errors, fixed headers during divider resizing, browser-session sign-in buttons and the Settings footer. Settings tests supply only the browser APIs unavailable on localhost; webmail navigation is recorded without opening real accounts.
 
 Sanitization needs a DOM and is verified in the sandbox; real sign-in, provider acceptance and installed-browser behavior need manual verification.

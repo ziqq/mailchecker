@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "ログイン中にメールボックスが変わりました。もう一度お試しください。"
   },
+  "error_account_mismatch": {
+    "message": "接続済みのメールボックスでログインしてください：$1。"
+  },
   "error_account_missing": {
     "message": "メールボックスが見つかりません。"
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "固定済み"
+  },
+  "label_resize_list": {
+    "message": "メッセージ一覧の幅を変更"
   },
   "label_sections": {
     "message": "セクション"

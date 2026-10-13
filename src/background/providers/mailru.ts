@@ -146,6 +146,8 @@ async function post(email: string, path: string, form: Record<string, string>): 
 /** Mail.ru through the browser's sign-in. */
 export const mailru = sessionProvider({
   label: t('service_mailru'),
+  unreadOnly: true,
+  bodyMarksRead: true,
   async connect(email) {
     const address = firstAddress(email || '');
     if (!address) throw new Error(t('error_mailru_address'));
@@ -159,13 +161,14 @@ export const mailru = sessionProvider({
   webURL: (_account: Account, item?: MailMessage | null) => item?.link || 'https://e.mail.ru/inbox/',
   async body(account, item) {
     const value = await token(account.email);
-    return parseMessage(
-      await call(
-        `${API}/messages/message?${mailbox(account.email)}&id=${encodeURIComponent(item.id)}` +
-          `&htmlencoded=false&token=${encodeURIComponent(value)}`,
-        OPTIONS,
-      ),
+    const reply = await call(
+      `${API}/messages/message?${mailbox(account.email)}&id=${encodeURIComponent(item.id)}` +
+        `&htmlencoded=false&token=${encodeURIComponent(value)}`,
+      OPTIONS,
     );
+    if (Number(reply?.status) === 403) throw new AuthError(t('error_sign_in_mailru'));
+    if (Number(reply?.status) !== 200) throw new Error(t('error_mailru_action'));
+    return parseMessage(reply);
   },
   // The compose fields of the webmail API; `source.reply` links the reply to the original.
   async reply(account, item, text) {

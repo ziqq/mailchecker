@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "Oturum açma sırasında posta kutusu değişti. Tekrar deneyin."
   },
+  "error_account_mismatch": {
+    "message": "Bağlı posta kutusuyla oturum açın: $1."
+  },
   "error_account_missing": {
     "message": "Posta kutusu bulunamadı."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Sabitlendi"
+  },
+  "label_resize_list": {
+    "message": "İleti listesinin genişliğini değiştir"
   },
   "label_sections": {
     "message": "Bölümler"

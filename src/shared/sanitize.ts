@@ -293,8 +293,8 @@ export function frameDocument(
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><base target="_blank"><style>
 html,body{margin:0;background:${background};color:${color}}html{overflow-y:hidden}
 body{padding:16px 18px;font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow-wrap:anywhere}
-img{max-width:100%;height:auto}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:${dark && !plain ? 'transparent' : 'rgba(127,127,127,.15)'}}
-table{max-width:100%}pre{white-space:pre-wrap}a{color:${dark ? '#8ab4f8' : '#0b62d6'}}
+img{max-width:100%!important;height:auto!important}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:${dark && !plain ? 'transparent' : 'rgba(127,127,127,.15)'}}
+table{width:100%!important;max-width:100%!important;table-layout:fixed!important}td,th{overflow-wrap:anywhere}pre{white-space:pre-wrap}a{color:${dark ? '#8ab4f8' : '#0b62d6'}}
 .plain{white-space:pre-wrap}blockquote{margin:8px 0;padding-left:12px;border-left:3px solid rgba(127,127,127,.35);color:inherit}
-</style></head><body>${body}</body></html>`;
+</style></head><body style="height:auto!important;min-height:0!important;display:flow-root!important">${body}</body></html>`;
 }

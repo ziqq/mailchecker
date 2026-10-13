@@ -17,6 +17,7 @@ import {render} from 'solid-js/web';
 import {applyTheme} from '../shared/dom';
 import {localize} from '../shared/i18n';
 import {MessageList} from './components/MessageList';
+import {PaneDivider} from './components/PaneDivider';
 import {Reader} from './components/Reader';
 import {Sidebar} from './components/Sidebar';
 import {TopBar} from './components/TopBar';
@@ -95,6 +96,7 @@ function App() {
       <TopBar />
       <Sidebar />
       <MessageList />
+      <PaneDivider />
       <Reader />
       <Show when={store.busy()}>
         <div class="busy" role="status">

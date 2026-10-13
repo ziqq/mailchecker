@@ -27,13 +27,26 @@ export interface Selection {
 }
 
 /** Conversation cache entries by `account/thread`. */
-const threads = new Map<string, ThreadMessage[]>();
+const threads = new Map<string, Promise<ThreadMessage[]>>();
+
+/** Inbox metadata that can change conversation contents, excluding flags and check timestamps. */
+const contents = (value: PublicState): string =>
+  JSON.stringify(
+    Object.entries(value.mailboxes).map(([account, box]) => [
+      account,
+      box.messages.map(({id, thread, date, from, subject, snippet}) => [id, thread, date, from, subject, snippet]),
+    ]),
+  );
 
 export const store = createRoot(() => {
   const [state, setState] = createSignal<PublicState | null>(null);
   const [account, setAccount] = createSignal<string>('all');
   const [filter, setFilter] = createSignal<Filter>('all');
   const [selected, setSelected] = createSignal<Selection | null>(null);
+  /** Last known metadata of the open message, retained when it leaves the Inbox feed. */
+  const [retained, setRetained] = createSignal<Entry | null>(null);
+  /** Refreshes the displayed conversation when its Inbox contents change or a reply is sent. */
+  const [threadVersion, setThreadVersion] = createSignal(0);
   const [expanded, setExpanded] = createSignal<ReadonlySet<string>>(new Set());
   const [query, setQuery] = createSignal('');
   const [results, setResults] = createSignal<Entry[] | null>(null);
@@ -71,12 +84,32 @@ export const store = createRoot(() => {
   /** Keyboard navigation order. */
   const navigation = createMemo(() => order(list(), expanded()));
 
-  /** The selected entry, from the list or search results. */
+  /** The selected entry, independent of visible filters and unread-only Inbox feeds. */
   const current = createMemo(() => {
     const selection = selected();
-    if (!selection) return null;
-    return navigation().find(entry => entry.account === selection.account && entry.message.id === selection.id) || null;
+    const value = state();
+    if (!selection || !value?.accounts.some(account => account.id === selection.account)) return null;
+    const listed = navigation().find(entry => entry.account === selection.account && entry.message.id === selection.id);
+    const message = value.mailboxes[selection.account]?.messages.find(message => message.id === selection.id);
+    if (message) return listed?.message === message ? listed : {account: selection.account, message};
+    return listed || retained();
   });
+
+  /** Updates public state while retaining the open message's most recent metadata. */
+  function updateState(value: PublicState): void {
+    batch(() => {
+      const before = state();
+      if (before && contents(before) !== contents(value)) invalidateThreads();
+      setRetained(current());
+      setState(value);
+    });
+  }
+
+  /** Drops cached and in-flight conversation references and refreshes the open reader. */
+  function invalidateThreads(): void {
+    threads.clear();
+    setThreadVersion(value => value + 1);
+  }
 
   /** Shows a transient message; errors are red. */
   function notify(text: string, error = false): void {
@@ -93,7 +126,7 @@ export const store = createRoot(() => {
   /** Loads the public state. */
   async function load(): Promise<void> {
     try {
-      setState(await request<PublicState>({type: 'STATE'}));
+      updateState(await request<PublicState>({type: 'STATE'}));
     } catch (error) {
       fail(error);
     }
@@ -110,7 +143,7 @@ export const store = createRoot(() => {
   async function refresh(): Promise<void> {
     setRefreshing(true);
     try {
-      setState(await request<PublicState>({type: 'CHECK'}));
+      updateState(await request<PublicState>({type: 'CHECK'}));
     } catch (error) {
       fail(error);
     } finally {
@@ -130,6 +163,7 @@ export const store = createRoot(() => {
   async function reply(entry: Entry, text: string): Promise<boolean> {
     try {
       await request<boolean>({type: 'REPLY', account: entry.account, message: entry.message.id, text});
+      invalidateThreads();
       setReplying(false);
       notify(t('reply_sent'));
       return true;
@@ -141,15 +175,19 @@ export const store = createRoot(() => {
 
   /** Selects an entry, or clears the selection. */
   function select(entry: Entry | null): void {
-    setReplying(false);
-    setSelected(entry ? {account: entry.account, id: entry.message.id, thread: entry.message.thread} : null);
+    batch(() => {
+      setReplying(false);
+      setRetained(entry);
+      setSelected(entry ? {account: entry.account, id: entry.message.id, thread: entry.message.thread} : null);
+    });
   }
 
   /** Moves the selection by [step] in navigation order. */
   function move(step: number): void {
     const items = navigation();
     if (!items.length) return;
-    const index = items.findIndex(entry => entry === current());
+    const selection = selected();
+    const index = items.findIndex(entry => entry.account === selection?.account && entry.message.id === selection.id);
     select(items[Math.min(items.length - 1, Math.max(0, index < 0 ? 0 : index + step))]);
   }
 
@@ -168,16 +206,57 @@ export const store = createRoot(() => {
    */
   async function thread(selection: Selection): Promise<ThreadMessage[]> {
     const key = `${selection.account}/${selection.thread || selection.id}`;
-    const cached = threads.get(key);
-    if (cached) return cached;
-    const value = await request<ThreadMessage[]>({
-      type: 'THREAD',
-      account: selection.account,
-      message: selection.id,
-      thread: selection.thread,
-    });
-    threads.set(key, value);
-    if (threads.size > 30) threads.delete(threads.keys().next().value!);
+    const matches = (entry: Entry): boolean => entry.account === selection.account && entry.message.id === selection.id;
+    const listed = state()?.mailboxes[selection.account]?.messages.find(item => item.id === selection.id);
+    const hit = results()?.find(matches);
+    const open = retained();
+    if (listed?.unread || hit?.message.unread || (open && matches(open) && open.message.unread)) threads.delete(key);
+    let pending = threads.get(key);
+    const cached = Boolean(pending);
+    if (!pending) {
+      pending = request<ThreadMessage[]>({
+        type: 'THREAD',
+        account: selection.account,
+        message: selection.id,
+        thread: selection.thread,
+      }).catch(error => {
+        if (threads.get(key) === pending) threads.delete(key);
+        throw error;
+      });
+      threads.set(key, pending);
+      if (threads.size > 30) threads.delete(threads.keys().next().value!);
+    }
+    const value = await pending;
+    if (cached && !value.some(item => item.id === selection.id)) {
+      threads.delete(key);
+      return thread(selection);
+    }
+    const target = value.find(item => item.id === selection.id);
+    if (target && !target.unread && threads.get(key) === pending)
+      batch(() => {
+        const currentState = state();
+        const box = currentState?.mailboxes[selection.account];
+        const message = box?.messages.find(item => item.id === selection.id);
+        if (currentState && box && message?.unread)
+          updateState({
+            ...currentState,
+            mailboxes: {
+              ...currentState.mailboxes,
+              [selection.account]: {
+                ...box,
+                unread: Math.max(0, box.unread - 1),
+                messages: box.messages.map(item => (item.id === selection.id ? {...item, unread: false} : item)),
+              },
+            },
+          });
+        if (results())
+          setResults(hits =>
+            hits!.map(entry => (matches(entry) ? {...entry, message: {...entry.message, unread: false}} : entry)),
+          );
+        setRetained(entry =>
+          entry && matches(entry) ? {...entry, message: {...entry.message, unread: false}} : entry,
+        );
+      });
     return value;
   }
 
@@ -189,10 +268,14 @@ export const store = createRoot(() => {
    */
   async function act(entry: Entry, action: MessageAction): Promise<void> {
     const leaving = action === 'archive' || action === 'trash';
+    /** Matches the message even when its list entry has been replaced by a state update. */
+    const matches = (item: Entry): boolean => item.account === entry.account && item.message.id === entry.message.id;
+    /** Whether the action still belongs to the open message. */
+    const isSelected = (): boolean => selected()?.account === entry.account && selected()?.id === entry.message.id;
     let next: Entry | null = null;
-    if (leaving && selected()?.id === entry.message.id) {
+    if (leaving && isSelected()) {
       const items = navigation();
-      const index = items.indexOf(entry);
+      const index = items.findIndex(matches);
       next = items[index + 1] || items[index - 1] || null;
     }
     if (leaving) setBusy(t(action === 'trash' ? 'busy_deleting' : 'busy_archiving'));
@@ -204,26 +287,23 @@ export const store = createRoot(() => {
         action,
       });
       batch(() => {
-        setState(value);
+        const updated = {
+          ...entry,
+          message: {
+            ...entry.message,
+            unread: action === 'unread' ? true : action === 'read' ? false : entry.message.unread,
+            pinned: action === 'pin' ? true : action === 'unpin' ? false : entry.message.pinned,
+          },
+        };
+        updateState(value);
+        if (action === 'unread') threads.delete(`${entry.account}/${entry.message.thread || entry.message.id}`);
         const hits = results();
         if (hits)
-          setResults(
-            leaving
-              ? hits.filter(hit => hit !== entry)
-              : hits.map(hit =>
-                  hit === entry
-                    ? {
-                        ...hit,
-                        message: {
-                          ...hit.message,
-                          unread: action === 'unread' ? true : action === 'read' ? false : hit.message.unread,
-                          pinned: action === 'pin' ? true : action === 'unpin' ? false : hit.message.pinned,
-                        },
-                      }
-                    : hit,
-                ),
-          );
-        if (leaving && selected()?.id === entry.message.id) select(next);
+          setResults(leaving ? hits.filter(hit => !matches(hit)) : hits.map(hit => (matches(hit) ? updated : hit)));
+        if (isSelected()) {
+          if (leaving) select(next);
+          else setRetained(updated);
+        }
       });
     } catch (error) {
       fail(error);
@@ -269,6 +349,7 @@ export const store = createRoot(() => {
     setFilter,
     selected,
     current,
+    threadVersion,
     expanded,
     query,
     results,

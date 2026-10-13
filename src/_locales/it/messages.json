@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "La casella è cambiata durante l'accesso. Riprova."
   },
+  "error_account_mismatch": {
+    "message": "Accedi con la casella collegata: $1."
+  },
   "error_account_missing": {
     "message": "Casella non trovata."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Fissati"
+  },
+  "label_resize_list": {
+    "message": "Ridimensiona l’elenco dei messaggi"
   },
   "label_sections": {
     "message": "Sezioni"

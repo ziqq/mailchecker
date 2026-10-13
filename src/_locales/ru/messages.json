@@ -185,6 +185,9 @@
   "error_account_changed": {
     "message": "Ящик изменился во время входа. Повторите."
   },
+  "error_account_mismatch": {
+    "message": "Войдите в подключённый ящик: $1."
+  },
   "error_account_missing": {
     "message": "Ящик не найден."
   },
@@ -484,6 +487,9 @@
   },
   "label_pinned": {
     "message": "Закреплено"
+  },
+  "label_resize_list": {
+    "message": "Изменить ширину списка писем"
   },
   "label_sections": {
     "message": "Разделы"
