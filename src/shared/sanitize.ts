@@ -149,7 +149,8 @@ export function textToHTML(text: string): string {
  *
  * @param body Sanitized body markup.
  * @param options.allowRemote Whether remote images and fonts may load.
- * @param options.dark Whether to use the dark plain-text palette (HTML mail keeps a light paper).
+ * @param options.dark Whether to use the dark palette: plain text gets dark colours, HTML mail is inverted
+ *   with media inverted back, so senders' fixed light colours stay readable.
  * @param options.plain Whether the body came from plain text.
  */
 export function frameDocument(
@@ -158,13 +159,18 @@ export function frameDocument(
 ): string {
   const remote = allowRemote ? ' https: http:' : '';
   const csp = `default-src 'none'; img-src data:${remote}; style-src 'unsafe-inline'; font-src data:${remote}`;
-  const background = plain && dark ? '#151619' : '#ffffff';
+  const background = plain && dark ? '#151619' : dark ? '#e8e8e8' : '#ffffff';
   const color = plain && dark ? '#f2f1ed' : '#1a1a1a';
+  // `#e8e8e8` inverts to the dark surface `#171717`; hue-rotate keeps the hues of the colours.
+  const invert = dark && !plain;
+  const inverted = invert
+    ? 'html{filter:invert(1) hue-rotate(180deg)}img,video,picture,svg,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)}'
+    : '';
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><base target="_blank"><style>
 html,body{margin:0;background:${background};color:${color}}html{overflow-y:hidden}
 body{padding:16px 18px;font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow-wrap:anywhere}
 img{max-width:100%;height:auto}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:rgba(127,127,127,.15)}
 table{max-width:100%}pre{white-space:pre-wrap}a{color:${plain && dark ? '#ffb562' : '#0b62d6'}}
 .plain{white-space:pre-wrap}blockquote{margin:8px 0;padding-left:12px;border-left:3px solid rgba(127,127,127,.35);color:inherit}
-</style></head><body>${body}</body></html>`;
+${inverted}</style></head><body>${body}</body></html>`;
 }

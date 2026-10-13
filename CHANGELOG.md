@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.9
+
+- **FIXED**: HTML mail stayed on white paper in the dark theme; it is now inverted to the dark surface with images and media inverted back, so fixed sender colours stay readable
+
 ## 0.0.8
 
 - **ADDED**: «Ответить» (`R`) in the reader: a plain-text editor for Gmail and Outlook through sign-in, JMAP and Mail.ru; Gmail and Yandex Mail through the browser open the message in the webmail. Outlook asks for the `Mail.Send` permission on the next sign-in
