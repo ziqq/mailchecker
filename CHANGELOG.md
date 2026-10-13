@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.13
+
+- **FIXED**: dark HTML mail drew grey bands; every grey or near-white background is now the page colour, so the message is one dark surface
+- **FIXED**: Gmail's full text repeated the sender, date, Reply-To, To and Cc above the body; only the body of the print view is shown
+
 ## 0.0.12
 
 - **FIXED**: grey backgrounds of dark HTML mail differed from band to band; white paper is now the page and every other grey background (header bands, panels, blocked images) one colour, `#2b2b2b`

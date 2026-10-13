@@ -120,12 +120,17 @@ export function parseFeed(xml: string): {email: string} & InboxResult {
 }
 
 /**
- * Returns the last message of a Gmail print view, or an empty string.
+ * Returns the body of the last message of a Gmail print view, or an empty
+ * string. Its header rows (sender, date, Reply-To, To, Cc) are dropped: the
+ * reader shows them itself; the body is the last cell of the last row.
  *
  * @param html The print view page.
  */
 export function parsePrint(html: string): string {
-  return elements(html, 'table', /class="message"/).pop() || '';
+  const message = elements(html, 'table', /class="message"/).pop() || '';
+  const row = elements(message.slice(message.indexOf('>') + 1), 'tr', /^<tr/).pop() || '';
+  const cell = elements(row.slice(row.indexOf('>') + 1), 'td', /^<td/).pop();
+  return cell ? cell.slice(cell.indexOf('>') + 1, cell.lastIndexOf('</td')) : message;
 }
 
 /** Reads the feed with the browser's Google sign-in. */

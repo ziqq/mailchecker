@@ -126,14 +126,17 @@ function parseColor(value: string): [number, number, number, number] | null {
 /** The dark page under a message. */
 const PAGE = '#171717';
 
-/** Every other grey background on the dark page (header bands, panels, image areas): one colour above the page. */
-const BAND = '#2b2b2b';
+/** Returns two hex digits for an alpha from 0 to 1. */
+const alphaHex = (alpha: number): string =>
+  Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0');
 
 /**
- * Returns [value] adapted to a dark page. Grey backgrounds take two colours
- * only: white paper becomes [PAGE], any other grey [BAND], so a message's
- * bands and panels match. A coloured background lighter than half is mirrored
- * to a dark one, a foreground darker than half to a light one.
+ * Returns [value] adapted to a dark page. Every grey or near-white background,
+ * white paper included, becomes [PAGE]: the message reads as one dark surface. A coloured
+ * background lighter than half is mirrored to a dark one, a foreground darker
+ * than half to a light one.
  *
  * @param value A colour literal.
  * @param background Whether the colour paints a background.
@@ -147,14 +150,8 @@ export function darkColor(value: string, background: boolean): string {
   const lightness = (max + min) / 2;
   const delta = max - min;
   const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
-  if (background && saturation <= 0.15) {
-    const grey = lightness >= 0.96 ? PAGE : BAND;
-    return rgb[3] < 1
-      ? `${grey}${Math.round(rgb[3] * 255)
-          .toString(16)
-          .padStart(2, '0')}`
-      : grey;
-  }
+  // Grey and near-white (lightly tinted paper) backgrounds are the page itself.
+  if (background && (saturation <= 0.15 || lightness >= 0.9)) return rgb[3] < 1 ? `${PAGE}${alphaHex(rgb[3])}` : PAGE;
   if (background ? lightness <= 0.5 : lightness >= 0.5) return value;
   const hue =
     delta === 0 ? 0 : max === r ? ((g - b) / delta + 6) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
@@ -296,7 +293,7 @@ export function frameDocument(
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><base target="_blank"><style>
 html,body{margin:0;background:${background};color:${color}}html{overflow-y:hidden}
 body{padding:16px 18px;font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow-wrap:anywhere}
-img{max-width:100%;height:auto}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:${dark && !plain ? BAND : 'rgba(127,127,127,.15)'}}
+img{max-width:100%;height:auto}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:${dark && !plain ? 'transparent' : 'rgba(127,127,127,.15)'}}
 table{max-width:100%}pre{white-space:pre-wrap}a{color:${dark ? '#8ab4f8' : '#0b62d6'}}
 .plain{white-space:pre-wrap}blockquote{margin:8px 0;padding-left:12px;border-left:3px solid rgba(127,127,127,.35);color:inherit}
 </style></head><body>${body}</body></html>`;
