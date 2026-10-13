@@ -766,8 +766,8 @@ kbd {
   margin: 0 14px 14px;
   overflow: hidden;
   border-radius: 12px;
+  // The frame paints the message's own background in either theme.
   &.paper {
-    background: #fff;
     box-shadow: inset 0 0 0 1px rgb(0 0 0 / 6%);
   }
 }

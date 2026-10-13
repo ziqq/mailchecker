@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.11
+
+- **FIXED**: dark grey bands in HTML mail (headers meant to stand out on white) nearly merged with the dark page; they are lifted to `#2b2b2b` so they still read as bands
+
 ## 0.0.10
 
 - **ADDED**: the interface in 13 languages through `chrome.i18n` (English, Russian, Ukrainian, German, French, Spanish, Italian, Portuguese (Brazil), Polish, Turkish, Chinese (Simplified), Japanese, Korean): pages, worker errors, notifications and the store description; the browser's language picks one, dates and sizes follow it

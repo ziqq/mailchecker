@@ -123,9 +123,14 @@ function parseColor(value: string): [number, number, number, number] | null {
   return rgb.some(Number.isNaN) || Number.isNaN(alpha) ? null : [rgb[0], rgb[1], rgb[2], alpha];
 }
 
+/** The lightness of dark grey backgrounds on the dark page: clearly above the `#171717` surface. */
+const BAND = 0.17;
+
 /**
  * Returns [value] adapted to a dark page: a background lighter than half is
- * mirrored to a dark one, a foreground darker than half to a light one.
+ * mirrored to a dark one, a foreground darker than half to a light one. A
+ * near-black grey background (a header band meant to stand out on white) is
+ * lifted above the page so it still reads as a band.
  *
  * @param value A colour literal.
  * @param background Whether the colour paints a background.
@@ -137,13 +142,19 @@ export function darkColor(value: string, background: boolean): string {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const lightness = (max + min) / 2;
-  if (background ? lightness <= 0.5 : lightness >= 0.5) return value;
   const delta = max - min;
   const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
+  if (background && lightness <= 0.5) {
+    if (saturation > 0.15 || lightness >= BAND) return value;
+  } else if (!background && lightness >= 0.5) return value;
   const hue =
     delta === 0 ? 0 : max === r ? ((g - b) / delta + 6) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
-  // White paper becomes the reader surface (`#171717`); black text becomes `#e8e8e8`.
-  const mirrored = background ? Math.max(0.09, 1 - lightness) : Math.min(0.91, 1 - lightness);
+  // White paper becomes the reader surface (`#171717`); black text becomes `#e8e8e8`; dark grey bands become `#2b2b2b`.
+  const mirrored = background
+    ? lightness <= 0.5
+      ? BAND
+      : Math.max(0.09, 1 - lightness)
+    : Math.min(0.91, 1 - lightness);
   const chroma = (1 - Math.abs(2 * mirrored - 1)) * saturation;
   const x = chroma * (1 - Math.abs((hue % 2) - 1));
   const m = mirrored - chroma / 2;
