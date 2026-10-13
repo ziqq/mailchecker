@@ -21,6 +21,7 @@ A mail client that lives in the browser toolbar, for mailboxes on **any domain**
 - **Actions** synced with the provider: archive, trash, read/unread, pin, reply (in the extension, or in the webmail where no send API exists); search across all accounts; keyboard shortcuts.
 - **Responsive:** three columns in a wide tab, two in the popup, one with back navigation on narrow screens and iPhone.
 - **Badge and notifications** for new mail; theme (auto/light/dark) and palette (black and white graphite by default, or nine accent colours).
+- **13 languages:** English, Russian, Ukrainian, German, French, Spanish, Italian, Portuguese (Brazil), Polish, Turkish, Chinese (Simplified), Japanese and Korean; the browser's language picks one.
 - **Chromium and Safari** from one codebase — see [Safari](docs/SAFARI.md).
 
 ## Screenshots

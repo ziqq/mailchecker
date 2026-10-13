@@ -18,6 +18,7 @@ import type {Account, InboxResult, MailMessage} from '../../shared/types';
 import {AuthError, requestText} from '../http';
 import {categorize, count, message} from './message';
 import {elements, firstAddress, markupText, sessionProvider} from './session';
+import {t} from '../../shared/i18n';
 
 /** The lite web interface. */
 const ORIGIN = 'https://mail.yandex.ru';
@@ -45,9 +46,9 @@ const rows = (html: string): string[] => {
  * @throws {AuthError} For the sign-in page.
  */
 export function parseInbox(html: string, now = Date.now()): InboxResult {
-  if (/type=["']password["']/.test(html)) throw new AuthError('Войдите в Яндекс Почту в этом браузере и повторите.');
+  if (/type=["']password["']/.test(html)) throw new AuthError(t('error_sign_in_yandex'));
   const folders = /<div class="b-folders">([\s\S]*?)<\/div>/.exec(html)?.[1] || '';
-  if (!folders.includes('href="/lite/inbox"')) throw new Error('Яндекс Почта вернула неожиданную страницу.');
+  if (!folders.includes('href="/lite/inbox"')) throw new Error(t('error_unexpected_page', t('service_yandex')));
   const inboxPart = folders.split('href="/lite/inbox"')[0];
   const folderCount = /class="b-folders__folder__num"[^>]*>\s*([\d,]+)\s*<\/span>/.exec(inboxPart)?.[1];
   const messages = rows(html)
@@ -107,7 +108,7 @@ export function parseInbox(html: string, now = Date.now()): InboxResult {
 }
 
 /** Session request options. */
-const OPTIONS = {session: true, service: 'Яндекс Почта'};
+const OPTIONS = {session: true, service: t('service_yandex')};
 
 /** Reads the lite Inbox page with the browser's Yandex sign-in. */
 const page = (): Promise<string> => requestText(`${ORIGIN}/lite/inbox`, OPTIONS);
@@ -128,9 +129,9 @@ export function parseMessage(html: string): string {
 /** Deletes a listed message with the lite toolbar form, as its «Удалить» button does. */
 async function remove(item: MailMessage): Promise<void> {
   const [field, value] = item.thread.split('=');
-  if (!value || (field !== 'ids' && field !== 'tids')) throw new Error('Удалите это письмо в веб-почте.');
+  if (!value || (field !== 'ids' && field !== 'tids')) throw new Error(t('error_delete_in_webmail'));
   const ckey = /name="_ckey" value="([^"]+)"/.exec(await page())?.[1];
-  if (!ckey) throw new Error('Яндекс Почта вернула неожиданную страницу.');
+  if (!ckey) throw new Error(t('error_unexpected_page', t('service_yandex')));
   await requestText(`${ORIGIN}/lite/messages-action.xml`, {
     ...OPTIONS,
     method: 'POST',
@@ -140,10 +141,10 @@ async function remove(item: MailMessage): Promise<void> {
 
 /** Yandex Mail through the browser's sign-in. */
 export const yandex = sessionProvider({
-  label: 'Яндекс Почта',
+  label: t('service_yandex'),
   async connect(email) {
     const address = firstAddress(email || '');
-    if (!address) throw new Error('Укажите адрес Яндекс Почты.');
+    if (!address) throw new Error(t('error_yandex_address'));
     await inbox();
     return address;
   },

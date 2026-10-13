@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.10
+
+- **ADDED**: the interface in 13 languages through `chrome.i18n` (English, Russian, Ukrainian, German, French, Spanish, Italian, Portuguese (Brazil), Polish, Turkish, Chinese (Simplified), Japanese, Korean): pages, worker errors, notifications and the store description; the browser's language picks one, dates and sizes follow it
+- **CHANGED**: dark HTML mail adapts each colour instead of inverting the page: light backgrounds become dark and dark text light, while dark headers and images stay as the sender made them
+- **CHANGED**: `scripts/check.mjs` checks every locale against English and every key used in code
+
 ## 0.0.9
 
 - **FIXED**: HTML mail stayed on white paper in the dark theme; it is now inverted to the dark surface with images and media inverted back, so fixed sender colours stay readable

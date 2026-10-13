@@ -15,6 +15,7 @@
 import {createEffect, onCleanup, onMount, Show} from 'solid-js';
 import {render} from 'solid-js/web';
 import {applyTheme} from '../shared/dom';
+import {localize} from '../shared/i18n';
 import {MessageList} from './components/MessageList';
 import {Reader} from './components/Reader';
 import {Sidebar} from './components/Sidebar';
@@ -118,4 +119,5 @@ function App() {
 if (mode === 'popup' && Math.min(screen.width, screen.height) < 820 && matchMedia('(pointer: coarse)').matches)
   document.documentElement.dataset.narrow = 'true';
 
+localize();
 render(() => <App />, document.getElementById('root')!);

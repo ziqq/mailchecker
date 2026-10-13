@@ -18,6 +18,7 @@ import type {Credentials} from '../../shared/types';
 import {AuthError, HTTPError, requestJSON} from '../http';
 import {hasIdentity, supportsIdentity} from '../platform';
 import {oauthConfig as config} from './config';
+import {t} from '../../shared/i18n';
 
 /** OAuth providers. */
 export type OAuthProvider = 'google' | 'microsoft';
@@ -44,12 +45,8 @@ export function redirectURI(provider: OAuthProvider): string {
 
 /** Returns the client ID or throws a user-facing error. */
 function clientID(provider: OAuthProvider): string {
-  if (!hasIdentity())
-    throw new Error(
-      'В этом браузере вход выполняется через приложение mailchecker (Safari). Используйте JMAP или Chrome.',
-    );
-  if (!available(provider))
-    throw new Error('Вход не настроен в этой сборке: укажите OAuth Client ID в src/background/oauth/config.ts.');
+  if (!hasIdentity()) throw new Error(t('error_oauth_safari'));
+  if (!available(provider)) throw new Error(t('error_oauth_unconfigured'));
   return config[provider];
 }
 
@@ -79,16 +76,16 @@ async function launch(url: URL, provider: OAuthProvider, interactive: boolean): 
     result = new URL(callback || '');
   } catch {
     if (!interactive) throw new AuthError();
-    throw new Error('Вход отменён или не удался.');
+    throw new Error(t('error_oauth_cancelled'));
   }
-  if (result.origin + result.pathname !== redirectURI(provider)) throw new Error('Неверный адрес возврата OAuth.');
+  if (result.origin + result.pathname !== redirectURI(provider)) throw new Error(t('error_oauth_redirect'));
   return result;
 }
 
 /** Validates a bearer token value. */
 function token(value: unknown): string {
   if (typeof value !== 'string' || !value || value.length > 8192 || /\s/.test(value))
-    throw new Error('Сервис входа не вернул корректный токен.');
+    throw new Error(t('error_oauth_token'));
   return value;
 }
 
@@ -118,10 +115,10 @@ export async function google({
     ...(loginHint ? {login_hint: loginHint} : {}),
   }).toString();
   const result = new URLSearchParams((await launch(url, 'google', interactive)).hash.slice(1));
-  if (result.get('state') !== state) throw new Error('Ответ входа Google не прошёл проверку.');
+  if (result.get('state') !== state) throw new Error(t('error_oauth_state', 'Google'));
   if (result.get('error')) {
     if (!interactive) throw new AuthError();
-    throw new Error('Google отклонил вход.');
+    throw new Error(t('error_oauth_denied', 'Google'));
   }
   const expiresIn = Number(result.get('expires_in')) || 3600;
   return {token: token(result.get('access_token')), expiresAt: Date.now() + (expiresIn - 60) * 1000};
@@ -149,9 +146,9 @@ export async function microsoft({loginHint}: {loginHint?: string} = {}): Promise
     ...(loginHint ? {login_hint: loginHint} : {}),
   }).toString();
   const result = (await launch(url, 'microsoft', true)).searchParams;
-  if (result.get('state') !== state) throw new Error('Ответ входа Microsoft не прошёл проверку.');
+  if (result.get('state') !== state) throw new Error(t('error_oauth_state', 'Microsoft'));
   const code = result.get('code');
-  if (!code) throw new Error('Microsoft отклонил вход.');
+  if (!code) throw new Error(t('error_oauth_denied', 'Microsoft'));
   return microsoftToken({
     grant_type: 'authorization_code',
     code,

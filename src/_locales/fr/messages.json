@@ -1,0 +1,716 @@
+{
+  "accent_blue": {
+    "message": "Bleu"
+  },
+  "accent_cyan": {
+    "message": "Cyan"
+  },
+  "accent_gray": {
+    "message": "Gris"
+  },
+  "accent_green": {
+    "message": "Vert"
+  },
+  "accent_label": {
+    "message": "Accent"
+  },
+  "accent_neutral": {
+    "message": "Graphite"
+  },
+  "accent_orange": {
+    "message": "Orange"
+  },
+  "accent_pink": {
+    "message": "Rose"
+  },
+  "accent_purple": {
+    "message": "Violet"
+  },
+  "accent_red": {
+    "message": "Rouge"
+  },
+  "accent_text": {
+    "message": "La couleur des boutons et de la sélection, ou la palette graphite."
+  },
+  "accent_yellow": {
+    "message": "Jaune"
+  },
+  "account_checked": {
+    "message": "Non lus : $1 · vérifié $2"
+  },
+  "account_color": {
+    "message": "Couleur de $1"
+  },
+  "account_color_title": {
+    "message": "Couleur de la boîte"
+  },
+  "account_removed": {
+    "message": "Boîte supprimée."
+  },
+  "account_unchecked": {
+    "message": "$1 · pas encore vérifiée"
+  },
+  "accounts_empty": {
+    "message": "Aucune boîte pour l’instant. Ajoutez la première ci-dessous."
+  },
+  "accounts_text": {
+    "message": "Adresses connectées et leur état."
+  },
+  "action_add": {
+    "message": "Ajouter"
+  },
+  "action_add_mailbox": {
+    "message": "Ajouter une boîte"
+  },
+  "action_archive": {
+    "message": "Archiver"
+  },
+  "action_back": {
+    "message": "Retour à la liste"
+  },
+  "action_cancel": {
+    "message": "Annuler"
+  },
+  "action_check_now": {
+    "message": "Vérifier"
+  },
+  "action_connect": {
+    "message": "Connecter"
+  },
+  "action_delete": {
+    "message": "Supprimer"
+  },
+  "action_delete_account": {
+    "message": "Retirer $1"
+  },
+  "action_full_screen": {
+    "message": "Ouvrir en plein écran"
+  },
+  "action_open_mail": {
+    "message": "Ouvrir la messagerie"
+  },
+  "action_open_webmail": {
+    "message": "Ouvrir dans le webmail"
+  },
+  "action_pin": {
+    "message": "Épingler"
+  },
+  "action_read": {
+    "message": "Marquer comme lu"
+  },
+  "action_read_toggle": {
+    "message": "Lu ou non lu"
+  },
+  "action_reply": {
+    "message": "Répondre"
+  },
+  "action_settings": {
+    "message": "Paramètres"
+  },
+  "action_show": {
+    "message": "Afficher"
+  },
+  "action_sign_in": {
+    "message": "Se connecter"
+  },
+  "action_sign_in_again": {
+    "message": "Se reconnecter"
+  },
+  "action_theme": {
+    "message": "Changer de thème"
+  },
+  "action_unpin": {
+    "message": "Désépingler"
+  },
+  "action_unread": {
+    "message": "Marquer comme non lu"
+  },
+  "address_hint": {
+    "message": "Connectez-vous d’abord à cette boîte dans le navigateur. Aucun mot de passe n’est nécessaire : l’extension lit le courrier via votre connexion."
+  },
+  "address_subtitle": {
+    "message": "Via la connexion dans ce navigateur"
+  },
+  "all_mailboxes": {
+    "message": "Toutes les boîtes"
+  },
+  "app_title": {
+    "message": "mailchecker · Courrier"
+  },
+  "appearance_text": {
+    "message": "Thème et couleur d’accent de la fenêtre et des paramètres."
+  },
+  "appearance_title": {
+    "message": "Apparence"
+  },
+  "badge_title": {
+    "message": "mailchecker · non lus : $1"
+  },
+  "badge_title_problems": {
+    "message": "mailchecker · non lus : $1 · boîtes en erreur : $2"
+  },
+  "busy_archiving": {
+    "message": "Archivage…"
+  },
+  "busy_deleting": {
+    "message": "Suppression…"
+  },
+  "check_text": {
+    "message": "À quelle fréquence vérifier et quoi afficher."
+  },
+  "check_title": {
+    "message": "Vérification du courrier"
+  },
+  "confirm_delete_account": {
+    "message": "Retirer $1 de l’extension ?"
+  },
+  "connected": {
+    "message": "Connectée : $1"
+  },
+  "connected_plain": {
+    "message": "Connectée."
+  },
+  "copied_redirect": {
+    "message": "Adresse de redirection $1 copiée."
+  },
+  "copy_failed": {
+    "message": "Impossible de copier l’adresse."
+  },
+  "copy_redirect": {
+    "message": "Copier l’adresse de redirection"
+  },
+  "copy_redirect_named": {
+    "message": "Copier l’adresse de redirection $1"
+  },
+  "error_account_changed": {
+    "message": "La boîte a changé pendant la connexion. Réessayez."
+  },
+  "error_account_missing": {
+    "message": "Boîte introuvable."
+  },
+  "error_bad_address": {
+    "message": "$1 : adresse non valide."
+  },
+  "error_bad_message": {
+    "message": "Message non valide."
+  },
+  "error_bad_response": {
+    "message": "$1 a renvoyé une réponse non valide."
+  },
+  "error_check_failed": {
+    "message": "Impossible de vérifier le courrier."
+  },
+  "error_delete_in_webmail": {
+    "message": "Supprimez ce message dans le webmail."
+  },
+  "error_generic": {
+    "message": "erreur"
+  },
+  "error_gmail_action": {
+    "message": "Gmail n’a pas autorisé l’action. Réessayez dans Gmail."
+  },
+  "error_gmail_address": {
+    "message": "Impossible de déterminer l’adresse Gmail. Ouvrez Gmail dans ce navigateur et réessayez."
+  },
+  "error_gmail_cookies": {
+    "message": "Pour agir dans Gmail, reconnectez la boîte dans les paramètres et autorisez l’accès aux cookies Gmail."
+  },
+  "error_gmail_key": {
+    "message": "Gmail n’a pas fourni la clé de page pour les actions. Ouvrez Gmail dans ce navigateur et réessayez."
+  },
+  "error_http_status": {
+    "message": "$1 : erreur $2."
+  },
+  "error_https_only": {
+    "message": "Seules les adresses HTTPS sont autorisées."
+  },
+  "error_identity_denied": {
+    "message": "Sans l’autorisation de connexion du navigateur, la boîte ne peut pas être connectée."
+  },
+  "error_identity_permission": {
+    "message": "Autorisez la connexion du navigateur dans les paramètres de l’extension et réessayez."
+  },
+  "error_in_webmail": {
+    "message": "Pour la boîte « $1 » connectée via la connexion du navigateur, cette action est disponible dans le webmail : ouvrez-y le message."
+  },
+  "error_jmap_access": {
+    "message": "L’accès au serveur JMAP n’a pas été autorisé."
+  },
+  "error_jmap_folders": {
+    "message": "La boîte n’a pas de dossiers Brouillons et Envoyés."
+  },
+  "error_jmap_generic": {
+    "message": "JMAP : $1."
+  },
+  "error_jmap_identity": {
+    "message": "JMAP : aucune adresse d’expéditeur pour la réponse."
+  },
+  "error_jmap_mail": {
+    "message": "Le serveur ne prend pas en charge JMAP Mail."
+  },
+  "error_jmap_origin": {
+    "message": "L’API JMAP est sur un autre domaine ; ces serveurs ne sont pas pris en charge."
+  },
+  "error_jmap_permission": {
+    "message": "Autorisez l’accès au serveur JMAP et réessayez."
+  },
+  "error_jmap_rejected": {
+    "message": "Le jeton JMAP a été refusé. Retirez la boîte et ajoutez un nouveau jeton."
+  },
+  "error_jmap_renew": {
+    "message": "Pour JMAP, retirez la boîte et ajoutez-la à nouveau avec un nouveau jeton."
+  },
+  "error_jmap_send": {
+    "message": "JMAP : le serveur n’a pas envoyé la réponse."
+  },
+  "error_jmap_token": {
+    "message": "Saisissez le jeton API sans espaces."
+  },
+  "error_jmap_url": {
+    "message": "URL de session JMAP non valide."
+  },
+  "error_mailru_action": {
+    "message": "Mail.ru n’a pas effectué l’action. Réessayez dans le webmail."
+  },
+  "error_mailru_address": {
+    "message": "Saisissez l’adresse Mail.ru."
+  },
+  "error_need_https": {
+    "message": "$1 : une adresse HTTPS est requise."
+  },
+  "error_no_address": {
+    "message": "$1 n’a pas renvoyé l’adresse de la boîte."
+  },
+  "error_no_folder": {
+    "message": "La boîte n’a pas de dossier « $1 »."
+  },
+  "error_no_reply": {
+    "message": "L’extension ne répond pas. Rechargez la page."
+  },
+  "error_oauth_cancelled": {
+    "message": "La connexion a été annulée ou a échoué."
+  },
+  "error_oauth_denied": {
+    "message": "$1 a refusé la connexion."
+  },
+  "error_oauth_redirect": {
+    "message": "Adresse de redirection OAuth non valide."
+  },
+  "error_oauth_safari": {
+    "message": "Dans ce navigateur, la connexion se fait dans l’app mailchecker (Safari). Utilisez JMAP ou Chrome."
+  },
+  "error_oauth_state": {
+    "message": "La réponse de connexion de $1 n’a pas passé la vérification."
+  },
+  "error_oauth_token": {
+    "message": "Le service de connexion n’a pas renvoyé de jeton valide."
+  },
+  "error_oauth_unconfigured": {
+    "message": "La connexion n’est pas configurée dans cette version : définissez l’OAuth Client ID dans src/background/oauth/config.ts."
+  },
+  "error_rate_limited": {
+    "message": "« $1 » a temporairement limité l’accès : trop de requêtes. La vérification sera relancée plus tard."
+  },
+  "error_reply_text": {
+    "message": "Rédigez une réponse (jusqu’à 100 000 caractères)."
+  },
+  "error_reply_webmail": {
+    "message": "Pour cette boîte, les réponses se rédigent dans le webmail."
+  },
+  "error_request_denied": {
+    "message": "Cette requête n’est pas autorisée."
+  },
+  "error_session_expired": {
+    "message": "Session expirée. Reconnectez-vous."
+  },
+  "error_session_host": {
+    "message": "Cette adresse ne peut pas utiliser la connexion du navigateur."
+  },
+  "error_session_or_network": {
+    "message": "Connectez-vous à « $1 » dans ce navigateur (ou vérifiez le réseau) et réessayez."
+  },
+  "error_sign_in_mailru": {
+    "message": "Connectez-vous à Mail.ru dans ce navigateur et réessayez."
+  },
+  "error_sign_in_webmail": {
+    "message": "Connectez-vous à « $1 » dans ce navigateur et réessayez."
+  },
+  "error_sign_in_yandex": {
+    "message": "Connectez-vous à Yandex Mail dans ce navigateur et réessayez."
+  },
+  "error_site_denied": {
+    "message": "Sans accès à « $1 », la boîte ne peut pas être connectée via le navigateur."
+  },
+  "error_site_permission": {
+    "message": "Autorisez l’accès à « $1 » : ajoutez à nouveau la boîte dans les paramètres."
+  },
+  "error_timeout": {
+    "message": "$1 n’a pas répondu à temps."
+  },
+  "error_too_large": {
+    "message": "Le serveur a renvoyé une réponse trop volumineuse."
+  },
+  "error_too_many_accounts": {
+    "message": "Vous pouvez connecter jusqu’à $1 boîtes."
+  },
+  "error_unexpected_page": {
+    "message": "$1 a renvoyé une page inattendue."
+  },
+  "error_unexpected_reply": {
+    "message": "$1 a renvoyé une réponse inattendue."
+  },
+  "error_unknown": {
+    "message": "Erreur inconnue."
+  },
+  "error_unknown_action": {
+    "message": "Action inconnue."
+  },
+  "error_unknown_color": {
+    "message": "Couleur inconnue."
+  },
+  "error_unknown_provider": {
+    "message": "Type de boîte inconnu."
+  },
+  "error_unreachable": {
+    "message": "$1 est injoignable. Vérifiez le réseau."
+  },
+  "error_webmail_timeout": {
+    "message": "« $1 » ne répond pas. Réessayez plus tard."
+  },
+  "error_yandex_address": {
+    "message": "Saisissez l’adresse Yandex Mail."
+  },
+  "extension_description": {
+    "message": "Client mail dans la barre d’outils : boîte unifiée, lecture sûre et réponses pour Gmail, Yandex Mail, Mail.ru, Microsoft 365, JMAP."
+  },
+  "feature_local": {
+    "message": "Local uniquement"
+  },
+  "feature_local_text": {
+    "message": "Les jetons restent dans le profil du navigateur."
+  },
+  "feature_passwords": {
+    "message": "Sans mot de passe"
+  },
+  "feature_passwords_text": {
+    "message": "Vous vous connectez sur les pages de Google, de Microsoft ou du webmail."
+  },
+  "feature_server": {
+    "message": "Sans serveur"
+  },
+  "feature_server_text": {
+    "message": "Les requêtes vont directement aux API de messagerie."
+  },
+  "field_address": {
+    "message": "Adresse de la boîte"
+  },
+  "field_api_token": {
+    "message": "Jeton API"
+  },
+  "field_optional": {
+    "message": "(facultatif)"
+  },
+  "field_webmail": {
+    "message": "Webmail"
+  },
+  "field_webmail_link": {
+    "message": "Lien du webmail"
+  },
+  "filter_all": {
+    "message": "Tous"
+  },
+  "folder_archive": {
+    "message": "Archives"
+  },
+  "folder_inbox": {
+    "message": "Réception"
+  },
+  "folder_trash": {
+    "message": "Corbeille"
+  },
+  "header_cc": {
+    "message": "Cc : $1"
+  },
+  "header_to": {
+    "message": "À : $1"
+  },
+  "hero_eyebrow": {
+    "message": "Une boîte mail dans le navigateur"
+  },
+  "hero_lead": {
+    "message": "Compteur, liste et notifications pour Gmail, Yandex Mail, Mail.ru, Microsoft 365 et JMAP. Sans serveur propre ni app supplémentaire."
+  },
+  "hint_archive": {
+    "message": "archiver"
+  },
+  "hint_navigate": {
+    "message": "parcourir la liste"
+  },
+  "hint_pin": {
+    "message": "épingler"
+  },
+  "hint_search": {
+    "message": "rechercher"
+  },
+  "inbox_empty": {
+    "message": "Tout est traité"
+  },
+  "inbox_empty_text": {
+    "message": "Aucun nouveau message ici."
+  },
+  "interval_label": {
+    "message": "Intervalle, minutes"
+  },
+  "interval_text": {
+    "message": "De 0,5 à 60."
+  },
+  "label_attachments": {
+    "message": "Avec pièces jointes"
+  },
+  "label_categories": {
+    "message": "Catégories"
+  },
+  "label_mailboxes": {
+    "message": "Boîtes"
+  },
+  "label_message": {
+    "message": "Message"
+  },
+  "label_message_text": {
+    "message": "Texte du message"
+  },
+  "label_messages": {
+    "message": "Messages"
+  },
+  "label_pinned": {
+    "message": "Épinglés"
+  },
+  "label_sections": {
+    "message": "Sections"
+  },
+  "limit_label": {
+    "message": "Messages dans la liste"
+  },
+  "limit_text": {
+    "message": "Par boîte, jusqu’à 50."
+  },
+  "messages_count_many": {
+    "message": "$1 de messages"
+  },
+  "messages_count_one": {
+    "message": "$1 message"
+  },
+  "messages_count_other": {
+    "message": "$1 messages"
+  },
+  "method_browser": {
+    "message": "Via le navigateur"
+  },
+  "method_google": {
+    "message": "Avec Google"
+  },
+  "no_subject": {
+    "message": "(sans objet)"
+  },
+  "notification_new": {
+    "message": "Nouveaux messages : $1"
+  },
+  "notifications_text": {
+    "message": "Une notification système pour le nouveau courrier."
+  },
+  "oauth_has_id": {
+    "message": "· Client ID défini"
+  },
+  "oauth_no_id": {
+    "message": "· Client ID non défini"
+  },
+  "oauth_note_build": {
+    "message": "Ces méthodes fonctionnent quand un Client ID est défini dans la version :"
+  },
+  "oauth_note_setup": {
+    "message": "Créez un client OAuth dans Google Cloud ou Microsoft Entra et saisissez l’adresse de redirection ci-dessous. Les boîtes connectées via le navigateur n’en ont pas besoin."
+  },
+  "oauth_text": {
+    "message": "Uniquement pour compiler l’extension : connexions « Avec Google » et Outlook."
+  },
+  "oauth_title": {
+    "message": "Connexion avec Google et Microsoft"
+  },
+  "oauth_unconfigured": {
+    "message": "Client ID non configuré."
+  },
+  "popup_full": {
+    "message": "Complète"
+  },
+  "popup_label": {
+    "message": "Fenêtre"
+  },
+  "popup_mini": {
+    "message": "Mini"
+  },
+  "popup_text": {
+    "message": "La taille de la fenêtre ouverte depuis le bouton de la barre d’outils."
+  },
+  "privacy_images_many": {
+    "message": "Bloquées : $1 d’images"
+  },
+  "privacy_images_one": {
+    "message": "Bloquée : $1 image"
+  },
+  "privacy_images_other": {
+    "message": "Bloquées : $1 images"
+  },
+  "privacy_trackers_many": {
+    "message": "et $1 de traqueurs"
+  },
+  "privacy_trackers_one": {
+    "message": "et $1 traqueur"
+  },
+  "privacy_trackers_other": {
+    "message": "et $1 traqueurs"
+  },
+  "provider_gmail_text": {
+    "message": "Via la connexion Gmail dans ce navigateur ou un compte Google."
+  },
+  "provider_jmap_text": {
+    "message": "Fastmail, Stalwart, Cyrus — avec un jeton API."
+  },
+  "provider_mailru_text": {
+    "message": "Via la connexion Mail.ru dans ce navigateur."
+  },
+  "provider_outlook_text": {
+    "message": "Outlook.com, Hotmail, Exchange Online sur n’importe quel domaine."
+  },
+  "provider_yandex_text": {
+    "message": "Via la connexion Yandex Mail dans ce navigateur."
+  },
+  "reader_empty": {
+    "message": "Choisissez un message"
+  },
+  "reader_eyebrow": {
+    "message": "Lecture"
+  },
+  "reader_failed": {
+    "message": "Impossible d’ouvrir le message"
+  },
+  "reply_heading": {
+    "message": "Réponse · $1"
+  },
+  "reply_hint": {
+    "message": "⌘/Ctrl + Enter pour envoyer"
+  },
+  "reply_placeholder": {
+    "message": "Texte de la réponse"
+  },
+  "reply_send": {
+    "message": "Envoyer"
+  },
+  "reply_sending": {
+    "message": "Envoi…"
+  },
+  "reply_sent": {
+    "message": "Réponse envoyée."
+  },
+  "search_empty": {
+    "message": "Aucun résultat"
+  },
+  "search_empty_text": {
+    "message": "Essayez une autre requête."
+  },
+  "search_placeholder": {
+    "message": "Rechercher dans toutes les boîtes"
+  },
+  "search_results": {
+    "message": "Résultats de recherche"
+  },
+  "search_title": {
+    "message": "« $1 »"
+  },
+  "section_inbox": {
+    "message": "Autres"
+  },
+  "section_newsletters": {
+    "message": "Newsletters"
+  },
+  "section_notifications": {
+    "message": "Notifications"
+  },
+  "section_people": {
+    "message": "Personnel"
+  },
+  "section_pinned": {
+    "message": "Épinglés"
+  },
+  "service_mailru": {
+    "message": "Mail.ru"
+  },
+  "service_server": {
+    "message": "Serveur"
+  },
+  "service_yandex": {
+    "message": "Yandex Mail"
+  },
+  "settings_title": {
+    "message": "mailchecker · Paramètres"
+  },
+  "signed_in": {
+    "message": "Connecté : $1"
+  },
+  "snippet_full_text": {
+    "message": "$1\n\nLe texte complet est dans le webmail : utilisez « Ouvrir dans le webmail »."
+  },
+  "status_wait": {
+    "message": "Veuillez patienter…"
+  },
+  "theme_auto": {
+    "message": "Auto"
+  },
+  "theme_auto_title": {
+    "message": "Thème : système"
+  },
+  "theme_dark": {
+    "message": "Sombre"
+  },
+  "theme_dark_title": {
+    "message": "Thème : sombre"
+  },
+  "theme_label": {
+    "message": "Thème"
+  },
+  "theme_light": {
+    "message": "Clair"
+  },
+  "theme_light_title": {
+    "message": "Thème : clair"
+  },
+  "theme_text": {
+    "message": "Clair, sombre ou comme le système."
+  },
+  "theme_title": {
+    "message": "Thème : $1"
+  },
+  "unread_new_many": {
+    "message": "$1 de nouveaux"
+  },
+  "unread_new_one": {
+    "message": "$1 nouveau"
+  },
+  "unread_new_other": {
+    "message": "$1 nouveaux"
+  },
+  "view_inbox": {
+    "message": "Réception"
+  },
+  "welcome_eyebrow": {
+    "message": "Le courrier dans le navigateur"
+  },
+  "welcome_text": {
+    "message": "Connectez Gmail, Yandex Mail, Mail.ru, Microsoft 365 ou une boîte JMAP sur n’importe quel domaine."
+  },
+  "welcome_title_1": {
+    "message": "Tout votre courrier"
+  },
+  "welcome_title_2": {
+    "message": "En un coup d’œil"
+  }
+}

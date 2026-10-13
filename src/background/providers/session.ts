@@ -17,6 +17,7 @@
 import type {Account, Credentials, InboxResult, MailMessage, MessageAction} from '../../shared/types';
 import {AuthError} from '../http';
 import {decodeEntities, threadMessage, type Connection, type Provider} from './message';
+import {t} from '../../shared/i18n';
 
 /** The parts a browser-session adapter supplies. */
 export interface SessionAdapter {
@@ -96,8 +97,7 @@ export function firstAddress(value: string): string {
 }
 
 /** A message for features the browser session cannot do; the webmail has them. */
-const IN_WEBMAIL = (label: string) =>
-  `Для ящика «${label}», подключённого через вход в браузере, это действие доступно в веб-почте: откройте письмо там.`;
+const IN_WEBMAIL = (label: string) => t('error_in_webmail', label);
 
 /**
  * Returns a [Provider] for a mailbox read through the browser's sign-in.
@@ -113,7 +113,7 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
       return {email: await adapter.connect(input?.email), credentials: empty, settings: {browser: true}};
     },
     async renew(): Promise<Credentials> {
-      throw new AuthError(`Войдите в ${adapter.label} в этом браузере и повторите.`);
+      throw new AuthError(t('error_sign_in_webmail', adapter.label));
     },
     async signIn(account: Account): Promise<Credentials> {
       await adapter.inbox(account, 1);
@@ -133,7 +133,7 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
           date: item.date,
           unread: item.unread,
           html: full ? body?.html : '',
-          text: full ? body?.text : `${item.snippet}\n\nПолный текст — в веб-почте: кнопка «Открыть в веб-почте».`,
+          text: full ? body?.text : t('snippet_full_text', item.snippet),
         }),
       ];
     },

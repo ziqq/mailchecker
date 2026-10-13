@@ -21,6 +21,7 @@ import type {Account, InboxResult, MailMessage} from '../../shared/types';
 import {AuthError, requestJSON, type RequestOptions} from '../http';
 import {bareAddress, categorize, message, replySubject} from './message';
 import {firstAddress, sessionProvider} from './session';
+import {t} from '../../shared/i18n';
 
 /** The webmail API. */
 const API = 'https://e.mail.ru/api/v1';
@@ -58,7 +59,7 @@ function link(id: string, folder: string): string {
  * @throws {AuthError} When Mail.ru refuses the address.
  */
 export function parseUnread(reply: Reply | null, now = Date.now()): InboxResult {
-  if (Number(reply?.status) === 403) throw new AuthError('Войдите в Почту Mail.ru в этом браузере и повторите.');
+  if (Number(reply?.status) === 403) throw new AuthError(t('error_sign_in_mailru'));
   const list = Array.isArray(reply?.body) ? (reply.body as Record<string, unknown>[]) : [];
   const messages = list.slice(0, 100).map((item, index) => {
     const id = String(item.id ?? item.mid ?? '');
@@ -95,7 +96,7 @@ async function call(url: string, options: RequestOptions): Promise<Reply> {
 const mailbox = (email: string): string => `email=${encodeURIComponent(email)}&x-email=${encodeURIComponent(email)}`;
 
 /** Session request options. */
-const OPTIONS: RequestOptions = {session: true, service: 'Почта Mail.ru'};
+const OPTIONS: RequestOptions = {session: true, service: t('service_mailru')};
 
 /** The trash folder of a Mail.ru mailbox. */
 const TRASH = '500002';
@@ -103,9 +104,9 @@ const TRASH = '500002';
 /** Returns an API token for [email], issued for the browser's Mail.ru sign-in. */
 async function token(email: string): Promise<string> {
   const reply = await call(`${API}/tokens?${mailbox(email)}`, OPTIONS);
-  if (Number(reply?.status) === 403) throw new AuthError('Войдите в Почту Mail.ru в этом браузере и повторите.');
+  if (Number(reply?.status) === 403) throw new AuthError(t('error_sign_in_mailru'));
   const value = (reply?.body as {token?: unknown} | undefined)?.token;
-  if (typeof value !== 'string' || !value) throw new Error('Почта Mail.ru вернула неожиданный ответ.');
+  if (typeof value !== 'string' || !value) throw new Error(t('error_unexpected_reply', t('service_mailru')));
   return value;
 }
 
@@ -139,15 +140,15 @@ async function post(email: string, path: string, form: Record<string, string>): 
     method: 'POST',
     form: {...form, email, htmlencoded: 'false', token: await token(email)},
   });
-  if (Number(reply?.status) !== 200) throw new Error('Почта Mail.ru не выполнила действие. Повторите в веб-почте.');
+  if (Number(reply?.status) !== 200) throw new Error(t('error_mailru_action'));
 }
 
 /** Mail.ru through the browser's sign-in. */
 export const mailru = sessionProvider({
-  label: 'Почта Mail.ru',
+  label: t('service_mailru'),
   async connect(email) {
     const address = firstAddress(email || '');
-    if (!address) throw new Error('Укажите адрес Почты Mail.ru.');
+    if (!address) throw new Error(t('error_mailru_address'));
     await unread(address);
     return address;
   },

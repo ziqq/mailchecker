@@ -1,0 +1,704 @@
+{
+  "accent_blue": {
+    "message": "Blue"
+  },
+  "accent_cyan": {
+    "message": "Cyan"
+  },
+  "accent_gray": {
+    "message": "Grey"
+  },
+  "accent_green": {
+    "message": "Green"
+  },
+  "accent_label": {
+    "message": "Accent"
+  },
+  "accent_neutral": {
+    "message": "Graphite"
+  },
+  "accent_orange": {
+    "message": "Orange"
+  },
+  "accent_pink": {
+    "message": "Pink"
+  },
+  "accent_purple": {
+    "message": "Purple"
+  },
+  "accent_red": {
+    "message": "Red"
+  },
+  "accent_text": {
+    "message": "The colour of buttons and selection, or the graphite palette."
+  },
+  "accent_yellow": {
+    "message": "Yellow"
+  },
+  "account_checked": {
+    "message": "Unread: $1 · checked $2"
+  },
+  "account_color": {
+    "message": "Colour of $1"
+  },
+  "account_color_title": {
+    "message": "Mailbox colour"
+  },
+  "account_removed": {
+    "message": "Mailbox removed."
+  },
+  "account_unchecked": {
+    "message": "$1 · not checked yet"
+  },
+  "accounts_empty": {
+    "message": "No mailboxes yet. Add the first one below."
+  },
+  "accounts_text": {
+    "message": "Connected addresses and their state."
+  },
+  "action_add": {
+    "message": "Add"
+  },
+  "action_add_mailbox": {
+    "message": "Add a mailbox"
+  },
+  "action_archive": {
+    "message": "Archive"
+  },
+  "action_back": {
+    "message": "Back to the list"
+  },
+  "action_cancel": {
+    "message": "Cancel"
+  },
+  "action_check_now": {
+    "message": "Check now"
+  },
+  "action_connect": {
+    "message": "Connect"
+  },
+  "action_delete": {
+    "message": "Delete"
+  },
+  "action_delete_account": {
+    "message": "Remove $1"
+  },
+  "action_full_screen": {
+    "message": "Open full screen"
+  },
+  "action_open_mail": {
+    "message": "Open mail"
+  },
+  "action_open_webmail": {
+    "message": "Open in webmail"
+  },
+  "action_pin": {
+    "message": "Pin"
+  },
+  "action_read": {
+    "message": "Mark as read"
+  },
+  "action_read_toggle": {
+    "message": "Read or unread"
+  },
+  "action_reply": {
+    "message": "Reply"
+  },
+  "action_settings": {
+    "message": "Settings"
+  },
+  "action_show": {
+    "message": "Show"
+  },
+  "action_sign_in": {
+    "message": "Sign in"
+  },
+  "action_sign_in_again": {
+    "message": "Sign in again"
+  },
+  "action_theme": {
+    "message": "Change theme"
+  },
+  "action_unpin": {
+    "message": "Unpin"
+  },
+  "action_unread": {
+    "message": "Mark as unread"
+  },
+  "address_hint": {
+    "message": "Sign in to this mailbox in the browser first. No password is needed: the extension reads mail through your sign-in."
+  },
+  "address_subtitle": {
+    "message": "Through the sign-in in this browser"
+  },
+  "all_mailboxes": {
+    "message": "All mailboxes"
+  },
+  "app_title": {
+    "message": "mailchecker · Mail"
+  },
+  "appearance_text": {
+    "message": "Theme and accent colour for the window and Settings."
+  },
+  "appearance_title": {
+    "message": "Appearance"
+  },
+  "badge_title": {
+    "message": "mailchecker · unread: $1"
+  },
+  "badge_title_problems": {
+    "message": "mailchecker · unread: $1 · mailboxes with errors: $2"
+  },
+  "busy_archiving": {
+    "message": "Archiving…"
+  },
+  "busy_deleting": {
+    "message": "Deleting…"
+  },
+  "check_text": {
+    "message": "How often to check and what to show."
+  },
+  "check_title": {
+    "message": "Mail checks"
+  },
+  "confirm_delete_account": {
+    "message": "Remove $1 from the extension?"
+  },
+  "connected": {
+    "message": "Connected $1"
+  },
+  "connected_plain": {
+    "message": "Connected."
+  },
+  "copied_redirect": {
+    "message": "$1 redirect address copied."
+  },
+  "copy_failed": {
+    "message": "Could not copy the address."
+  },
+  "copy_redirect": {
+    "message": "Copy the redirect address"
+  },
+  "copy_redirect_named": {
+    "message": "Copy the $1 redirect address"
+  },
+  "error_account_changed": {
+    "message": "The mailbox changed during sign-in. Try again."
+  },
+  "error_account_missing": {
+    "message": "Mailbox not found."
+  },
+  "error_bad_address": {
+    "message": "$1: invalid address."
+  },
+  "error_bad_message": {
+    "message": "Invalid message."
+  },
+  "error_bad_response": {
+    "message": "$1 returned an invalid response."
+  },
+  "error_check_failed": {
+    "message": "Could not check the mail."
+  },
+  "error_delete_in_webmail": {
+    "message": "Delete this message in the webmail."
+  },
+  "error_generic": {
+    "message": "error"
+  },
+  "error_gmail_action": {
+    "message": "Gmail did not allow the action. Try again in Gmail."
+  },
+  "error_gmail_address": {
+    "message": "Could not determine the Gmail address. Open Gmail in this browser and try again."
+  },
+  "error_gmail_cookies": {
+    "message": "For actions in Gmail, connect the mailbox again in Settings and allow access to Gmail cookies."
+  },
+  "error_gmail_key": {
+    "message": "Gmail did not provide the page key for actions. Open Gmail in this browser and try again."
+  },
+  "error_http_status": {
+    "message": "$1: error $2."
+  },
+  "error_https_only": {
+    "message": "Only HTTPS addresses are allowed."
+  },
+  "error_identity_denied": {
+    "message": "Without the browser sign-in permission the mailbox cannot be connected."
+  },
+  "error_identity_permission": {
+    "message": "Allow browser sign-in in the extension settings and try again."
+  },
+  "error_in_webmail": {
+    "message": "For the “$1” mailbox connected through the browser sign-in, this action is available in the webmail: open the message there."
+  },
+  "error_jmap_access": {
+    "message": "Access to the JMAP server was not allowed."
+  },
+  "error_jmap_folders": {
+    "message": "The mailbox has no Drafts and Sent folders."
+  },
+  "error_jmap_generic": {
+    "message": "JMAP: $1."
+  },
+  "error_jmap_identity": {
+    "message": "JMAP: no sender address for the reply."
+  },
+  "error_jmap_mail": {
+    "message": "The server does not support JMAP Mail."
+  },
+  "error_jmap_origin": {
+    "message": "The JMAP API is on another domain; such servers are not supported."
+  },
+  "error_jmap_permission": {
+    "message": "Allow access to the JMAP server and try again."
+  },
+  "error_jmap_rejected": {
+    "message": "The JMAP token was rejected. Remove the mailbox and add a new token."
+  },
+  "error_jmap_renew": {
+    "message": "For JMAP, remove the mailbox and add it again with a new token."
+  },
+  "error_jmap_send": {
+    "message": "JMAP: the server did not send the reply."
+  },
+  "error_jmap_token": {
+    "message": "Enter the API token without spaces."
+  },
+  "error_jmap_url": {
+    "message": "Invalid JMAP Session URL."
+  },
+  "error_mailru_action": {
+    "message": "Mail.ru did not complete the action. Try again in the webmail."
+  },
+  "error_mailru_address": {
+    "message": "Enter the Mail.ru address."
+  },
+  "error_need_https": {
+    "message": "$1: an HTTPS address is required."
+  },
+  "error_no_address": {
+    "message": "$1 did not return the mailbox address."
+  },
+  "error_no_folder": {
+    "message": "The mailbox has no “$1” folder."
+  },
+  "error_no_reply": {
+    "message": "The extension did not respond. Reload the page."
+  },
+  "error_oauth_cancelled": {
+    "message": "Sign-in was cancelled or failed."
+  },
+  "error_oauth_denied": {
+    "message": "$1 declined the sign-in."
+  },
+  "error_oauth_redirect": {
+    "message": "Invalid OAuth redirect address."
+  },
+  "error_oauth_safari": {
+    "message": "In this browser, sign-in runs in the mailchecker app (Safari). Use JMAP or Chrome."
+  },
+  "error_oauth_state": {
+    "message": "The $1 sign-in response failed verification."
+  },
+  "error_oauth_token": {
+    "message": "The sign-in service did not return a valid token."
+  },
+  "error_oauth_unconfigured": {
+    "message": "Sign-in is not configured in this build: set the OAuth Client ID in src/background/oauth/config.ts."
+  },
+  "error_rate_limited": {
+    "message": "“$1” has temporarily limited access: too many requests. The check will repeat later."
+  },
+  "error_reply_text": {
+    "message": "Write a reply (up to 100,000 characters)."
+  },
+  "error_reply_webmail": {
+    "message": "For this mailbox, replies are written in the webmail."
+  },
+  "error_request_denied": {
+    "message": "This request is not allowed."
+  },
+  "error_session_expired": {
+    "message": "Session expired. Sign in again."
+  },
+  "error_session_host": {
+    "message": "This address cannot use the browser sign-in."
+  },
+  "error_session_or_network": {
+    "message": "Sign in to “$1” in this browser (or check the network) and try again."
+  },
+  "error_sign_in_mailru": {
+    "message": "Sign in to Mail.ru in this browser and try again."
+  },
+  "error_sign_in_webmail": {
+    "message": "Sign in to “$1” in this browser and try again."
+  },
+  "error_sign_in_yandex": {
+    "message": "Sign in to Yandex Mail in this browser and try again."
+  },
+  "error_site_denied": {
+    "message": "Without access to “$1” the mailbox cannot be connected through the browser."
+  },
+  "error_site_permission": {
+    "message": "Allow access to “$1”: add the mailbox again in Settings."
+  },
+  "error_timeout": {
+    "message": "$1 did not respond in time."
+  },
+  "error_too_large": {
+    "message": "The server returned a response that is too large."
+  },
+  "error_too_many_accounts": {
+    "message": "You can connect up to $1 mailboxes."
+  },
+  "error_unexpected_page": {
+    "message": "$1 returned an unexpected page."
+  },
+  "error_unexpected_reply": {
+    "message": "$1 returned an unexpected response."
+  },
+  "error_unknown": {
+    "message": "Unknown error."
+  },
+  "error_unknown_action": {
+    "message": "Unknown action."
+  },
+  "error_unknown_color": {
+    "message": "Unknown colour."
+  },
+  "error_unknown_provider": {
+    "message": "Unknown mailbox type."
+  },
+  "error_unreachable": {
+    "message": "$1 is unreachable. Check the network."
+  },
+  "error_webmail_timeout": {
+    "message": "“$1” is not responding. Try again later."
+  },
+  "error_yandex_address": {
+    "message": "Enter the Yandex Mail address."
+  },
+  "extension_description": {
+    "message": "A mail client in the toolbar: unified inbox, safe reading and replies for Gmail, Yandex Mail, Mail.ru, Microsoft 365 and JMAP."
+  },
+  "feature_local": {
+    "message": "Local only"
+  },
+  "feature_local_text": {
+    "message": "Tokens stay in the browser profile."
+  },
+  "feature_passwords": {
+    "message": "No passwords"
+  },
+  "feature_passwords_text": {
+    "message": "You sign in on the pages of Google, Microsoft or the webmail."
+  },
+  "feature_server": {
+    "message": "No server"
+  },
+  "feature_server_text": {
+    "message": "Requests go straight to the mail APIs."
+  },
+  "field_address": {
+    "message": "Mailbox address"
+  },
+  "field_api_token": {
+    "message": "API token"
+  },
+  "field_optional": {
+    "message": "(optional)"
+  },
+  "field_webmail": {
+    "message": "Webmail"
+  },
+  "field_webmail_link": {
+    "message": "Webmail link"
+  },
+  "filter_all": {
+    "message": "All"
+  },
+  "folder_archive": {
+    "message": "Archive"
+  },
+  "folder_inbox": {
+    "message": "Inbox"
+  },
+  "folder_trash": {
+    "message": "Trash"
+  },
+  "header_cc": {
+    "message": "Cc: $1"
+  },
+  "header_to": {
+    "message": "To: $1"
+  },
+  "hero_eyebrow": {
+    "message": "A mailbox in your browser"
+  },
+  "hero_lead": {
+    "message": "A counter, list and notifications for Gmail, Yandex Mail, Mail.ru, Microsoft 365 and JMAP. No server of its own and no extra apps."
+  },
+  "hint_archive": {
+    "message": "archive"
+  },
+  "hint_navigate": {
+    "message": "move through the list"
+  },
+  "hint_pin": {
+    "message": "pin"
+  },
+  "hint_search": {
+    "message": "search"
+  },
+  "inbox_empty": {
+    "message": "All done"
+  },
+  "inbox_empty_text": {
+    "message": "No new mail here."
+  },
+  "interval_label": {
+    "message": "Interval, minutes"
+  },
+  "interval_text": {
+    "message": "From 0.5 to 60."
+  },
+  "label_attachments": {
+    "message": "Has attachments"
+  },
+  "label_categories": {
+    "message": "Categories"
+  },
+  "label_mailboxes": {
+    "message": "Mailboxes"
+  },
+  "label_message": {
+    "message": "Message"
+  },
+  "label_message_text": {
+    "message": "Message text"
+  },
+  "label_messages": {
+    "message": "Messages"
+  },
+  "label_pinned": {
+    "message": "Pinned"
+  },
+  "label_sections": {
+    "message": "Sections"
+  },
+  "limit_label": {
+    "message": "Messages in the list"
+  },
+  "limit_text": {
+    "message": "Per mailbox, up to 50."
+  },
+  "messages_count_one": {
+    "message": "$1 message"
+  },
+  "messages_count_other": {
+    "message": "$1 messages"
+  },
+  "method_browser": {
+    "message": "Through the browser"
+  },
+  "method_google": {
+    "message": "With Google"
+  },
+  "no_subject": {
+    "message": "(no subject)"
+  },
+  "notification_new": {
+    "message": "New messages: $1"
+  },
+  "notifications_text": {
+    "message": "A system notification about new mail."
+  },
+  "oauth_has_id": {
+    "message": "· Client ID set"
+  },
+  "oauth_no_id": {
+    "message": "· Client ID not set"
+  },
+  "oauth_note_build": {
+    "message": "These methods work when a Client ID is set in the build:"
+  },
+  "oauth_note_setup": {
+    "message": "Create an OAuth client in Google Cloud or Microsoft Entra and enter the redirect address below. Mailboxes connected through the browser do not need it."
+  },
+  "oauth_text": {
+    "message": "Only for building the extension: “With Google” and Outlook connections."
+  },
+  "oauth_title": {
+    "message": "Sign-in with Google and Microsoft"
+  },
+  "oauth_unconfigured": {
+    "message": "Client ID is not configured."
+  },
+  "popup_full": {
+    "message": "Full"
+  },
+  "popup_label": {
+    "message": "Window"
+  },
+  "popup_mini": {
+    "message": "Mini"
+  },
+  "popup_text": {
+    "message": "The size of the window opened from the toolbar button."
+  },
+  "privacy_images_one": {
+    "message": "Blocked: $1 image"
+  },
+  "privacy_images_other": {
+    "message": "Blocked: $1 images"
+  },
+  "privacy_trackers_one": {
+    "message": "and $1 tracker"
+  },
+  "privacy_trackers_other": {
+    "message": "and $1 trackers"
+  },
+  "provider_gmail_text": {
+    "message": "Through the Gmail sign-in in this browser or a Google account."
+  },
+  "provider_jmap_text": {
+    "message": "Fastmail, Stalwart, Cyrus — with an API token."
+  },
+  "provider_mailru_text": {
+    "message": "Through the Mail.ru sign-in in this browser."
+  },
+  "provider_outlook_text": {
+    "message": "Outlook.com, Hotmail, Exchange Online on any domain."
+  },
+  "provider_yandex_text": {
+    "message": "Through the Yandex Mail sign-in in this browser."
+  },
+  "reader_empty": {
+    "message": "Choose a message"
+  },
+  "reader_eyebrow": {
+    "message": "Reading"
+  },
+  "reader_failed": {
+    "message": "Could not open the message"
+  },
+  "reply_heading": {
+    "message": "Reply · $1"
+  },
+  "reply_hint": {
+    "message": "⌘/Ctrl + Enter to send"
+  },
+  "reply_placeholder": {
+    "message": "Reply text"
+  },
+  "reply_send": {
+    "message": "Send"
+  },
+  "reply_sending": {
+    "message": "Sending…"
+  },
+  "reply_sent": {
+    "message": "Reply sent."
+  },
+  "search_empty": {
+    "message": "Nothing found"
+  },
+  "search_empty_text": {
+    "message": "Try another query."
+  },
+  "search_placeholder": {
+    "message": "Search all mailboxes"
+  },
+  "search_results": {
+    "message": "Search results"
+  },
+  "search_title": {
+    "message": "“$1”"
+  },
+  "section_inbox": {
+    "message": "Everything else"
+  },
+  "section_newsletters": {
+    "message": "Newsletters"
+  },
+  "section_notifications": {
+    "message": "Notifications"
+  },
+  "section_people": {
+    "message": "Personal"
+  },
+  "section_pinned": {
+    "message": "Pinned"
+  },
+  "service_mailru": {
+    "message": "Mail.ru"
+  },
+  "service_server": {
+    "message": "Server"
+  },
+  "service_yandex": {
+    "message": "Yandex Mail"
+  },
+  "settings_title": {
+    "message": "mailchecker · Settings"
+  },
+  "signed_in": {
+    "message": "Signed in: $1"
+  },
+  "snippet_full_text": {
+    "message": "$1\n\nThe full text is in the webmail: use “Open in webmail”."
+  },
+  "status_wait": {
+    "message": "Please wait…"
+  },
+  "theme_auto": {
+    "message": "Auto"
+  },
+  "theme_auto_title": {
+    "message": "Theme: system"
+  },
+  "theme_dark": {
+    "message": "Dark"
+  },
+  "theme_dark_title": {
+    "message": "Theme: dark"
+  },
+  "theme_label": {
+    "message": "Theme"
+  },
+  "theme_light": {
+    "message": "Light"
+  },
+  "theme_light_title": {
+    "message": "Theme: light"
+  },
+  "theme_text": {
+    "message": "Light, dark or as in the system."
+  },
+  "theme_title": {
+    "message": "Theme: $1"
+  },
+  "unread_new_one": {
+    "message": "$1 new"
+  },
+  "unread_new_other": {
+    "message": "$1 new"
+  },
+  "view_inbox": {
+    "message": "Inbox"
+  },
+  "welcome_eyebrow": {
+    "message": "Mail in your browser"
+  },
+  "welcome_text": {
+    "message": "Connect Gmail, Yandex Mail, Mail.ru, Microsoft 365 or a JMAP mailbox on any domain."
+  },
+  "welcome_title_1": {
+    "message": "All your mail"
+  },
+  "welcome_title_2": {
+    "message": "At once"
+  }
+}

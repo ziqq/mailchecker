@@ -13,6 +13,7 @@
 import type {Account, MailMessage} from '../../shared/types';
 import {AuthError, requestJSON} from '../http';
 import {addresses, categorize, count, message, replySubject, threadMessage, type Provider} from './message';
+import {t} from '../../shared/i18n';
 
 /** JMAP capabilities used by every request. */
 const USING = ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'];
@@ -71,9 +72,9 @@ function httpsURL(value: unknown, name: string): string {
   try {
     url = new URL(String(value || '').trim());
   } catch {
-    throw new Error(`${name}: некорректный адрес.`);
+    throw new Error(t('error_bad_address', name));
   }
-  if (url.protocol !== 'https:') throw new Error(`${name}: нужен адрес HTTPS.`);
+  if (url.protocol !== 'https:') throw new Error(t('error_need_https', name));
   return url.toString();
 }
 
@@ -87,11 +88,9 @@ async function session(account: Pick<Account, 'credentials' | 'settings'>) {
     {token: account.credentials.token, service: 'JMAP'},
   );
   const accountID = value?.primaryAccounts?.['urn:ietf:params:jmap:mail'];
-  if (typeof value?.apiUrl !== 'string' || typeof accountID !== 'string')
-    throw new Error('Сервер не поддерживает JMAP Mail.');
+  if (typeof value?.apiUrl !== 'string' || typeof accountID !== 'string') throw new Error(t('error_jmap_mail'));
   const apiURL = new URL(value.apiUrl, sessionURL(account)).toString();
-  if (new URL(apiURL).origin !== new URL(sessionURL(account)).origin)
-    throw new Error('JMAP API находится на другом домене; такой сервер не поддерживается.');
+  if (new URL(apiURL).origin !== new URL(sessionURL(account)).origin) throw new Error(t('error_jmap_origin'));
   return {apiURL, accountID, username: String(value.username || 'JMAP').slice(0, 320)};
 }
 
@@ -110,7 +109,8 @@ async function run(account: Account, calls: Call[], using = USING): Promise<Reco
   });
   const replies: Record<string, Record<string, unknown>> = {};
   for (const [name, args, tag] of value?.methodResponses || []) {
-    if (name === 'error') throw new Error(`JMAP: ${String(args?.description || args?.type || 'ошибка')}.`);
+    if (name === 'error')
+      throw new Error(t('error_jmap_generic', String(args?.description || args?.type || t('error_generic'))));
     replies[tag] = args;
   }
   return replies;
@@ -124,7 +124,7 @@ async function mailboxes(account: Account): Promise<Record<string, JMAPMailbox>>
   const list: JMAPMailbox[] = Array.isArray(replies.mailboxes?.list) ? replies.mailboxes.list : [];
   const roles: Record<string, JMAPMailbox> = {};
   for (const box of list) if (box.role) roles[box.role] = box;
-  if (!roles.inbox) throw new Error('В ящике нет папки «Входящие».');
+  if (!roles.inbox) throw new Error(t('error_no_folder', t('folder_inbox')));
   return roles;
 }
 
@@ -173,7 +173,7 @@ async function patch(account: Account, action: string): Promise<Record<string, u
   }
   const roles = await mailboxes(account);
   const target = roles[action === 'archive' ? 'archive' : 'trash'];
-  if (!target) throw new Error(action === 'archive' ? 'В ящике нет папки «Архив».' : 'В ящике нет папки «Корзина».');
+  if (!target) throw new Error(t('error_no_folder', t(action === 'archive' ? 'folder_archive' : 'folder_trash')));
   return {mailboxIds: {[target.id]: true}};
 }
 
@@ -184,12 +184,12 @@ export const jmap: Provider = {
   async connect(input) {
     const settings = {
       sessionURL: httpsURL(input?.sessionURL, 'JMAP Session URL'),
-      webURL: input?.webURL ? httpsURL(input.webURL, 'Ссылка на веб-почту') : '',
+      webURL: input?.webURL ? httpsURL(input.webURL, t('field_webmail_link')) : '',
     };
     const token = String(input?.token || '').trim();
-    if (!token || token.length > 4096 || /\s/.test(token)) throw new Error('Укажите API-токен без пробелов.');
+    if (!token || token.length > 4096 || /\s/.test(token)) throw new Error(t('error_jmap_token'));
     if (!(await chrome.permissions.contains({origins: [`${new URL(settings.sessionURL).origin}/*`]})))
-      throw new Error('Разрешите доступ к серверу JMAP и повторите.');
+      throw new Error(t('error_jmap_permission'));
     const credentials = {token};
     const current = await session({credentials, settings});
     return {email: current.username, credentials, settings};
@@ -197,11 +197,11 @@ export const jmap: Provider = {
 
   /** API tokens do not expire on their own; a rejected token needs a new one. */
   async renew() {
-    throw new AuthError('Токен JMAP отклонён. Удалите ящик и добавьте новый токен.');
+    throw new AuthError(t('error_jmap_rejected'));
   },
 
   async signIn() {
-    throw new Error('Для JMAP удалите ящик и добавьте его с новым токеном.');
+    throw new Error(t('error_jmap_renew'));
   },
 
   async inbox(account, limit) {
@@ -272,7 +272,7 @@ export const jmap: Provider = {
   // A draft in Drafts, submitted with the first identity and moved to Sent on success (RFC 8621 §7).
   async reply(account, item, text) {
     const roles = await mailboxes(account);
-    if (!roles.drafts || !roles.sent) throw new Error('В ящике нет папок «Черновики» и «Отправленные».');
+    if (!roles.drafts || !roles.sent) throw new Error(t('error_jmap_folders'));
     const replies = await run(
       account,
       [
@@ -289,7 +289,7 @@ export const jmap: Provider = {
     const original = replies.original?.list?.[0] as
       | {messageId?: string[]; references?: string[]; from?: unknown[]; replyTo?: unknown[]; subject?: string}
       | undefined;
-    if (!identity?.id || !identity.email) throw new Error('JMAP: нет адреса отправителя для ответа.');
+    if (!identity?.id || !identity.email) throw new Error(t('error_jmap_identity'));
     const ids = Array.isArray(original?.messageId) ? original.messageId : [];
     const set = await run(
       account,
@@ -330,6 +330,6 @@ export const jmap: Provider = {
       ],
       [...USING, SUBMISSION],
     );
-    if (set.email?.notCreated || set.submission?.notCreated) throw new Error('JMAP: сервер не отправил ответ.');
+    if (set.email?.notCreated || set.submission?.notCreated) throw new Error(t('error_jmap_send'));
   },
 };

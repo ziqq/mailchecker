@@ -1,0 +1,728 @@
+{
+  "accent_blue": {
+    "message": "Синий"
+  },
+  "accent_cyan": {
+    "message": "Голубой"
+  },
+  "accent_gray": {
+    "message": "Серый"
+  },
+  "accent_green": {
+    "message": "Зелёный"
+  },
+  "accent_label": {
+    "message": "Акцент"
+  },
+  "accent_neutral": {
+    "message": "Графит"
+  },
+  "accent_orange": {
+    "message": "Оранжевый"
+  },
+  "accent_pink": {
+    "message": "Розовый"
+  },
+  "accent_purple": {
+    "message": "Фиолетовый"
+  },
+  "accent_red": {
+    "message": "Красный"
+  },
+  "accent_text": {
+    "message": "Цвет кнопок и выделения или графитовая палитра."
+  },
+  "accent_yellow": {
+    "message": "Жёлтый"
+  },
+  "account_checked": {
+    "message": "Непрочитанных: $1 · проверено $2"
+  },
+  "account_color": {
+    "message": "Цвет $1"
+  },
+  "account_color_title": {
+    "message": "Цвет ящика"
+  },
+  "account_removed": {
+    "message": "Ящик удалён."
+  },
+  "account_unchecked": {
+    "message": "$1 · ещё не проверялся"
+  },
+  "accounts_empty": {
+    "message": "Пока ни одного ящика. Добавьте первый ниже."
+  },
+  "accounts_text": {
+    "message": "Подключённые адреса и их состояние."
+  },
+  "action_add": {
+    "message": "Добавить"
+  },
+  "action_add_mailbox": {
+    "message": "Добавить ящик"
+  },
+  "action_archive": {
+    "message": "В архив"
+  },
+  "action_back": {
+    "message": "К списку"
+  },
+  "action_cancel": {
+    "message": "Отмена"
+  },
+  "action_check_now": {
+    "message": "Проверить сейчас"
+  },
+  "action_connect": {
+    "message": "Подключить"
+  },
+  "action_delete": {
+    "message": "Удалить"
+  },
+  "action_delete_account": {
+    "message": "Удалить $1"
+  },
+  "action_full_screen": {
+    "message": "Открыть во весь экран"
+  },
+  "action_open_mail": {
+    "message": "Открыть почту"
+  },
+  "action_open_webmail": {
+    "message": "Открыть в веб-почте"
+  },
+  "action_pin": {
+    "message": "Закрепить"
+  },
+  "action_read": {
+    "message": "Прочитано"
+  },
+  "action_read_toggle": {
+    "message": "Прочитано или непрочитано"
+  },
+  "action_reply": {
+    "message": "Ответить"
+  },
+  "action_settings": {
+    "message": "Настройки"
+  },
+  "action_show": {
+    "message": "Показать"
+  },
+  "action_sign_in": {
+    "message": "Войти"
+  },
+  "action_sign_in_again": {
+    "message": "Войти заново"
+  },
+  "action_theme": {
+    "message": "Сменить тему"
+  },
+  "action_unpin": {
+    "message": "Открепить"
+  },
+  "action_unread": {
+    "message": "Непрочитано"
+  },
+  "address_hint": {
+    "message": "Сначала войдите в этот ящик в браузере. Пароль не нужен: расширение читает почту через ваш вход."
+  },
+  "address_subtitle": {
+    "message": "Через вход в этом браузере"
+  },
+  "all_mailboxes": {
+    "message": "Все ящики"
+  },
+  "app_title": {
+    "message": "mailchecker · Почта"
+  },
+  "appearance_text": {
+    "message": "Тема и акцентный цвет для окна и настроек."
+  },
+  "appearance_title": {
+    "message": "Оформление"
+  },
+  "badge_title": {
+    "message": "mailchecker · непрочитанных: $1"
+  },
+  "badge_title_problems": {
+    "message": "mailchecker · непрочитанных: $1 · ящиков с ошибкой: $2"
+  },
+  "busy_archiving": {
+    "message": "Архивируем…"
+  },
+  "busy_deleting": {
+    "message": "Удаляем…"
+  },
+  "check_text": {
+    "message": "Как часто проверять и что показывать."
+  },
+  "check_title": {
+    "message": "Проверка почты"
+  },
+  "confirm_delete_account": {
+    "message": "Удалить $1 из расширения?"
+  },
+  "connected": {
+    "message": "Подключён $1"
+  },
+  "connected_plain": {
+    "message": "Подключён."
+  },
+  "copied_redirect": {
+    "message": "Адрес возврата $1 скопирован."
+  },
+  "copy_failed": {
+    "message": "Не удалось скопировать адрес."
+  },
+  "copy_redirect": {
+    "message": "Скопировать адрес возврата"
+  },
+  "copy_redirect_named": {
+    "message": "Скопировать адрес возврата $1"
+  },
+  "error_account_changed": {
+    "message": "Ящик изменился во время входа. Повторите."
+  },
+  "error_account_missing": {
+    "message": "Ящик не найден."
+  },
+  "error_bad_address": {
+    "message": "$1: некорректный адрес."
+  },
+  "error_bad_message": {
+    "message": "Некорректное письмо."
+  },
+  "error_bad_response": {
+    "message": "$1 вернул некорректный ответ."
+  },
+  "error_check_failed": {
+    "message": "Не удалось проверить почту."
+  },
+  "error_delete_in_webmail": {
+    "message": "Удалите это письмо в веб-почте."
+  },
+  "error_generic": {
+    "message": "ошибка"
+  },
+  "error_gmail_action": {
+    "message": "Gmail не дал выполнить действие. Повторите в Gmail."
+  },
+  "error_gmail_address": {
+    "message": "Не удалось определить адрес Gmail. Откройте Gmail в этом браузере и повторите."
+  },
+  "error_gmail_cookies": {
+    "message": "Для действий в Gmail подключите ящик заново в настройках и разрешите доступ к cookies Gmail."
+  },
+  "error_gmail_key": {
+    "message": "Gmail не отдал ключ страницы для действий. Откройте Gmail в этом браузере и повторите."
+  },
+  "error_http_status": {
+    "message": "$1: ошибка $2."
+  },
+  "error_https_only": {
+    "message": "Разрешены только HTTPS-адреса."
+  },
+  "error_identity_denied": {
+    "message": "Без разрешения на вход через браузер подключить ящик нельзя."
+  },
+  "error_identity_permission": {
+    "message": "Разрешите вход через браузер в настройках расширения и повторите."
+  },
+  "error_in_webmail": {
+    "message": "Для ящика «$1», подключённого через вход в браузере, это действие доступно в веб-почте: откройте письмо там."
+  },
+  "error_jmap_access": {
+    "message": "Доступ к серверу JMAP не разрешён."
+  },
+  "error_jmap_folders": {
+    "message": "В ящике нет папок «Черновики» и «Отправленные»."
+  },
+  "error_jmap_generic": {
+    "message": "JMAP: $1."
+  },
+  "error_jmap_identity": {
+    "message": "JMAP: нет адреса отправителя для ответа."
+  },
+  "error_jmap_mail": {
+    "message": "Сервер не поддерживает JMAP Mail."
+  },
+  "error_jmap_origin": {
+    "message": "JMAP API находится на другом домене; такой сервер не поддерживается."
+  },
+  "error_jmap_permission": {
+    "message": "Разрешите доступ к серверу JMAP и повторите."
+  },
+  "error_jmap_rejected": {
+    "message": "Токен JMAP отклонён. Удалите ящик и добавьте новый токен."
+  },
+  "error_jmap_renew": {
+    "message": "Для JMAP удалите ящик и добавьте его с новым токеном."
+  },
+  "error_jmap_send": {
+    "message": "JMAP: сервер не отправил ответ."
+  },
+  "error_jmap_token": {
+    "message": "Укажите API-токен без пробелов."
+  },
+  "error_jmap_url": {
+    "message": "Некорректный JMAP Session URL."
+  },
+  "error_mailru_action": {
+    "message": "Почта Mail.ru не выполнила действие. Повторите в веб-почте."
+  },
+  "error_mailru_address": {
+    "message": "Укажите адрес Почты Mail.ru."
+  },
+  "error_need_https": {
+    "message": "$1: нужен адрес HTTPS."
+  },
+  "error_no_address": {
+    "message": "$1 не вернул адрес ящика."
+  },
+  "error_no_folder": {
+    "message": "В ящике нет папки «$1»."
+  },
+  "error_no_reply": {
+    "message": "Расширение не ответило. Перезагрузите страницу."
+  },
+  "error_oauth_cancelled": {
+    "message": "Вход отменён или не удался."
+  },
+  "error_oauth_denied": {
+    "message": "$1 отклонил вход."
+  },
+  "error_oauth_redirect": {
+    "message": "Неверный адрес возврата OAuth."
+  },
+  "error_oauth_safari": {
+    "message": "В этом браузере вход выполняется через приложение mailchecker (Safari). Используйте JMAP или Chrome."
+  },
+  "error_oauth_state": {
+    "message": "Ответ входа $1 не прошёл проверку."
+  },
+  "error_oauth_token": {
+    "message": "Сервис входа не вернул корректный токен."
+  },
+  "error_oauth_unconfigured": {
+    "message": "Вход не настроен в этой сборке: укажите OAuth Client ID в src/background/oauth/config.ts."
+  },
+  "error_rate_limited": {
+    "message": "«$1» временно ограничил доступ: слишком много запросов. Проверка повторится позже."
+  },
+  "error_reply_text": {
+    "message": "Напишите ответ (до 100 000 символов)."
+  },
+  "error_reply_webmail": {
+    "message": "Для этого ящика ответ пишется в веб-почте."
+  },
+  "error_request_denied": {
+    "message": "Этот запрос не разрешён."
+  },
+  "error_session_expired": {
+    "message": "Сессия истекла. Войдите заново."
+  },
+  "error_session_host": {
+    "message": "Этот адрес не может использовать вход в браузере."
+  },
+  "error_session_or_network": {
+    "message": "Войдите в «$1» в этом браузере (или проверьте сеть) и повторите."
+  },
+  "error_sign_in_mailru": {
+    "message": "Войдите в Почту Mail.ru в этом браузере и повторите."
+  },
+  "error_sign_in_webmail": {
+    "message": "Войдите в «$1» в этом браузере и повторите."
+  },
+  "error_sign_in_yandex": {
+    "message": "Войдите в Яндекс Почту в этом браузере и повторите."
+  },
+  "error_site_denied": {
+    "message": "Без доступа к сайту «$1» подключить ящик через браузер нельзя."
+  },
+  "error_site_permission": {
+    "message": "Разрешите доступ к сайту «$1»: добавьте ящик заново в настройках."
+  },
+  "error_timeout": {
+    "message": "$1 не ответил вовремя."
+  },
+  "error_too_large": {
+    "message": "Сервер вернул слишком большой ответ."
+  },
+  "error_too_many_accounts": {
+    "message": "Можно подключить до $1 ящиков."
+  },
+  "error_unexpected_page": {
+    "message": "$1 вернула неожиданную страницу."
+  },
+  "error_unexpected_reply": {
+    "message": "$1 вернула неожиданный ответ."
+  },
+  "error_unknown": {
+    "message": "Неизвестная ошибка."
+  },
+  "error_unknown_action": {
+    "message": "Неизвестное действие."
+  },
+  "error_unknown_color": {
+    "message": "Неизвестный цвет."
+  },
+  "error_unknown_provider": {
+    "message": "Неизвестный тип ящика."
+  },
+  "error_unreachable": {
+    "message": "$1 недоступен. Проверьте сеть."
+  },
+  "error_webmail_timeout": {
+    "message": "«$1» не отвечает. Повторите позже."
+  },
+  "error_yandex_address": {
+    "message": "Укажите адрес Яндекс Почты."
+  },
+  "extension_description": {
+    "message": "Почта в панели браузера: общие входящие, безопасное чтение и ответы для Gmail, Яндекс Почты, Mail.ru, Microsoft 365 и JMAP."
+  },
+  "feature_local": {
+    "message": "Только локально"
+  },
+  "feature_local_text": {
+    "message": "Токены хранятся в профиле браузера."
+  },
+  "feature_passwords": {
+    "message": "Без паролей"
+  },
+  "feature_passwords_text": {
+    "message": "Вход на страницах Google, Microsoft или веб-почты."
+  },
+  "feature_server": {
+    "message": "Без сервера"
+  },
+  "feature_server_text": {
+    "message": "Запросы идут напрямую в API почты."
+  },
+  "field_address": {
+    "message": "Адрес ящика"
+  },
+  "field_api_token": {
+    "message": "API-токен"
+  },
+  "field_optional": {
+    "message": "(необязательно)"
+  },
+  "field_webmail": {
+    "message": "Веб-почта"
+  },
+  "field_webmail_link": {
+    "message": "Ссылка на веб-почту"
+  },
+  "filter_all": {
+    "message": "Все"
+  },
+  "folder_archive": {
+    "message": "Архив"
+  },
+  "folder_inbox": {
+    "message": "Входящие"
+  },
+  "folder_trash": {
+    "message": "Корзина"
+  },
+  "header_cc": {
+    "message": "Копия: $1"
+  },
+  "header_to": {
+    "message": "Кому: $1"
+  },
+  "hero_eyebrow": {
+    "message": "Почтовый ящик в браузере"
+  },
+  "hero_lead": {
+    "message": "Счётчик, список и уведомления для Gmail, Яндекс Почты, Почты Mail.ru, Microsoft 365 и JMAP. Без своего сервера и дополнительных программ."
+  },
+  "hint_archive": {
+    "message": "в архив"
+  },
+  "hint_navigate": {
+    "message": "по списку"
+  },
+  "hint_pin": {
+    "message": "закрепить"
+  },
+  "hint_search": {
+    "message": "поиск"
+  },
+  "inbox_empty": {
+    "message": "Всё разобрано"
+  },
+  "inbox_empty_text": {
+    "message": "Новых писем здесь нет."
+  },
+  "interval_label": {
+    "message": "Интервал, минут"
+  },
+  "interval_text": {
+    "message": "От 0,5 до 60."
+  },
+  "label_attachments": {
+    "message": "Есть вложения"
+  },
+  "label_categories": {
+    "message": "Категории"
+  },
+  "label_mailboxes": {
+    "message": "Ящики"
+  },
+  "label_message": {
+    "message": "Письмо"
+  },
+  "label_message_text": {
+    "message": "Текст письма"
+  },
+  "label_messages": {
+    "message": "Письма"
+  },
+  "label_pinned": {
+    "message": "Закреплено"
+  },
+  "label_sections": {
+    "message": "Разделы"
+  },
+  "limit_label": {
+    "message": "Писем в списке"
+  },
+  "limit_text": {
+    "message": "На каждый ящик, до 50."
+  },
+  "messages_count_few": {
+    "message": "$1 письма"
+  },
+  "messages_count_many": {
+    "message": "$1 писем"
+  },
+  "messages_count_one": {
+    "message": "$1 письмо"
+  },
+  "messages_count_other": {
+    "message": "$1 письма"
+  },
+  "method_browser": {
+    "message": "Через браузер"
+  },
+  "method_google": {
+    "message": "Через Google"
+  },
+  "no_subject": {
+    "message": "(без темы)"
+  },
+  "notification_new": {
+    "message": "Новых писем: $1"
+  },
+  "notifications_text": {
+    "message": "Системное уведомление о новых письмах."
+  },
+  "oauth_has_id": {
+    "message": "· Client ID есть"
+  },
+  "oauth_no_id": {
+    "message": "· Client ID не задан"
+  },
+  "oauth_note_build": {
+    "message": "Эти способы работают, когда в сборку вписан Client ID:"
+  },
+  "oauth_note_setup": {
+    "message": "Создайте OAuth-клиент в Google Cloud или Microsoft Entra и укажите в нём адрес возврата ниже. Ящики, подключённые через браузер, этого не требуют."
+  },
+  "oauth_text": {
+    "message": "Только для сборки расширения: подключение «Через Google» и Outlook."
+  },
+  "oauth_title": {
+    "message": "Вход через Google и Microsoft"
+  },
+  "oauth_unconfigured": {
+    "message": "Не настроен Client ID."
+  },
+  "popup_full": {
+    "message": "Полное"
+  },
+  "popup_label": {
+    "message": "Окно"
+  },
+  "popup_mini": {
+    "message": "Мини"
+  },
+  "popup_text": {
+    "message": "Размер окна по кнопке в панели браузера."
+  },
+  "privacy_images_few": {
+    "message": "Заблокировано: $1 картинки"
+  },
+  "privacy_images_many": {
+    "message": "Заблокировано: $1 картинок"
+  },
+  "privacy_images_one": {
+    "message": "Заблокировано: $1 картинка"
+  },
+  "privacy_images_other": {
+    "message": "Заблокировано: $1 картинки"
+  },
+  "privacy_trackers_few": {
+    "message": "и $1 трекера"
+  },
+  "privacy_trackers_many": {
+    "message": "и $1 трекеров"
+  },
+  "privacy_trackers_one": {
+    "message": "и $1 трекер"
+  },
+  "privacy_trackers_other": {
+    "message": "и $1 трекера"
+  },
+  "provider_gmail_text": {
+    "message": "Через вход в Gmail в этом браузере или через аккаунт Google."
+  },
+  "provider_jmap_text": {
+    "message": "Fastmail, Stalwart, Cyrus — по API-токену."
+  },
+  "provider_mailru_text": {
+    "message": "Через вход в Почту Mail.ru в этом браузере."
+  },
+  "provider_outlook_text": {
+    "message": "Outlook.com, Hotmail, Exchange Online на любом домене."
+  },
+  "provider_yandex_text": {
+    "message": "Через вход в Яндекс Почту в этом браузере."
+  },
+  "reader_empty": {
+    "message": "Выберите письмо"
+  },
+  "reader_eyebrow": {
+    "message": "Чтение"
+  },
+  "reader_failed": {
+    "message": "Не удалось открыть письмо"
+  },
+  "reply_heading": {
+    "message": "Ответ · $1"
+  },
+  "reply_hint": {
+    "message": "⌘/Ctrl + Enter — отправить"
+  },
+  "reply_placeholder": {
+    "message": "Текст ответа"
+  },
+  "reply_send": {
+    "message": "Отправить"
+  },
+  "reply_sending": {
+    "message": "Отправляем…"
+  },
+  "reply_sent": {
+    "message": "Ответ отправлен."
+  },
+  "search_empty": {
+    "message": "Ничего не нашлось"
+  },
+  "search_empty_text": {
+    "message": "Попробуйте другой запрос."
+  },
+  "search_placeholder": {
+    "message": "Поиск по всем ящикам"
+  },
+  "search_results": {
+    "message": "Результаты поиска"
+  },
+  "search_title": {
+    "message": "«$1»"
+  },
+  "section_inbox": {
+    "message": "Остальные"
+  },
+  "section_newsletters": {
+    "message": "Рассылки"
+  },
+  "section_notifications": {
+    "message": "Уведомления"
+  },
+  "section_people": {
+    "message": "Личные"
+  },
+  "section_pinned": {
+    "message": "Закреплённые"
+  },
+  "service_mailru": {
+    "message": "Почта Mail.ru"
+  },
+  "service_server": {
+    "message": "Сервер"
+  },
+  "service_yandex": {
+    "message": "Яндекс Почта"
+  },
+  "settings_title": {
+    "message": "mailchecker · Настройки"
+  },
+  "signed_in": {
+    "message": "Вход выполнен: $1"
+  },
+  "snippet_full_text": {
+    "message": "$1\n\nПолный текст — в веб-почте: кнопка «Открыть в веб-почте»."
+  },
+  "status_wait": {
+    "message": "Подождите…"
+  },
+  "theme_auto": {
+    "message": "Авто"
+  },
+  "theme_auto_title": {
+    "message": "Тема: как в системе"
+  },
+  "theme_dark": {
+    "message": "Тёмная"
+  },
+  "theme_dark_title": {
+    "message": "Тема: тёмная"
+  },
+  "theme_label": {
+    "message": "Тема"
+  },
+  "theme_light": {
+    "message": "Светлая"
+  },
+  "theme_light_title": {
+    "message": "Тема: светлая"
+  },
+  "theme_text": {
+    "message": "Светлая, тёмная или как в системе."
+  },
+  "theme_title": {
+    "message": "Тема: $1"
+  },
+  "unread_new_few": {
+    "message": "$1 новых"
+  },
+  "unread_new_many": {
+    "message": "$1 новых"
+  },
+  "unread_new_one": {
+    "message": "$1 новое"
+  },
+  "unread_new_other": {
+    "message": "$1 новых"
+  },
+  "view_inbox": {
+    "message": "Входящие"
+  },
+  "welcome_eyebrow": {
+    "message": "Почта в браузере"
+  },
+  "welcome_text": {
+    "message": "Подключите Gmail, Яндекс Почту, Почту Mail.ru, Microsoft 365 или JMAP-ящик на любом домене."
+  },
+  "welcome_title_1": {
+    "message": "Вся почта"
+  },
+  "welcome_title_2": {
+    "message": "Сразу"
+  }
+}

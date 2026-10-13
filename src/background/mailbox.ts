@@ -21,6 +21,7 @@ import {adapter, withAccount} from './accounts';
 import {message as normalize} from './providers/message';
 import {hasNotifications, setBadge} from './platform';
 import {readStore, writeStore} from './storage';
+import {t} from '../shared/i18n';
 
 /** The running check of all accounts, shared by concurrent callers. */
 let running: Promise<void> | null = null;
@@ -57,7 +58,7 @@ export async function checkAccount(id: string): Promise<void> {
     result = {
       unread: previous?.unread || 0,
       messages: previous?.messages || [],
-      error: failure?.message || 'Не удалось проверить почту.',
+      error: failure?.message || t('error_check_failed'),
       reauth: Boolean(failure?.reauth),
       checkedAt: Date.now(),
       notified: previous?.notified,
@@ -99,7 +100,7 @@ export async function updateBadge(): Promise<void> {
   await setBadge(
     unread > 999 ? '999+' : unread ? String(unread) : problems ? '!' : '',
     unread ? {background: accent.color, text: accent.text} : {background: '#6b6b70', text: '#ffffff'},
-    `mailchecker · непрочитанных: ${unread}${problems ? ` · ящиков с ошибкой: ${problems}` : ''}`,
+    problems ? t('badge_title_problems', unread, problems) : t('badge_title', unread),
   );
 }
 
@@ -113,7 +114,7 @@ async function notify(account: Account, messages: MailMessage[]): Promise<void> 
   await chrome.notifications.create(id, {
     type: single ? 'basic' : 'list',
     iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-    title: single ? senderName(messages[0].from) : `Новых писем: ${messages.length}`,
+    title: single ? senderName(messages[0].from) : t('notification_new', messages.length),
     message: single ? messages[0].subject : account.email,
     contextMessage: account.email,
     ...(single
@@ -148,8 +149,8 @@ function lookup(box: Mailbox | undefined, id: string, thread = ''): MailMessage 
  * @param action The action.
  */
 export async function act(accountID: string, messageID: string, action: MessageAction): Promise<void> {
-  if (!ACTIONS.includes(action)) throw new Error('Неизвестное действие.');
-  if (!messageID || messageID.length > 512) throw new Error('Некорректное письмо.');
+  if (!ACTIONS.includes(action)) throw new Error(t('error_unknown_action'));
+  if (!messageID || messageID.length > 512) throw new Error(t('error_bad_message'));
   const {mailboxes = {}} = await readStore();
   const item = lookup(mailboxes[accountID], messageID);
   await withAccount(accountID, (module, account) => module.act(account, item, action));
@@ -183,7 +184,7 @@ export async function act(accountID: string, messageID: string, action: MessageA
  * @param threadID Its conversation ID.
  */
 export async function thread(accountID: string, messageID: string, threadID: string): Promise<ThreadMessage[]> {
-  if (!messageID || messageID.length > 512 || threadID.length > 512) throw new Error('Некорректное письмо.');
+  if (!messageID || messageID.length > 512 || threadID.length > 512) throw new Error(t('error_bad_message'));
   const {mailboxes = {}} = await readStore();
   const item = lookup(mailboxes[accountID], messageID, threadID);
   const messages = await withAccount(accountID, (module, account) =>
@@ -201,12 +202,12 @@ export async function thread(accountID: string, messageID: string, threadID: str
  * @param text The reply text.
  */
 export async function reply(accountID: string, messageID: string, text: string): Promise<void> {
-  if (!messageID || messageID.length > 512) throw new Error('Некорректное письмо.');
-  if (!text.trim() || text.length > 100_000) throw new Error('Напишите ответ (до 100 000 символов).');
+  if (!messageID || messageID.length > 512) throw new Error(t('error_bad_message'));
+  if (!text.trim() || text.length > 100_000) throw new Error(t('error_reply_text'));
   const {mailboxes = {}} = await readStore();
   const item = lookup(mailboxes[accountID], messageID);
   await withAccount(accountID, (module, account) => {
-    if (!module.reply) throw new Error('Для этого ящика ответ пишется в веб-почте.');
+    if (!module.reply) throw new Error(t('error_reply_webmail'));
     return module.reply(account, item, text);
   });
 }
@@ -238,7 +239,7 @@ export async function search(query: string): Promise<SearchHit[]> {
 export async function open(accountID: string, messageID?: string): Promise<void> {
   const {accounts = [], mailboxes = {}} = await readStore();
   const account = accounts.find(item => item.id === accountID);
-  if (!account) throw new Error('Ящик не найден.');
+  if (!account) throw new Error(t('error_account_missing'));
   const item = messageID ? mailboxes[accountID]?.messages?.find(entry => entry.id === messageID) : null;
   await chrome.tabs.create({url: adapter(account).webURL(account, item)});
 }

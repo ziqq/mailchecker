@@ -24,6 +24,7 @@ import type {Provider} from './providers/message';
 import {outlook} from './providers/outlook';
 import {readStore, writeStore} from './storage';
 import {yandex} from './providers/yandex';
+import {t} from '../shared/i18n';
 
 /** API adapters by provider ID (OAuth or token). */
 export const providers: Readonly<Partial<Record<ProviderID, Provider>>> = Object.freeze({gmail, outlook, jmap});
@@ -50,7 +51,7 @@ const renewals = new Map<string, Promise<Account>>();
  */
 export function provider(id: unknown, browser = false): Provider {
   const registry = browser ? browserProviders : providers;
-  if (typeof id !== 'string' || !Object.hasOwn(registry, id)) throw new Error('Неизвестный тип ящика.');
+  if (typeof id !== 'string' || !Object.hasOwn(registry, id)) throw new Error(t('error_unknown_provider'));
   return registry[id as ProviderID]!;
 }
 
@@ -92,7 +93,7 @@ export async function addAccount(providerID: unknown, input?: AccountInput, brow
   let account!: Account;
   await writeStore(({accounts = []}) => {
     const existing = accounts.find(item => item.provider === providerID && item.email === connected.email);
-    if (!existing && accounts.length >= MAX_ACCOUNTS) throw new Error(`Можно подключить до ${MAX_ACCOUNTS} ящиков.`);
+    if (!existing && accounts.length >= MAX_ACCOUNTS) throw new Error(t('error_too_many_accounts', MAX_ACCOUNTS));
     account = {id: existing?.id || crypto.randomUUID(), provider: providerID as ProviderID, ...connected};
     return {
       accounts: existing ? accounts.map(item => (item.id === account.id ? account : item)) : [...accounts, account],
@@ -107,7 +108,7 @@ export async function addAccount(providerID: unknown, input?: AccountInput, brow
  * @throws When [color] is not one of `ACCOUNT_COLORS`.
  */
 export async function setAccountColor(id: string, color: string): Promise<void> {
-  if (color && !ACCOUNT_COLORS.includes(color)) throw new Error('Неизвестный цвет.');
+  if (color && !ACCOUNT_COLORS.includes(color)) throw new Error(t('error_unknown_color'));
   await writeStore(({accounts = []}) => ({
     accounts: accounts.map(account =>
       account.id === id ? {...account, settings: {...account.settings, color: color || undefined}} : account,
@@ -139,7 +140,7 @@ async function saveCredentials(account: Account, credentials: Credentials): Prom
   await writeStore(({accounts = []}) => {
     const current = accounts.find(item => item.id === account.id);
     if (!current || current.credentials.token !== account.credentials.token)
-      throw new Error('Ящик изменился во время входа. Повторите.');
+      throw new Error(t('error_account_changed'));
     updated = {...current, credentials};
     return {accounts: accounts.map(item => (item.id === account.id ? updated : item))};
   });
@@ -170,7 +171,7 @@ export async function withAccount<T>(
   callback: (module: Provider, account: Account) => Promise<T>,
 ): Promise<T> {
   let account = ((await readStore()).accounts || []).find(item => item.id === id);
-  if (!account) throw new Error('Ящик не найден.');
+  if (!account) throw new Error(t('error_account_missing'));
   const module = adapter(account);
   const expires = account.credentials.expiresAt;
   if (expires && expires <= Date.now()) account = await renew(account);
@@ -188,6 +189,6 @@ export async function withAccount<T>(
 /** Signs in to an existing account again with a visible window. */
 export async function signIn(id: string): Promise<Account> {
   const account = ((await readStore()).accounts || []).find(item => item.id === id);
-  if (!account) throw new Error('Ящик не найден.');
+  if (!account) throw new Error(t('error_account_missing'));
   return saveCredentials(account, await adapter(account).signIn(account));
 }

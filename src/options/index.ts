@@ -17,6 +17,7 @@ import {icon, providerMark} from '../shared/icons';
 import {ACCOUNT_COLORS, accountColor} from '../shared/inbox';
 import {accents, palettes, popupSizes, themes} from '../shared/preferences';
 import type {Palette, PopupSize, Preferences, ProviderID, PublicState, Request, Theme} from '../shared/types';
+import {localize, t} from '../shared/i18n';
 
 /** The rendered public state. */
 let state: PublicState | null = null;
@@ -29,23 +30,23 @@ const addressForm = byID<HTMLFormElement>('address-form');
 const statusLine = byID('status');
 
 /** Theme labels by preference. */
-const themeNames: Record<Theme, string> = {auto: 'Авто', light: 'Светлая', dark: 'Тёмная'};
+const themeNames: Record<Theme, string> = {auto: t('theme_auto'), light: t('theme_light'), dark: t('theme_dark')};
 
 /** Popup size labels by preference. */
-const popupNames: Record<PopupSize, string> = {full: 'Полное', mini: 'Мини'};
+const popupNames: Record<PopupSize, string> = {full: t('popup_full'), mini: t('popup_mini')};
 
 /** Palette names; the swatch colours come from `accents`. */
 const paletteNames: Record<Palette, string> = {
-  orange: 'Оранжевый',
-  blue: 'Синий',
-  cyan: 'Голубой',
-  green: 'Зелёный',
-  pink: 'Розовый',
-  purple: 'Фиолетовый',
-  red: 'Красный',
-  yellow: 'Жёлтый',
-  gray: 'Серый',
-  neutral: 'Графит',
+  orange: t('accent_orange'),
+  blue: t('accent_blue'),
+  cyan: t('accent_cyan'),
+  green: t('accent_green'),
+  pink: t('accent_pink'),
+  purple: t('accent_purple'),
+  red: t('accent_red'),
+  yellow: t('accent_yellow'),
+  gray: t('accent_gray'),
+  neutral: t('accent_neutral'),
 };
 
 /**
@@ -63,36 +64,36 @@ const providerRows: {id: ProviderID; title: string; text: string; methods: Metho
   {
     id: 'gmail',
     title: 'Gmail / Google Workspace',
-    text: 'Через вход в Gmail в этом браузере или через аккаунт Google.',
+    text: t('provider_gmail_text'),
     methods: [
       // `cookies` reads Gmail's action cookie (`GMAIL_AT`) for archive, trash, read and star.
-      {label: 'Через браузер', origin: 'https://mail.google.com/*', permissions: ['cookies']},
-      {label: 'Через Google', oauth: 'google'},
+      {label: t('method_browser'), origin: 'https://mail.google.com/*', permissions: ['cookies']},
+      {label: t('method_google'), oauth: 'google'},
     ],
   },
   {
     id: 'yandex',
-    title: 'Яндекс Почта',
-    text: 'Через вход в Яндекс Почту в этом браузере.',
-    methods: [{label: 'Добавить', origin: 'https://mail.yandex.ru/*', address: 'name@yandex.ru'}],
+    title: t('service_yandex'),
+    text: t('provider_yandex_text'),
+    methods: [{label: t('action_add'), origin: 'https://mail.yandex.ru/*', address: 'name@yandex.ru'}],
   },
   {
     id: 'mailru',
-    title: 'Почта Mail.ru',
-    text: 'Через вход в Почту Mail.ru в этом браузере.',
-    methods: [{label: 'Добавить', origin: 'https://*.mail.ru/*', address: 'name@mail.ru'}],
+    title: t('service_mailru'),
+    text: t('provider_mailru_text'),
+    methods: [{label: t('action_add'), origin: 'https://*.mail.ru/*', address: 'name@mail.ru'}],
   },
   {
     id: 'outlook',
     title: 'Outlook / Microsoft 365',
-    text: 'Outlook.com, Hotmail, Exchange Online на любом домене.',
-    methods: [{label: 'Добавить', oauth: 'microsoft'}],
+    text: t('provider_outlook_text'),
+    methods: [{label: t('action_add'), oauth: 'microsoft'}],
   },
   {
     id: 'jmap',
     title: 'JMAP',
-    text: 'Fastmail, Stalwart, Cyrus — по API-токену.',
-    methods: [{label: 'Добавить', jmap: true}],
+    text: t('provider_jmap_text'),
+    methods: [{label: t('action_add'), jmap: true}],
   },
 ];
 
@@ -119,7 +120,7 @@ function status(text: string, error = false): void {
  */
 async function run(button: HTMLButtonElement, message: Request, done: (value: StateReply) => string): Promise<boolean> {
   button.disabled = true;
-  status('Подождите…');
+  status(t('status_wait'));
   try {
     const value = await request<StateReply>(message);
     state = 'state' in value ? value.state : value;
@@ -137,7 +138,7 @@ async function run(button: HTMLButtonElement, message: Request, done: (value: St
 /** Requests the browser sign-in permission inside a click. */
 async function allowIdentity(): Promise<boolean> {
   if (await chrome.permissions.request({permissions: ['identity']})) return true;
-  status('Без разрешения на вход через браузер подключить ящик нельзя.', true);
+  status(t('error_identity_denied'), true);
   return false;
 }
 
@@ -158,7 +159,7 @@ function render(): void {
 function renderAccounts({accounts, mailboxes}: PublicState): void {
   byID('accounts-count').textContent = String(accounts.length);
   if (!accounts.length) {
-    byID('accounts').replaceChildren(el('p', {class: 'empty-accounts'}, 'Пока ни одного ящика. Добавьте первый ниже.'));
+    byID('accounts').replaceChildren(el('p', {class: 'empty-accounts'}, t('accounts_empty')));
     return;
   }
   byID('accounts').replaceChildren(
@@ -169,16 +170,14 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
         : el(
             'span',
             {},
-            box
-              ? `Непрочитанных: ${box.unread} · проверено ${shortDate(box.checkedAt)}`
-              : `${account.label} · ещё не проверялся`,
+            box ? t('account_checked', box.unread, shortDate(box.checkedAt)) : t('account_unchecked', account.label),
           );
       const color = accountColor(accounts, account.id);
       const colors =
         colorsFor === account.id &&
         el(
           'div',
-          {class: 'accents account-colors', role: 'radiogroup', 'aria-label': `Цвет ${account.email}`},
+          {class: 'accents account-colors', role: 'radiogroup', 'aria-label': t('account_color', account.email)},
           ...ACCOUNT_COLORS.map(value =>
             el('button', {
               type: 'button',
@@ -207,8 +206,8 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
             class: 'avatar ringed',
             type: 'button',
             style: `--ring: ${color}`,
-            title: 'Цвет ящика',
-            'aria-label': `Цвет ${account.email}`,
+            title: t('account_color_title'),
+            'aria-label': t('account_color', account.email),
             'aria-expanded': String(colorsFor === account.id),
             onclick: () => {
               colorsFor = colorsFor === account.id ? '' : account.id;
@@ -231,14 +230,10 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
                   onclick: async (event: Event) => {
                     const button = event.currentTarget as HTMLButtonElement;
                     if (account.browser || (await allowIdentity()))
-                      await run(
-                        button,
-                        {type: 'SIGN_IN', account: account.id},
-                        () => `Вход выполнен: ${account.email}`,
-                      );
+                      await run(button, {type: 'SIGN_IN', account: account.id}, () => t('signed_in', account.email));
                   },
                 },
-                'Войти заново',
+                t('action_sign_in_again'),
               )
             : null,
           el(
@@ -246,8 +241,8 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
             {
               class: 'round ghost',
               type: 'button',
-              title: 'Открыть почту',
-              'aria-label': 'Открыть почту',
+              title: t('action_open_mail'),
+              'aria-label': t('action_open_mail'),
               onclick: () => request({type: 'OPEN', account: account.id}),
             },
             icon('external'),
@@ -257,14 +252,12 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
             {
               class: 'round ghost danger',
               type: 'button',
-              title: 'Удалить',
-              'aria-label': `Удалить ${account.email}`,
+              title: t('action_delete'),
+              'aria-label': t('action_delete_account', account.email),
               onclick: (event: Event) => {
-                if (confirm(`Удалить ${account.email} из расширения?`))
-                  run(
-                    event.currentTarget as HTMLButtonElement,
-                    {type: 'REMOVE_ACCOUNT', account: account.id},
-                    () => 'Ящик удалён.',
+                if (confirm(t('confirm_delete_account', account.email)))
+                  run(event.currentTarget as HTMLButtonElement, {type: 'REMOVE_ACCOUNT', account: account.id}, () =>
+                    t('account_removed'),
                   );
               },
             },
@@ -283,13 +276,13 @@ async function allowSite(
   permissions: chrome.runtime.ManifestPermission[] = [],
 ): Promise<boolean> {
   if (await chrome.permissions.request({origins: [origin], permissions})) return true;
-  status(`Без доступа к сайту «${title}» подключить ящик через браузер нельзя.`, true);
+  status(t('error_site_denied', title), true);
   return false;
 }
 
 /** Connects a mailbox with [method] from a click on [button]. */
 async function connect(button: HTMLButtonElement, row: (typeof providerRows)[number], method: Method): Promise<void> {
-  const added = (value: StateReply) => ('email' in value ? `Подключён ${value.email}` : 'Подключён.');
+  const added = (value: StateReply) => ('email' in value ? t('connected', value.email) : t('connected_plain'));
   if ('jmap' in method) {
     form.hidden = false;
     (form.elements.namedItem('token') as HTMLInputElement).focus();
@@ -320,7 +313,7 @@ function renderProviders({oauth}: PublicState): void {
         'div',
         {class: 'provider'},
         el('span', {class: 'tile'}, providerMark(row.id)),
-        el('div', {}, el('strong', {}, row.title), el('span', {}, configured ? row.text : 'Не настроен Client ID.')),
+        el('div', {}, el('strong', {}, row.title), el('span', {}, configured ? row.text : t('oauth_unconfigured'))),
         el(
           'div',
           {class: 'provider-actions'},
@@ -331,7 +324,7 @@ function renderProviders({oauth}: PublicState): void {
                 class: index === 0 && !('jmap' in method) ? 'btn primary small' : 'btn small',
                 type: 'button',
                 disabled: !available(method),
-                title: available(method) ? null : 'Не настроен Client ID.',
+                title: available(method) ? null : t('oauth_unconfigured'),
                 onclick: (event: Event) => connect(event.currentTarget as HTMLButtonElement, row, method),
               },
               icon('plus'),
@@ -381,7 +374,7 @@ function renderAppearance({theme, popup, palette}: Preferences): void {
       }),
     ),
   );
-  byID('theme').title = `Тема: ${themeNames[theme].toLowerCase()}`;
+  byID('theme').title = t('theme_title', themeNames[theme].toLowerCase());
 }
 
 /** Renders the OAuth configuration status and the redirect URIs to register with the providers. */
@@ -394,13 +387,7 @@ function renderOAuth({oauth}: PublicState): void {
       el(
         'div',
         {},
-        el(
-          'strong',
-          {},
-          name,
-          ' ',
-          el('span', {class: 'muted'}, configured ? '· Client ID есть' : '· Client ID не задан'),
-        ),
+        el('strong', {}, name, ' ', el('span', {class: 'muted'}, configured ? t('oauth_has_id') : t('oauth_no_id'))),
         uri && el('code', {}, uri),
       ),
       uri &&
@@ -409,12 +396,12 @@ function renderOAuth({oauth}: PublicState): void {
           {
             class: 'round ghost',
             type: 'button',
-            title: 'Скопировать адрес возврата',
-            'aria-label': `Скопировать адрес возврата ${name}`,
+            title: t('copy_redirect'),
+            'aria-label': t('copy_redirect_named', name),
             onclick: () =>
               navigator.clipboard.writeText(uri).then(
-                () => status(`Адрес возврата ${name} скопирован.`),
-                () => status('Не удалось скопировать адрес.', true),
+                () => status(t('copied_redirect', name)),
+                () => status(t('copy_failed'), true),
               ),
           },
           icon('copy'),
@@ -459,16 +446,16 @@ form.addEventListener('submit', async event => {
   try {
     origin = `${new URL(input.sessionURL).origin}/*`;
   } catch {
-    status('Некорректный JMAP Session URL.', true);
+    status(t('error_jmap_url'), true);
     return;
   }
   if (!(await chrome.permissions.request({origins: [origin]}))) {
-    status('Доступ к серверу JMAP не разрешён.', true);
+    status(t('error_jmap_access'), true);
     return;
   }
   const submit = (event.submitter as HTMLButtonElement | null) || form.querySelector('button[type=submit]')!;
   const ok = await run(submit as HTMLButtonElement, {type: 'ADD_ACCOUNT', provider: 'jmap', input}, value =>
-    'email' in value ? `Подключён ${value.email}` : 'Подключён.',
+    'email' in value ? t('connected', value.email) : t('connected_plain'),
   );
   if (ok) {
     form.reset();
@@ -490,7 +477,7 @@ addressForm.addEventListener('submit', async event => {
   const ok = await run(
     submit as HTMLButtonElement,
     {type: 'ADD_ACCOUNT', provider: target.id, input: {email}, browser: true},
-    value => ('email' in value ? `Подключён ${value.email}` : 'Подключён.'),
+    value => ('email' in value ? t('connected', value.email) : t('connected_plain')),
   );
   if (ok) {
     const done = byID('address-status').textContent || '';
@@ -517,6 +504,7 @@ byID('theme').addEventListener('click', () => {
   if (state) save({theme: themes[(themes.indexOf(state.preferences.theme) + 1) % themes.length]});
 });
 
+localize();
 byID('theme').append(icon('theme'));
 byID('version').textContent = `v${chrome.runtime.getManifest().version}`;
 for (const tile of document.querySelectorAll<HTMLElement>('[data-icon]')) tile.append(icon(tile.dataset.icon || ''));

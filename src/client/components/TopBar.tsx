@@ -15,9 +15,10 @@ import {accountColor} from '../../shared/inbox';
 import {icon} from '../../shared/icons';
 import {themes} from '../../shared/preferences';
 import {mode, store} from '../store';
+import {t} from '../../shared/i18n';
 
 /** Theme button titles. */
-const THEME_TITLES = {auto: 'Тема: как в системе', light: 'Тема: светлая', dark: 'Тема: тёмная'};
+const THEME_TITLES = {auto: t('theme_auto_title'), light: t('theme_light_title'), dark: t('theme_dark_title')};
 
 /** Cycles the theme preference. */
 export function cycleTheme(): void {
@@ -44,7 +45,7 @@ export function AccountSwitcher() {
   const label = () => {
     const id = store.account();
     const account = accounts().find(item => item.id === id);
-    return account ? account.email : 'Все ящики';
+    return account ? account.email : t('all_mailboxes');
   };
   const choose = (id: string) => {
     store.setAccount(id);
@@ -78,7 +79,7 @@ export function AccountSwitcher() {
             onClick={() => choose('all')}
           >
             {icon('inbox')}
-            <span>Все ящики</span>
+            <span>{t('all_mailboxes')}</span>
             <span class="menu-count">{store.unread().all || ''}</span>
           </button>
           <For each={accounts()}>
@@ -108,8 +109,8 @@ export function RefreshButton(props: {class?: string}) {
       class={props.class || 'round ghost'}
       classList={{busy: store.refreshing()}}
       type="button"
-      title="Проверить сейчас"
-      aria-label="Проверить сейчас"
+      title={t('action_check_now')}
+      aria-label={t('action_check_now')}
       disabled={store.refreshing()}
       onClick={() => store.refresh()}
     >
@@ -137,7 +138,7 @@ export function TopBar() {
           class="round ghost theme-toggle"
           type="button"
           title={THEME_TITLES[store.state()?.preferences.theme || 'auto']}
-          aria-label="Сменить тему"
+          aria-label={t('action_theme')}
           onClick={cycleTheme}
         >
           {icon('theme')}
@@ -146,14 +147,20 @@ export function TopBar() {
           <button
             class="round ghost"
             type="button"
-            title="Открыть во весь экран"
-            aria-label="Открыть во весь экран"
+            title={t('action_full_screen')}
+            aria-label={t('action_full_screen')}
             onClick={expand}
           >
             {icon('expand')}
           </button>
         </Show>
-        <button class="round ghost" type="button" title="Настройки" aria-label="Настройки" onClick={openSettings}>
+        <button
+          class="round ghost"
+          type="button"
+          title={t('action_settings')}
+          aria-label={t('action_settings')}
+          onClick={openSettings}
+        >
           {icon('settings')}
         </button>
       </div>

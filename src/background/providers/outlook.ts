@@ -11,6 +11,7 @@ import type {Credentials, MailMessage, MessageAction} from '../../shared/types';
 import {AuthError, requestJSON, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
 import {addresses, categorize, count, message, threadMessage, type Provider} from './message';
+import {t} from '../../shared/i18n';
 
 /** Graph API base for the signed-in user. */
 const API = 'https://graph.microsoft.com/v1.0/me';
@@ -86,7 +87,7 @@ export const outlook: Provider = {
       '?$select=mail,userPrincipalName',
     );
     const email = me?.mail || me?.userPrincipalName;
-    if (typeof email !== 'string') throw new Error('Microsoft не вернул адрес ящика.');
+    if (typeof email !== 'string') throw new Error(t('error_no_address', 'Microsoft'));
     return {email, credentials, settings: {}};
   },
 

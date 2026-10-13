@@ -11,6 +11,7 @@
 import {handle} from '../sandbox/worker';
 import {accents} from './preferences';
 import type {Preferences, Reply, Request} from './types';
+import {t} from './i18n';
 
 /** Set by the build: `true` only in the sandbox build (`npm run sandbox`). */
 declare const __SANDBOX__: boolean;
@@ -80,7 +81,7 @@ export async function request<R = unknown>(message: Request): Promise<R> {
   const reply: Reply<R> | undefined = __SANDBOX__
     ? ((await handle(message)) as Reply<R>)
     : await chrome.runtime.sendMessage(message);
-  if (!reply || !reply.ok) throw new Error(reply?.error || 'Расширение не ответило. Перезагрузите страницу.');
+  if (!reply || !reply.ok) throw new Error(reply?.error || t('error_no_reply'));
   return reply.value;
 }
 
@@ -96,5 +97,4 @@ export function byID<T extends HTMLElement = HTMLElement>(id: string): T {
 }
 
 /** Returns the message of an unknown error. */
-export const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : 'Неизвестная ошибка.';
+export const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : t('error_unknown'));

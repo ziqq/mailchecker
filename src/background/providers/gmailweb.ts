@@ -19,6 +19,7 @@ import {requestText} from '../http';
 import {readCookie} from '../platform';
 import {categorize, count, decodeEntities, message} from './message';
 import {elements, firstAddress, markupText, sessionProvider} from './session';
+import {t} from '../../shared/i18n';
 
 /** The first signed-in account in Gmail. */
 const BASE = 'https://mail.google.com/mail/u/0';
@@ -59,16 +60,14 @@ async function idKey(): Promise<string> {
     url = new URL(decodeEntities(refresh), url).href;
   }
   if (!pageKey) pageKey = parseKey(await requestText(`${BASE}/`, OPTIONS));
-  if (!pageKey)
-    throw new Error('Gmail не отдал ключ страницы для действий. Откройте Gmail в этом браузере и повторите.');
+  if (!pageKey) throw new Error(t('error_gmail_key'));
   return pageKey;
 }
 
 /** Applies an action to a message as Gmail's web client does. */
 async function act(item: MailMessage, action: MessageAction): Promise<void> {
   const at = await readCookie(BASE, 'GMAIL_AT');
-  if (!at)
-    throw new Error('Для действий в Gmail подключите ящик заново в настройках и разрешите доступ к cookies Gmail.');
+  if (!at) throw new Error(t('error_gmail_cookies'));
   const key = await idKey();
   const update = [null, CODES[action], item.id, item.id, 'l:all', [], [], null];
   const refresh = [null, null, null, null, null, null, [null, true, false]];
@@ -80,7 +79,7 @@ async function act(item: MailMessage, action: MessageAction): Promise<void> {
       form: {s_jr: JSON.stringify([null, [[null, null, null, update], refresh, refresh], 2, null, null, null, key])},
     },
   );
-  if (!reply || reply.includes('/spreauth')) throw new Error('Gmail не дал выполнить действие. Повторите в Gmail.');
+  if (!reply || reply.includes('/spreauth')) throw new Error(t('error_gmail_action'));
 }
 
 /** Returns the text of the first `<tag>` in [xml]. */
@@ -137,7 +136,7 @@ export const gmailWeb = sessionProvider({
   label: 'Gmail',
   async connect() {
     const {email} = await feed();
-    if (!email) throw new Error('Не удалось определить адрес Gmail. Откройте Gmail в этом браузере и повторите.');
+    if (!email) throw new Error(t('error_gmail_address'));
     return email;
   },
   async inbox(_account: Account, limit: number) {

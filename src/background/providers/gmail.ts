@@ -22,6 +22,7 @@ import {
   type Provider,
   type RawThreadMessage,
 } from './message';
+import {t} from '../../shared/i18n';
 
 /** Gmail API base for the signed-in user. */
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -138,7 +139,7 @@ export const gmail: Provider = {
   async connect() {
     const credentials = await oauth.google({interactive: true});
     const profile = await call<{emailAddress?: unknown}>(credentials, '/profile');
-    if (typeof profile?.emailAddress !== 'string') throw new Error('Gmail не вернул адрес ящика.');
+    if (typeof profile?.emailAddress !== 'string') throw new Error(t('error_no_address', 'Gmail'));
     return {email: profile.emailAddress, credentials, settings: {}};
   },
 

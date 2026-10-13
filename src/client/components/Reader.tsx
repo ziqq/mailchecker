@@ -13,18 +13,27 @@
  */
 import {createMemo, createResource, createSignal, For, Match, Show, Switch} from 'solid-js';
 import {request} from '../../shared/dom';
-import {initial, plural, senderName, shortDate} from '../../shared/format';
+import {initial, senderName, shortDate} from '../../shared/format';
+import {locale, t, tn} from '../../shared/i18n';
 import {icon} from '../../shared/icons';
 import type {Entry} from '../../shared/inbox';
 import type {ThreadMessage} from '../../shared/types';
 import {store} from '../store';
 import {MailFrame} from './MailFrame';
 
-/** Formats a byte size. */
+/** Formats a byte size with the interface language's units. */
 function size(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} МБ`;
-  if (bytes >= 1024) return `${Math.round(bytes / 1024)} КБ`;
-  return `${bytes} Б`;
+  const [value, unit] =
+    bytes >= 1024 * 1024
+      ? [bytes / 1024 / 1024, 'megabyte']
+      : bytes >= 1024
+        ? [bytes / 1024, 'kilobyte']
+        : [bytes, 'byte'];
+  return new Intl.NumberFormat(locale(), {
+    style: 'unit',
+    unit,
+    maximumFractionDigits: unit === 'megabyte' ? 1 : 0,
+  }).format(value);
 }
 
 /** Returns a short file-type label for an attachment tile. */
@@ -63,8 +72,8 @@ function Message(props: {message: ThreadMessage; open: boolean; allowRemote: boo
             <span
               title={[
                 props.message.from,
-                props.message.to && `Кому: ${props.message.to}`,
-                props.message.cc && `Копия: ${props.message.cc}`,
+                props.message.to && t('header_to', props.message.to),
+                props.message.cc && t('header_cc', props.message.cc),
               ]
                 .filter(Boolean)
                 .join('\n')}
@@ -80,12 +89,12 @@ function Message(props: {message: ThreadMessage; open: boolean; allowRemote: boo
           <div class="privacy">
             {icon('shield')}
             <span>
-              Заблокировано: {blocked() - trackers()}{' '}
-              {plural(blocked() - trackers(), ['картинка', 'картинки', 'картинок'])}
-              {trackers() ? ` и ${trackers()} ${plural(trackers(), ['трекер', 'трекера', 'трекеров'])}` : ''}
+              {tn('privacy_images', blocked() - trackers())}
+              {trackers() ? ` ${tn('privacy_trackers', trackers())}` : ''}
             </span>
             <button class="btn small" type="button" onClick={() => props.onAllow()}>
-              {icon('image')}Показать
+              {icon('image')}
+              {t('action_show')}
             </button>
           </div>
         </Show>
@@ -131,12 +140,12 @@ function Composer(props: {entry: Entry}) {
   };
   return (
     <form class="composer" onSubmit={send}>
-      <p class="eyebrow">Ответ · {senderName(props.entry.message.from)}</p>
+      <p class="eyebrow">{t('reply_heading', senderName(props.entry.message.from))}</p>
       <textarea
         ref={element => queueMicrotask(() => element.focus())}
         rows={6}
         maxLength={100_000}
-        placeholder="Текст ответа"
+        placeholder={t('reply_placeholder')}
         value={text()}
         onInput={event => setText(event.currentTarget.value)}
         onKeyDown={event => {
@@ -145,12 +154,12 @@ function Composer(props: {entry: Entry}) {
         }}
       />
       <div class="form-actions">
-        <span class="muted">⌘/Ctrl + Enter — отправить</span>
+        <span class="muted">{t('reply_hint')}</span>
         <button class="btn" type="button" onClick={() => store.setReplying(false)}>
-          Отмена
+          {t('action_cancel')}
         </button>
         <button class="btn primary" type="submit" disabled={!text().trim() || sending()}>
-          {sending() ? 'Отправляем…' : 'Отправить'}
+          {sending() ? t('reply_sending') : t('reply_send')}
         </button>
       </div>
     </form>
@@ -175,19 +184,20 @@ export function Reader() {
   };
 
   return (
-    <section class="reader" aria-label="Письмо">
+    <section class="reader" aria-label={t('label_message')}>
       <Show
         when={store.selected()}
         fallback={
           <div class="reader-empty">
             <div class="empty">
-              <p class="eyebrow">Чтение</p>
+              <p class="eyebrow">{t('reader_eyebrow')}</p>
               <h2>
-                Выберите письмо<span class="dot">.</span>
+                {t('reader_empty')}
+                <span class="dot">.</span>
               </h2>
               <p class="muted">
-                <kbd>J</kbd> <kbd>K</kbd> — по списку, <kbd>E</kbd> — в архив, <kbd>S</kbd> — закрепить, <kbd>/</kbd> —
-                поиск
+                <kbd>J</kbd> <kbd>K</kbd> — {t('hint_navigate')}, <kbd>E</kbd> — {t('hint_archive')}, <kbd>S</kbd> —{' '}
+                {t('hint_pin')}, <kbd>/</kbd> — {t('hint_search')}
               </p>
             </div>
           </div>
@@ -197,8 +207,8 @@ export function Reader() {
           <button
             class="round ghost back"
             type="button"
-            title="К списку · Esc"
-            aria-label="К списку"
+            title={`${t('action_back')} · Esc`}
+            aria-label={t('action_back')}
             onClick={() => store.select(null)}
           >
             {icon('back')}
@@ -210,8 +220,8 @@ export function Reader() {
                 <button
                   class="round"
                   type="button"
-                  title="Ответить · R"
-                  aria-label="Ответить"
+                  title={`${t('action_reply')} · R`}
+                  aria-label={t('action_reply')}
                   onClick={() => store.startReply()}
                 >
                   {icon('reply')}
@@ -219,8 +229,8 @@ export function Reader() {
                 <button
                   class="round"
                   type="button"
-                  title="В архив · E"
-                  aria-label="В архив"
+                  title={`${t('action_archive')} · E`}
+                  aria-label={t('action_archive')}
                   onClick={() => act('archive')}
                 >
                   {icon('archive')}
@@ -228,8 +238,8 @@ export function Reader() {
                 <button
                   class="round"
                   type="button"
-                  title="Удалить · #"
-                  aria-label="Удалить"
+                  title={`${t('action_delete')} · #`}
+                  aria-label={t('action_delete')}
                   onClick={() => act('trash')}
                 >
                   {icon('trash')}
@@ -237,8 +247,8 @@ export function Reader() {
                 <button
                   class="round"
                   type="button"
-                  title={current().message.unread ? 'Прочитано · U' : 'Непрочитано · U'}
-                  aria-label="Прочитано или непрочитано"
+                  title={`${t(current().message.unread ? 'action_read' : 'action_unread')} · U`}
+                  aria-label={t('action_read_toggle')}
                   onClick={() => act(current().message.unread ? 'read' : 'unread')}
                 >
                   {icon('unread')}
@@ -247,8 +257,8 @@ export function Reader() {
                   class="round"
                   classList={{active: current().message.pinned}}
                   type="button"
-                  title={current().message.pinned ? 'Открепить · S' : 'Закрепить · S'}
-                  aria-label="Закрепить"
+                  title={`${t(current().message.pinned ? 'action_unpin' : 'action_pin')} · S`}
+                  aria-label={t('action_pin')}
                   onClick={() => act(current().message.pinned ? 'unpin' : 'pin')}
                 >
                   {icon('pin')}
@@ -256,8 +266,8 @@ export function Reader() {
                 <button
                   class="round ghost"
                   type="button"
-                  title="Открыть в веб-почте"
-                  aria-label="Открыть в веб-почте"
+                  title={t('action_open_webmail')}
+                  aria-label={t('action_open_webmail')}
                   onClick={() =>
                     request({type: 'OPEN', account: current().account, message: current().message.id}).catch(store.fail)
                   }
@@ -281,7 +291,8 @@ export function Reader() {
             <Match when={conversation.error}>
               <div class="empty small">
                 <h2>
-                  Не удалось открыть письмо<span class="dot">.</span>
+                  {t('reader_failed')}
+                  <span class="dot">.</span>
                 </h2>
                 <p class="muted">{String((conversation.error as Error)?.message || conversation.error)}</p>
               </div>
@@ -292,14 +303,12 @@ export function Reader() {
                   <div class="thread-title">
                     <p class="eyebrow">
                       {accountEmail()}
-                      {messages().length > 1
-                        ? ` · ${messages().length} ${plural(messages().length, ['письмо', 'письма', 'писем'])}`
-                        : ''}
+                      {messages().length > 1 ? ` · ${tn('messages_count', messages().length)}` : ''}
                     </p>
                     <h2>{messages()[messages().length - 1]?.subject || entry()?.message.subject}</h2>
                     <Show when={entry()?.message.pinned}>
                       <div class="labels">
-                        <span class="pill strong">Закреплено</span>
+                        <span class="pill strong">{t('label_pinned')}</span>
                       </div>
                     </Show>
                   </div>

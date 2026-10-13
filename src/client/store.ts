@@ -14,6 +14,7 @@ import {batch, createMemo, createRoot, createSignal} from 'solid-js';
 import {request, errorMessage} from '../shared/dom';
 import {counts, merge, order, sections, type Entry, type Filter} from '../shared/inbox';
 import type {MessageAction, Preferences, PublicState, SearchHit, ThreadMessage} from '../shared/types';
+import {t} from '../shared/i18n';
 
 /** Where the client runs: the toolbar popup or a full browser tab. */
 export const mode: 'popup' | 'app' = document.documentElement.dataset.mode === 'app' ? 'app' : 'popup';
@@ -57,7 +58,7 @@ export const store = createRoot(() => {
       return [
         {
           id: 'inbox' as const,
-          title: 'Результаты поиска',
+          title: t('search_results'),
           items: hits.map(entry => ({kind: 'message' as const, entry})),
         },
       ];
@@ -130,7 +131,7 @@ export const store = createRoot(() => {
     try {
       await request<boolean>({type: 'REPLY', account: entry.account, message: entry.message.id, text});
       setReplying(false);
-      notify('Ответ отправлен.');
+      notify(t('reply_sent'));
       return true;
     } catch (error) {
       fail(error);
@@ -194,7 +195,7 @@ export const store = createRoot(() => {
       const index = items.indexOf(entry);
       next = items[index + 1] || items[index - 1] || null;
     }
-    if (leaving) setBusy(action === 'trash' ? 'Удаляем…' : 'Архивируем…');
+    if (leaving) setBusy(t(action === 'trash' ? 'busy_deleting' : 'busy_archiving'));
     try {
       const value = await request<PublicState>({
         type: 'ACT',

@@ -19,6 +19,7 @@ import type {
   MessageAction,
   ThreadMessage,
 } from '../../shared/types';
+import {t} from '../../shared/i18n';
 
 /** Result of connecting a mailbox. */
 export interface Connection {
@@ -154,7 +155,7 @@ export function message(value: RawMessage): MailMessage {
     id: text(value.id, 512),
     thread: text(value.thread, 512),
     from: text(value.from, 320),
-    subject: text(value.subject, 300) || '(без темы)',
+    subject: text(value.subject, 300) || t('no_subject'),
     snippet: text(value.snippet, 300),
     date: timestamp(value.date),
     link: httpsLink(value.link),
@@ -197,7 +198,7 @@ export function threadMessage(value: RawThreadMessage): ThreadMessage {
     from: text(value.from, 320),
     to: text(value.to, 2000),
     cc: text(value.cc, 2000),
-    subject: text(value.subject, 300) || '(без темы)',
+    subject: text(value.subject, 300) || t('no_subject'),
     date: timestamp(value.date),
     html: String(value.html ?? '').slice(0, MAX_HTML),
     text: String(value.text ?? '').slice(0, MAX_HTML),

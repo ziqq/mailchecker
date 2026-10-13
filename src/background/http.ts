@@ -13,6 +13,7 @@
  *
  * @module background/http
  */
+import {t} from '../shared/i18n';
 
 /** Request timeout in milliseconds. */
 const TIMEOUT = 25000;
@@ -32,7 +33,7 @@ export const SESSION_HOSTS: readonly string[] = Object.freeze([
 export class AuthError extends Error {
   readonly reauth = true;
 
-  constructor(message = 'Сессия истекла. Войдите заново.') {
+  constructor(message = t('error_session_expired')) {
     super(message);
   }
 }
@@ -56,7 +57,7 @@ export class HTTPError extends Error {
  * @throws When the body is too large or not valid UTF-8.
  */
 export async function responseText(response: Response, limit = LIMIT): Promise<string> {
-  const tooLarge = 'Сервер вернул слишком большой ответ.';
+  const tooLarge = t('error_too_large');
   if (Number(response.headers.get('Content-Length')) > limit) {
     await response.body?.cancel().catch(() => {});
     throw new Error(tooLarge);
@@ -111,15 +112,14 @@ export interface RequestOptions {
 /** Sends a bounded request and returns the response with its text body. */
 async function send(
   url: string,
-  {method = 'GET', token, json, form, service = 'Сервер', session = false}: RequestOptions,
+  {method = 'GET', token, json, form, service = t('service_server'), session = false}: RequestOptions,
   accept: string,
 ): Promise<{response: Response; text: string}> {
   const target = new URL(url);
-  if (target.protocol !== 'https:') throw new Error('Разрешены только HTTPS-адреса.');
-  if (session && !SESSION_HOSTS.includes(target.hostname))
-    throw new Error('Этот адрес не может использовать вход в браузере.');
+  if (target.protocol !== 'https:') throw new Error(t('error_https_only'));
+  if (session && !SESSION_HOSTS.includes(target.hostname)) throw new Error(t('error_session_host'));
   if (session && !(await chrome.permissions.contains({origins: [`${target.origin}/*`]})))
-    throw new Error(`Разрешите доступ к сайту «${service}»: добавьте ящик заново в настройках.`);
+    throw new Error(t('error_site_permission', service));
   const headers: Record<string, string> = {Accept: accept};
   let body: string | undefined;
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -142,22 +142,22 @@ async function send(
     });
   } catch (error) {
     if ((error as Error)?.name === 'TimeoutError')
-      throw new Error(session ? `«${service}» не отвечает. Повторите позже.` : `${service} не ответил вовремя.`, {
+      throw new Error(session ? t('error_webmail_timeout', service) : t('error_timeout', service), {
         cause: error,
       });
     // A session request redirected to a sign-in host (no host permission there) fails like a network error.
-    if (session) throw new AuthError(`Войдите в «${service}» в этом браузере (или проверьте сеть) и повторите.`);
-    throw new Error(`${service} недоступен. Проверьте сеть.`, {cause: error});
+    if (session) throw new AuthError(t('error_session_or_network', service));
+    throw new Error(t('error_unreachable', service), {cause: error});
   }
   const signedOut = session && !SESSION_HOSTS.includes(new URL(response.url || url).hostname);
   // Webmail answers too frequent requests with 403/429 (Yandex: «Доступ к сервису временно запрещён»).
   if (session && !signedOut && (response.status === 403 || response.status === 429)) {
     await response.body?.cancel().catch(() => {});
-    throw new Error(`«${service}» временно ограничил доступ: слишком много запросов. Проверка повторится позже.`);
+    throw new Error(t('error_rate_limited', service));
   }
   if (signedOut || ((token || session) && (response.status === 401 || response.status === 403))) {
     await response.body?.cancel().catch(() => {});
-    throw new AuthError(session ? `Войдите в «${service}» в этом браузере и повторите.` : undefined);
+    throw new AuthError(session ? t('error_sign_in_webmail', service) : undefined);
   }
   return {response, text: await responseText(response)};
 }
@@ -173,7 +173,11 @@ async function send(
 export async function requestText(url: string, options: RequestOptions = {}): Promise<string> {
   const {response, text} = await send(url, options, 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
   if (!response.ok)
-    throw new HTTPError(`${options.service || 'Сервер'}: ошибка ${response.status}.`, response.status, null);
+    throw new HTTPError(
+      t('error_http_status', options.service || t('service_server'), response.status),
+      response.status,
+      null,
+    );
   return text;
 }
 
@@ -190,14 +194,14 @@ export async function requestText(url: string, options: RequestOptions = {}): Pr
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function requestJSON<T = any>(url: string, options: RequestOptions = {}): Promise<T> {
-  const service = options.service || 'Сервер';
+  const service = options.service || t('service_server');
   const {response, text} = await send(url, options, 'application/json');
   let value: unknown = null;
   try {
     value = text ? JSON.parse(text) : null;
   } catch {
-    if (response.ok) throw new Error(`${service} вернул некорректный ответ.`);
+    if (response.ok) throw new Error(t('error_bad_response', service));
   }
-  if (!response.ok) throw new HTTPError(`${service}: ошибка ${response.status}.`, response.status, value);
+  if (!response.ok) throw new HTTPError(t('error_http_status', service, response.status), response.status, value);
   return value as T;
 }

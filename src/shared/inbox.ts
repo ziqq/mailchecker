@@ -9,6 +9,7 @@
  * @module shared/inbox
  */
 import type {Category, MailMessage, Mailbox, PublicAccount} from './types';
+import {t} from './i18n';
 
 /** A message with its account ID. */
 export interface Entry {
@@ -27,11 +28,11 @@ export type Section = {id: 'pinned' | 'inbox' | Category; title: string; items: 
 
 /** Section titles. */
 const TITLES: Record<Section['id'], string> = {
-  pinned: 'Закреплённые',
-  inbox: 'Остальные',
-  people: 'Личные',
-  notifications: 'Уведомления',
-  newsletters: 'Рассылки',
+  pinned: t('section_pinned'),
+  inbox: t('section_inbox'),
+  people: t('section_people'),
+  notifications: t('section_notifications'),
+  newsletters: t('section_newsletters'),
 };
 
 /** Account accent colours by position. */

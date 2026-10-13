@@ -12,11 +12,12 @@ import {accountColor, type Filter} from '../../shared/inbox';
 import {icon} from '../../shared/icons';
 import {store} from '../store';
 import {cycleTheme, openSettings, RefreshButton} from './TopBar';
+import {t} from '../../shared/i18n';
 
 /** Sidebar views. */
 const VIEWS: {filter: Filter; label: string; icon: string}[] = [
-  {filter: 'all', label: 'Входящие', icon: 'inbox'},
-  {filter: 'pinned', label: 'Закреплённые', icon: 'pin'},
+  {filter: 'all', label: t('view_inbox'), icon: 'inbox'},
+  {filter: 'pinned', label: t('section_pinned'), icon: 'pin'},
 ];
 
 /** Renders the sidebar. */
@@ -35,7 +36,7 @@ export function Sidebar() {
       <span class="logo">
         mailchecker<span class="dot">.</span>
       </span>
-      <nav class="nav" aria-label="Разделы">
+      <nav class="nav" aria-label={t('label_sections')}>
         <For each={VIEWS}>
           {view => (
             <a
@@ -54,8 +55,8 @@ export function Sidebar() {
         </For>
       </nav>
       <div>
-        <h3 class="eyebrow">Ящики</h3>
-        <nav class="nav" aria-label="Ящики">
+        <h3 class="eyebrow">{t('label_mailboxes')}</h3>
+        <nav class="nav" aria-label={t('label_mailboxes')}>
           <a
             href="#"
             aria-current={store.account() === 'all' ? 'page' : undefined}
@@ -65,7 +66,7 @@ export function Sidebar() {
             }}
           >
             {icon('layers')}
-            <span class="label">Все ящики</span>
+            <span class="label">{t('all_mailboxes')}</span>
           </a>
           <For each={accounts()}>
             {account => (
@@ -88,10 +89,22 @@ export function Sidebar() {
       </div>
       <div class="sidebar-foot">
         <RefreshButton />
-        <button class="round ghost" type="button" title="Сменить тему" aria-label="Сменить тему" onClick={cycleTheme}>
+        <button
+          class="round ghost"
+          type="button"
+          title={t('action_theme')}
+          aria-label={t('action_theme')}
+          onClick={cycleTheme}
+        >
           {icon('theme')}
         </button>
-        <button class="round ghost" type="button" title="Настройки" aria-label="Настройки" onClick={openSettings}>
+        <button
+          class="round ghost"
+          type="button"
+          title={t('action_settings')}
+          aria-label={t('action_settings')}
+          onClick={openSettings}
+        >
           {icon('settings')}
         </button>
       </div>

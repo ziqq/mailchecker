@@ -18,6 +18,7 @@ import {addAccount, publicState, removeAccount, setAccountColor, signIn} from '.
 import {act, checkAccount, checkAll, open, openNotification, reply, search, thread, updateBadge} from './mailbox';
 import {hasNotifications, openApp} from './platform';
 import {readStore, writeStore} from './storage';
+import {t} from '../shared/i18n';
 
 /** Alarm name for periodic checks. */
 const ALARM = 'check';
@@ -71,7 +72,7 @@ async function schedule(): Promise<void> {
 /** Throws unless the optional `identity` permission is granted. */
 async function requireIdentity(): Promise<void> {
   if (!(await chrome.permissions.contains({permissions: ['identity']})))
-    throw new Error('Разрешите вход через браузер в настройках расширения и повторите.');
+    throw new Error(t('error_identity_permission'));
 }
 
 /** An untrusted message; fields are validated per type. */
@@ -86,7 +87,7 @@ type Message = {type?: unknown} & Record<string, unknown>;
 async function handle(message: Message, sender: chrome.runtime.MessageSender): Promise<unknown> {
   const page = senderPage(sender);
   const type = message?.type as RequestType;
-  if (!page || typeof type !== 'string' || !allowed[page].has(type)) throw new Error('Этот запрос не разрешён.');
+  if (!page || typeof type !== 'string' || !allowed[page].has(type)) throw new Error(t('error_request_denied'));
   const account = String(message.account ?? '');
   switch (type) {
     case 'STATE':
@@ -161,7 +162,7 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
 chrome.runtime.onMessage.addListener((message: Message, sender, reply: (value: Reply) => void) => {
   handle(message, sender).then(
     value => reply({ok: true, value}),
-    (error: Error) => reply({ok: false, error: error?.message || 'Неизвестная ошибка.'}),
+    (error: Error) => reply({ok: false, error: error?.message || t('error_unknown')}),
   );
   return true;
 });

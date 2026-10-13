@@ -13,6 +13,7 @@
  */
 import {createEffect, onCleanup} from 'solid-js';
 import {frameDocument, sanitizeEmail, textToHTML} from '../../shared/sanitize';
+import {t} from '../../shared/i18n';
 
 /** Frame properties. */
 export interface MailFrameProps {
@@ -41,7 +42,7 @@ export function MailFrame(props: MailFrameProps) {
     const plain = !props.html.trim();
     const body = plain
       ? {html: textToHTML(props.text), blocked: 0, trackers: 0}
-      : sanitizeEmail(props.html, props.allowRemote);
+      : sanitizeEmail(props.html, props.allowRemote, props.dark);
     props.onBlocked?.(body.blocked, body.trackers);
     frame.srcdoc = frameDocument(body.html, {allowRemote: props.allowRemote, dark: props.dark, plain});
   });
@@ -63,7 +64,7 @@ export function MailFrame(props: MailFrameProps) {
     <iframe
       ref={frame}
       class="mail-frame"
-      title="Текст письма"
+      title={t('label_message_text')}
       sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       referrerpolicy="no-referrer"
       onLoad={onLoad}

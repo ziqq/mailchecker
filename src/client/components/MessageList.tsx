@@ -9,7 +9,8 @@
  */
 import {createSignal, For, Match, Show, Switch} from 'solid-js';
 import {request} from '../../shared/dom';
-import {initial, plural, senderName, shortDate} from '../../shared/format';
+import {initial, senderName, shortDate} from '../../shared/format';
+import {t, tn} from '../../shared/i18n';
 import {accountColor, type Entry, type Filter, type Item} from '../../shared/inbox';
 import {icon} from '../../shared/icons';
 import {store} from '../store';
@@ -17,18 +18,18 @@ import {openSettings} from './TopBar';
 
 /** Category filter labels. */
 const FILTERS: {id: Filter; label: string}[] = [
-  {id: 'all', label: 'Все'},
-  {id: 'notifications', label: 'Уведомления'},
-  {id: 'newsletters', label: 'Рассылки'},
+  {id: 'all', label: t('filter_all')},
+  {id: 'notifications', label: t('section_notifications')},
+  {id: 'newsletters', label: t('section_newsletters')},
 ];
 
 /** Titles by filter. */
 const TITLES: Record<Filter, string> = {
-  all: 'Входящие',
-  pinned: 'Закреплённые',
-  people: 'Личные',
-  notifications: 'Уведомления',
-  newsletters: 'Рассылки',
+  all: t('view_inbox'),
+  pinned: t('section_pinned'),
+  people: t('section_people'),
+  notifications: t('section_notifications'),
+  newsletters: t('section_newsletters'),
 };
 
 /** A small action button that does not select the row. */
@@ -86,12 +87,12 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
         </Show>
         <div class="row-meta">
           <Show when={message().pinned}>
-            <span class="meta-icon pinned" title="Закреплено">
+            <span class="meta-icon pinned" title={t('label_pinned')}>
               {icon('pin')}
             </span>
           </Show>
           <Show when={message().attachments}>
-            <span class="meta-icon" title="Есть вложения">
+            <span class="meta-icon" title={t('label_attachments')}>
               {icon('clip')}
             </span>
           </Show>
@@ -100,15 +101,19 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
       <div class="row-actions">
         <RowAction
           name="pin"
-          title={message().pinned ? 'Открепить · S' : 'Закрепить · S'}
+          title={`${t(message().pinned ? 'action_unpin' : 'action_pin')} · S`}
           onClick={() => store.act(props.entry, message().pinned ? 'unpin' : 'pin')}
         />
         <RowAction
           name="unread"
-          title={message().unread ? 'Прочитано · U' : 'Непрочитано · U'}
+          title={`${t(message().unread ? 'action_read' : 'action_unread')} · U`}
           onClick={() => store.act(props.entry, message().unread ? 'read' : 'unread')}
         />
-        <RowAction name="archive" title="В архив · E" onClick={() => store.act(props.entry, 'archive')} />
+        <RowAction
+          name="archive"
+          title={`${t('action_archive')} · E`}
+          onClick={() => store.act(props.entry, 'archive')}
+        />
       </div>
     </article>
   );
@@ -145,8 +150,8 @@ function Stack(props: {item: Extract<Item, {kind: 'stack'}>}) {
           </div>
           <div class="subject">{first().subject}</div>
           <div class="snippet">
-            {props.item.entries.length} {plural(props.item.entries.length, ['письмо', 'письма', 'писем'])}
-            {unread() ? ` · ${unread()} новых` : ''}
+            {tn('messages_count', props.item.entries.length)}
+            {unread() ? ` · ${tn('unread_new', unread())}` : ''}
           </div>
         </div>
         <span class="count-badge">×{props.item.entries.length}</span>
@@ -184,7 +189,7 @@ function Notices() {
               type="button"
               onClick={() => request({type: 'SIGN_IN', account: account.id}).then(() => store.load(), store.fail)}
             >
-              Войти
+              {t('action_sign_in')}
             </button>
           </Show>
         </div>
@@ -207,7 +212,7 @@ function SearchField() {
       <input
         id="search"
         type="search"
-        placeholder="Поиск по всем ящикам"
+        placeholder={t('search_placeholder')}
         autocomplete="off"
         value={value()}
         onInput={event => {
@@ -236,22 +241,20 @@ export function MessageList() {
   const accounts = () => store.state()?.accounts || [];
   const total = () => store.unread().all;
   return (
-    <section class="list-pane" aria-label="Письма">
+    <section class="list-pane" aria-label={t('label_messages')}>
       <header class="list-head">
         <div class="list-title">
           <h1>
-            {store.results() ? `«${store.query()}»` : TITLES[store.filter()]}
+            {store.results() ? t('search_title', store.query()) : TITLES[store.filter()]}
             <span class="dot">.</span>
           </h1>
           <Show when={!store.results() && total()}>
-            <span class="pill strong">
-              {total()} {plural(total(), ['новое', 'новых', 'новых'])}
-            </span>
+            <span class="pill strong">{tn('unread_new', total())}</span>
           </Show>
         </div>
         <SearchField />
         <Show when={!store.results()}>
-          <div class="segmented" role="tablist" aria-label="Категории">
+          <div class="segmented" role="tablist" aria-label={t('label_categories')}>
             <For each={FILTERS}>
               {filter => (
                 <button
@@ -282,23 +285,26 @@ export function MessageList() {
           </Match>
           <Match when={!accounts().length}>
             <div class="empty">
-              <p class="eyebrow">Почта в браузере</p>
+              <p class="eyebrow">{t('welcome_eyebrow')}</p>
               <h2>
-                Вся почта<span class="dot">.</span> Сразу<span class="dot">.</span>
+                {t('welcome_title_1')}
+                <span class="dot">.</span> {t('welcome_title_2')}
+                <span class="dot">.</span>
               </h2>
-              <p>Подключите Gmail, Microsoft 365 или JMAP-ящик на любом домене.</p>
+              <p>{t('welcome_text')}</p>
               <button class="btn primary" type="button" onClick={openSettings}>
-                {icon('plus')}Добавить ящик
+                {icon('plus')}
+                {t('action_add_mailbox')}
               </button>
             </div>
           </Match>
           <Match when={!store.list().length}>
             <div class="empty small">
               <h2>
-                {store.results() ? 'Ничего не нашлось' : 'Всё разобрано'}
+                {store.results() ? t('search_empty') : t('inbox_empty')}
                 <span class="dot">.</span>
               </h2>
-              <p>{store.results() ? 'Попробуйте другой запрос.' : 'Новых писем здесь нет.'}</p>
+              <p>{store.results() ? t('search_empty_text') : t('inbox_empty_text')}</p>
             </div>
           </Match>
           <Match when={true}>
