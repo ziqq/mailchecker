@@ -1,0 +1,728 @@
+{
+  "accent_blue": {
+    "message": "Синій"
+  },
+  "accent_cyan": {
+    "message": "Блакитний"
+  },
+  "accent_gray": {
+    "message": "Сірий"
+  },
+  "accent_green": {
+    "message": "Зелений"
+  },
+  "accent_label": {
+    "message": "Акцент"
+  },
+  "accent_neutral": {
+    "message": "Графіт"
+  },
+  "accent_orange": {
+    "message": "Помаранчевий"
+  },
+  "accent_pink": {
+    "message": "Рожевий"
+  },
+  "accent_purple": {
+    "message": "Фіолетовий"
+  },
+  "accent_red": {
+    "message": "Червоний"
+  },
+  "accent_text": {
+    "message": "Колір кнопок і виділення або графітова палітра."
+  },
+  "accent_yellow": {
+    "message": "Жовтий"
+  },
+  "account_checked": {
+    "message": "Непрочитаних: $1 · перевірено $2"
+  },
+  "account_color": {
+    "message": "Колір $1"
+  },
+  "account_color_title": {
+    "message": "Колір скриньки"
+  },
+  "account_removed": {
+    "message": "Скриньку видалено."
+  },
+  "account_unchecked": {
+    "message": "$1 · ще не перевірялася"
+  },
+  "accounts_empty": {
+    "message": "Поки жодної скриньки. Додайте першу нижче."
+  },
+  "accounts_text": {
+    "message": "Підключені адреси та їхній стан."
+  },
+  "action_add": {
+    "message": "Додати"
+  },
+  "action_add_mailbox": {
+    "message": "Додати скриньку"
+  },
+  "action_archive": {
+    "message": "В архів"
+  },
+  "action_back": {
+    "message": "До списку"
+  },
+  "action_cancel": {
+    "message": "Скасувати"
+  },
+  "action_check_now": {
+    "message": "Перевірити зараз"
+  },
+  "action_connect": {
+    "message": "Підключити"
+  },
+  "action_delete": {
+    "message": "Видалити"
+  },
+  "action_delete_account": {
+    "message": "Видалити $1"
+  },
+  "action_full_screen": {
+    "message": "Відкрити на весь екран"
+  },
+  "action_open_mail": {
+    "message": "Відкрити пошту"
+  },
+  "action_open_webmail": {
+    "message": "Відкрити у веб-пошті"
+  },
+  "action_pin": {
+    "message": "Закріпити"
+  },
+  "action_read": {
+    "message": "Прочитано"
+  },
+  "action_read_toggle": {
+    "message": "Прочитано або непрочитано"
+  },
+  "action_reply": {
+    "message": "Відповісти"
+  },
+  "action_settings": {
+    "message": "Налаштування"
+  },
+  "action_show": {
+    "message": "Показати"
+  },
+  "action_sign_in": {
+    "message": "Увійти"
+  },
+  "action_sign_in_again": {
+    "message": "Увійти знову"
+  },
+  "action_theme": {
+    "message": "Змінити тему"
+  },
+  "action_unpin": {
+    "message": "Відкріпити"
+  },
+  "action_unread": {
+    "message": "Непрочитано"
+  },
+  "address_hint": {
+    "message": "Спочатку увійдіть у цю скриньку в браузері. Пароль не потрібен: розширення читає пошту через ваш вхід."
+  },
+  "address_subtitle": {
+    "message": "Через вхід у цьому браузері"
+  },
+  "all_mailboxes": {
+    "message": "Усі скриньки"
+  },
+  "app_title": {
+    "message": "mailchecker · Пошта"
+  },
+  "appearance_text": {
+    "message": "Тема й акцентний колір для вікна та налаштувань."
+  },
+  "appearance_title": {
+    "message": "Вигляд"
+  },
+  "badge_title": {
+    "message": "mailchecker · непрочитаних: $1"
+  },
+  "badge_title_problems": {
+    "message": "mailchecker · непрочитаних: $1 · скриньок із помилкою: $2"
+  },
+  "busy_archiving": {
+    "message": "Архівуємо…"
+  },
+  "busy_deleting": {
+    "message": "Видаляємо…"
+  },
+  "check_text": {
+    "message": "Як часто перевіряти й що показувати."
+  },
+  "check_title": {
+    "message": "Перевірка пошти"
+  },
+  "confirm_delete_account": {
+    "message": "Видалити $1 із розширення?"
+  },
+  "connected": {
+    "message": "Підключено $1"
+  },
+  "connected_plain": {
+    "message": "Підключено."
+  },
+  "copied_redirect": {
+    "message": "Адресу повернення $1 скопійовано."
+  },
+  "copy_failed": {
+    "message": "Не вдалося скопіювати адресу."
+  },
+  "copy_redirect": {
+    "message": "Скопіювати адресу повернення"
+  },
+  "copy_redirect_named": {
+    "message": "Скопіювати адресу повернення $1"
+  },
+  "error_account_changed": {
+    "message": "Скринька змінилася під час входу. Спробуйте ще раз."
+  },
+  "error_account_missing": {
+    "message": "Скриньку не знайдено."
+  },
+  "error_bad_address": {
+    "message": "$1: некоректна адреса."
+  },
+  "error_bad_message": {
+    "message": "Некоректний лист."
+  },
+  "error_bad_response": {
+    "message": "$1: некоректна відповідь."
+  },
+  "error_check_failed": {
+    "message": "Не вдалося перевірити пошту."
+  },
+  "error_delete_in_webmail": {
+    "message": "Видаліть цей лист у веб-пошті."
+  },
+  "error_generic": {
+    "message": "помилка"
+  },
+  "error_gmail_action": {
+    "message": "Gmail не дозволив виконати дію. Спробуйте ще раз у Gmail."
+  },
+  "error_gmail_address": {
+    "message": "Не вдалося визначити адресу Gmail. Відкрийте Gmail у цьому браузері та спробуйте ще раз."
+  },
+  "error_gmail_cookies": {
+    "message": "Для дій у Gmail підключіть скриньку знову в налаштуваннях і дозвольте доступ до cookies Gmail."
+  },
+  "error_gmail_key": {
+    "message": "Gmail не надав ключ сторінки для дій. Відкрийте Gmail у цьому браузері та спробуйте ще раз."
+  },
+  "error_http_status": {
+    "message": "$1: помилка $2."
+  },
+  "error_https_only": {
+    "message": "Дозволено лише адреси HTTPS."
+  },
+  "error_identity_denied": {
+    "message": "Без дозволу на вхід через браузер підключити скриньку неможливо."
+  },
+  "error_identity_permission": {
+    "message": "Дозвольте вхід через браузер у налаштуваннях розширення та спробуйте ще раз."
+  },
+  "error_in_webmail": {
+    "message": "Для скриньки «$1», підключеної через вхід у браузері, ця дія доступна у веб-пошті: відкрийте лист там."
+  },
+  "error_jmap_access": {
+    "message": "Доступ до сервера JMAP не дозволено."
+  },
+  "error_jmap_folders": {
+    "message": "У скриньці немає папок «Чернетки» та «Надіслані»."
+  },
+  "error_jmap_generic": {
+    "message": "JMAP: $1."
+  },
+  "error_jmap_identity": {
+    "message": "JMAP: немає адреси відправника для відповіді."
+  },
+  "error_jmap_mail": {
+    "message": "Сервер не підтримує JMAP Mail."
+  },
+  "error_jmap_origin": {
+    "message": "JMAP API розташований на іншому домені; такі сервери не підтримуються."
+  },
+  "error_jmap_permission": {
+    "message": "Дозвольте доступ до сервера JMAP і спробуйте ще раз."
+  },
+  "error_jmap_rejected": {
+    "message": "Токен JMAP відхилено. Видаліть скриньку й додайте новий токен."
+  },
+  "error_jmap_renew": {
+    "message": "Для JMAP видаліть скриньку й додайте її знову з новим токеном."
+  },
+  "error_jmap_send": {
+    "message": "JMAP: сервер не надіслав відповідь."
+  },
+  "error_jmap_token": {
+    "message": "Вкажіть API-токен без пробілів."
+  },
+  "error_jmap_url": {
+    "message": "Некоректний JMAP Session URL."
+  },
+  "error_mailru_action": {
+    "message": "Mail.ru не виконала дію. Спробуйте ще раз у веб-пошті."
+  },
+  "error_mailru_address": {
+    "message": "Вкажіть адресу Mail.ru."
+  },
+  "error_need_https": {
+    "message": "$1: потрібна адреса HTTPS."
+  },
+  "error_no_address": {
+    "message": "$1: не отримано адресу скриньки."
+  },
+  "error_no_folder": {
+    "message": "У скриньці немає папки «$1»."
+  },
+  "error_no_reply": {
+    "message": "Розширення не відповіло. Перезавантажте сторінку."
+  },
+  "error_oauth_cancelled": {
+    "message": "Вхід скасовано або він не вдався."
+  },
+  "error_oauth_denied": {
+    "message": "$1: вхід відхилено."
+  },
+  "error_oauth_redirect": {
+    "message": "Неправильна адреса повернення OAuth."
+  },
+  "error_oauth_safari": {
+    "message": "У цьому браузері вхід виконується через застосунок mailchecker (Safari). Використовуйте JMAP або Chrome."
+  },
+  "error_oauth_state": {
+    "message": "Відповідь входу $1 не пройшла перевірку."
+  },
+  "error_oauth_token": {
+    "message": "Сервіс входу не повернув коректний токен."
+  },
+  "error_oauth_unconfigured": {
+    "message": "Вхід не налаштовано в цій збірці: вкажіть OAuth Client ID у src/background/oauth/config.ts."
+  },
+  "error_rate_limited": {
+    "message": "«$1» тимчасово обмежив доступ: забагато запитів. Перевірку буде повторено пізніше."
+  },
+  "error_reply_text": {
+    "message": "Напишіть відповідь (до 100 000 символів)."
+  },
+  "error_reply_webmail": {
+    "message": "Для цієї скриньки відповідь пишеться у веб-пошті."
+  },
+  "error_request_denied": {
+    "message": "Цей запит не дозволено."
+  },
+  "error_session_expired": {
+    "message": "Сеанс завершився. Увійдіть знову."
+  },
+  "error_session_host": {
+    "message": "Ця адреса не може використовувати вхід у браузері."
+  },
+  "error_session_or_network": {
+    "message": "Увійдіть у «$1» у цьому браузері (або перевірте мережу) і спробуйте ще раз."
+  },
+  "error_sign_in_mailru": {
+    "message": "Увійдіть у Mail.ru в цьому браузері та спробуйте ще раз."
+  },
+  "error_sign_in_webmail": {
+    "message": "Увійдіть у «$1» у цьому браузері та спробуйте ще раз."
+  },
+  "error_sign_in_yandex": {
+    "message": "Увійдіть у Яндекс Пошту в цьому браузері та спробуйте ще раз."
+  },
+  "error_site_denied": {
+    "message": "Без доступу до сайту «$1» підключити скриньку через браузер неможливо."
+  },
+  "error_site_permission": {
+    "message": "Дозвольте доступ до сайту «$1»: додайте скриньку знову в налаштуваннях."
+  },
+  "error_timeout": {
+    "message": "$1: немає відповіді вчасно."
+  },
+  "error_too_large": {
+    "message": "Сервер повернув завелику відповідь."
+  },
+  "error_too_many_accounts": {
+    "message": "Можна підключити до $1 скриньок."
+  },
+  "error_unexpected_page": {
+    "message": "$1: неочікувана сторінка."
+  },
+  "error_unexpected_reply": {
+    "message": "$1: неочікувана відповідь."
+  },
+  "error_unknown": {
+    "message": "Невідома помилка."
+  },
+  "error_unknown_action": {
+    "message": "Невідома дія."
+  },
+  "error_unknown_color": {
+    "message": "Невідомий колір."
+  },
+  "error_unknown_provider": {
+    "message": "Невідомий тип скриньки."
+  },
+  "error_unreachable": {
+    "message": "$1: немає з’єднання. Перевірте мережу."
+  },
+  "error_webmail_timeout": {
+    "message": "«$1» не відповідає. Спробуйте пізніше."
+  },
+  "error_yandex_address": {
+    "message": "Вкажіть адресу Яндекс Пошти."
+  },
+  "extension_description": {
+    "message": "Пошта на панелі браузера: спільні вхідні, безпечне читання й відповіді для Gmail, Яндекс Пошти, Mail.ru, Microsoft 365 і JMAP."
+  },
+  "feature_local": {
+    "message": "Лише локально"
+  },
+  "feature_local_text": {
+    "message": "Токени зберігаються в профілі браузера."
+  },
+  "feature_passwords": {
+    "message": "Без паролів"
+  },
+  "feature_passwords_text": {
+    "message": "Вхід на сторінках Google, Microsoft або веб-пошти."
+  },
+  "feature_server": {
+    "message": "Без сервера"
+  },
+  "feature_server_text": {
+    "message": "Запити йдуть напряму до API пошти."
+  },
+  "field_address": {
+    "message": "Адреса скриньки"
+  },
+  "field_api_token": {
+    "message": "API-токен"
+  },
+  "field_optional": {
+    "message": "(необов’язково)"
+  },
+  "field_webmail": {
+    "message": "Веб-пошта"
+  },
+  "field_webmail_link": {
+    "message": "Посилання на веб-пошту"
+  },
+  "filter_all": {
+    "message": "Усі"
+  },
+  "folder_archive": {
+    "message": "Архів"
+  },
+  "folder_inbox": {
+    "message": "Вхідні"
+  },
+  "folder_trash": {
+    "message": "Кошик"
+  },
+  "header_cc": {
+    "message": "Копія: $1"
+  },
+  "header_to": {
+    "message": "Кому: $1"
+  },
+  "hero_eyebrow": {
+    "message": "Поштова скринька в браузері"
+  },
+  "hero_lead": {
+    "message": "Лічильник, список і сповіщення для Gmail, Яндекс Пошти, Mail.ru, Microsoft 365 і JMAP. Без власного сервера й додаткових програм."
+  },
+  "hint_archive": {
+    "message": "в архів"
+  },
+  "hint_navigate": {
+    "message": "по списку"
+  },
+  "hint_pin": {
+    "message": "закріпити"
+  },
+  "hint_search": {
+    "message": "пошук"
+  },
+  "inbox_empty": {
+    "message": "Усе розібрано"
+  },
+  "inbox_empty_text": {
+    "message": "Нових листів тут немає."
+  },
+  "interval_label": {
+    "message": "Інтервал, хвилин"
+  },
+  "interval_text": {
+    "message": "Від 0,5 до 60."
+  },
+  "label_attachments": {
+    "message": "Є вкладення"
+  },
+  "label_categories": {
+    "message": "Категорії"
+  },
+  "label_mailboxes": {
+    "message": "Скриньки"
+  },
+  "label_message": {
+    "message": "Лист"
+  },
+  "label_message_text": {
+    "message": "Текст листа"
+  },
+  "label_messages": {
+    "message": "Листи"
+  },
+  "label_pinned": {
+    "message": "Закріплено"
+  },
+  "label_sections": {
+    "message": "Розділи"
+  },
+  "limit_label": {
+    "message": "Листів у списку"
+  },
+  "limit_text": {
+    "message": "На кожну скриньку, до 50."
+  },
+  "messages_count_few": {
+    "message": "$1 листи"
+  },
+  "messages_count_many": {
+    "message": "$1 листів"
+  },
+  "messages_count_one": {
+    "message": "$1 лист"
+  },
+  "messages_count_other": {
+    "message": "$1 листа"
+  },
+  "method_browser": {
+    "message": "Через браузер"
+  },
+  "method_google": {
+    "message": "Через Google"
+  },
+  "no_subject": {
+    "message": "(без теми)"
+  },
+  "notification_new": {
+    "message": "Нових листів: $1"
+  },
+  "notifications_text": {
+    "message": "Системне сповіщення про нові листи."
+  },
+  "oauth_has_id": {
+    "message": "· Client ID є"
+  },
+  "oauth_no_id": {
+    "message": "· Client ID не задано"
+  },
+  "oauth_note_build": {
+    "message": "Ці способи працюють, коли в збірку вписано Client ID:"
+  },
+  "oauth_note_setup": {
+    "message": "Створіть OAuth-клієнт у Google Cloud або Microsoft Entra і вкажіть у ньому адресу повернення нижче. Скринькам, підключеним через браузер, це не потрібно."
+  },
+  "oauth_text": {
+    "message": "Лише для збирання розширення: підключення «Через Google» та Outlook."
+  },
+  "oauth_title": {
+    "message": "Вхід через Google і Microsoft"
+  },
+  "oauth_unconfigured": {
+    "message": "Client ID не налаштовано."
+  },
+  "popup_full": {
+    "message": "Повне"
+  },
+  "popup_label": {
+    "message": "Вікно"
+  },
+  "popup_mini": {
+    "message": "Міні"
+  },
+  "popup_text": {
+    "message": "Розмір вікна, що відкривається кнопкою на панелі браузера."
+  },
+  "privacy_images_few": {
+    "message": "Заблоковано: $1 зображення"
+  },
+  "privacy_images_many": {
+    "message": "Заблоковано: $1 зображень"
+  },
+  "privacy_images_one": {
+    "message": "Заблоковано: $1 зображення"
+  },
+  "privacy_images_other": {
+    "message": "Заблоковано: $1 зображення"
+  },
+  "privacy_trackers_few": {
+    "message": "і $1 трекери"
+  },
+  "privacy_trackers_many": {
+    "message": "і $1 трекерів"
+  },
+  "privacy_trackers_one": {
+    "message": "і $1 трекер"
+  },
+  "privacy_trackers_other": {
+    "message": "і $1 трекера"
+  },
+  "provider_gmail_text": {
+    "message": "Через вхід у Gmail у цьому браузері або через обліковий запис Google."
+  },
+  "provider_jmap_text": {
+    "message": "Fastmail, Stalwart, Cyrus — за API-токеном."
+  },
+  "provider_mailru_text": {
+    "message": "Через вхід у Mail.ru в цьому браузері."
+  },
+  "provider_outlook_text": {
+    "message": "Outlook.com, Hotmail, Exchange Online на будь-якому домені."
+  },
+  "provider_yandex_text": {
+    "message": "Через вхід у Яндекс Пошту в цьому браузері."
+  },
+  "reader_empty": {
+    "message": "Виберіть лист"
+  },
+  "reader_eyebrow": {
+    "message": "Читання"
+  },
+  "reader_failed": {
+    "message": "Не вдалося відкрити лист"
+  },
+  "reply_heading": {
+    "message": "Відповідь · $1"
+  },
+  "reply_hint": {
+    "message": "⌘/Ctrl + Enter — надіслати"
+  },
+  "reply_placeholder": {
+    "message": "Текст відповіді"
+  },
+  "reply_send": {
+    "message": "Надіслати"
+  },
+  "reply_sending": {
+    "message": "Надсилаємо…"
+  },
+  "reply_sent": {
+    "message": "Відповідь надіслано."
+  },
+  "search_empty": {
+    "message": "Нічого не знайдено"
+  },
+  "search_empty_text": {
+    "message": "Спробуйте інший запит."
+  },
+  "search_placeholder": {
+    "message": "Пошук в усіх скриньках"
+  },
+  "search_results": {
+    "message": "Результати пошуку"
+  },
+  "search_title": {
+    "message": "«$1»"
+  },
+  "section_inbox": {
+    "message": "Інші"
+  },
+  "section_newsletters": {
+    "message": "Розсилки"
+  },
+  "section_notifications": {
+    "message": "Сповіщення"
+  },
+  "section_people": {
+    "message": "Особисті"
+  },
+  "section_pinned": {
+    "message": "Закріплені"
+  },
+  "service_mailru": {
+    "message": "Mail.ru"
+  },
+  "service_server": {
+    "message": "Сервер"
+  },
+  "service_yandex": {
+    "message": "Яндекс Пошта"
+  },
+  "settings_title": {
+    "message": "mailchecker · Налаштування"
+  },
+  "signed_in": {
+    "message": "Вхід виконано: $1"
+  },
+  "snippet_full_text": {
+    "message": "$1\n\nПовний текст — у веб-пошті: кнопка «Відкрити у веб-пошті»."
+  },
+  "status_wait": {
+    "message": "Зачекайте…"
+  },
+  "theme_auto": {
+    "message": "Авто"
+  },
+  "theme_auto_title": {
+    "message": "Тема: як у системі"
+  },
+  "theme_dark": {
+    "message": "Темна"
+  },
+  "theme_dark_title": {
+    "message": "Тема: темна"
+  },
+  "theme_label": {
+    "message": "Тема"
+  },
+  "theme_light": {
+    "message": "Світла"
+  },
+  "theme_light_title": {
+    "message": "Тема: світла"
+  },
+  "theme_text": {
+    "message": "Світла, темна або як у системі."
+  },
+  "theme_title": {
+    "message": "Тема: $1"
+  },
+  "unread_new_few": {
+    "message": "$1 нові"
+  },
+  "unread_new_many": {
+    "message": "$1 нових"
+  },
+  "unread_new_one": {
+    "message": "$1 новий"
+  },
+  "unread_new_other": {
+    "message": "$1 нового"
+  },
+  "view_inbox": {
+    "message": "Вхідні"
+  },
+  "welcome_eyebrow": {
+    "message": "Пошта в браузері"
+  },
+  "welcome_text": {
+    "message": "Підключіть Gmail, Яндекс Пошту, Mail.ru, Microsoft 365 або JMAP-скриньку на будь-якому домені."
+  },
+  "welcome_title_1": {
+    "message": "Уся пошта"
+  },
+  "welcome_title_2": {
+    "message": "Одразу"
+  }
+}

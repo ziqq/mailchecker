@@ -1,0 +1,704 @@
+{
+  "accent_blue": {
+    "message": "Mavi"
+  },
+  "accent_cyan": {
+    "message": "Camgöbeği"
+  },
+  "accent_gray": {
+    "message": "Gri"
+  },
+  "accent_green": {
+    "message": "Yeşil"
+  },
+  "accent_label": {
+    "message": "Vurgu"
+  },
+  "accent_neutral": {
+    "message": "Grafit"
+  },
+  "accent_orange": {
+    "message": "Turuncu"
+  },
+  "accent_pink": {
+    "message": "Pembe"
+  },
+  "accent_purple": {
+    "message": "Mor"
+  },
+  "accent_red": {
+    "message": "Kırmızı"
+  },
+  "accent_text": {
+    "message": "Düğmelerin ve seçimin rengi ya da grafit palet."
+  },
+  "accent_yellow": {
+    "message": "Sarı"
+  },
+  "account_checked": {
+    "message": "Okunmamış: $1 · kontrol: $2"
+  },
+  "account_color": {
+    "message": "$1 rengi"
+  },
+  "account_color_title": {
+    "message": "Posta kutusu rengi"
+  },
+  "account_removed": {
+    "message": "Posta kutusu kaldırıldı."
+  },
+  "account_unchecked": {
+    "message": "$1 · henüz kontrol edilmedi"
+  },
+  "accounts_empty": {
+    "message": "Henüz posta kutusu yok. İlkini aşağıdan ekleyin."
+  },
+  "accounts_text": {
+    "message": "Bağlı adresler ve durumları."
+  },
+  "action_add": {
+    "message": "Ekle"
+  },
+  "action_add_mailbox": {
+    "message": "Posta kutusu ekle"
+  },
+  "action_archive": {
+    "message": "Arşivle"
+  },
+  "action_back": {
+    "message": "Listeye dön"
+  },
+  "action_cancel": {
+    "message": "İptal"
+  },
+  "action_check_now": {
+    "message": "Şimdi kontrol et"
+  },
+  "action_connect": {
+    "message": "Bağla"
+  },
+  "action_delete": {
+    "message": "Sil"
+  },
+  "action_delete_account": {
+    "message": "$1 hesabını kaldır"
+  },
+  "action_full_screen": {
+    "message": "Tam ekranda aç"
+  },
+  "action_open_mail": {
+    "message": "Postayı aç"
+  },
+  "action_open_webmail": {
+    "message": "Web postasında aç"
+  },
+  "action_pin": {
+    "message": "Sabitle"
+  },
+  "action_read": {
+    "message": "Okundu olarak işaretle"
+  },
+  "action_read_toggle": {
+    "message": "Okundu veya okunmadı"
+  },
+  "action_reply": {
+    "message": "Yanıtla"
+  },
+  "action_settings": {
+    "message": "Ayarlar"
+  },
+  "action_show": {
+    "message": "Göster"
+  },
+  "action_sign_in": {
+    "message": "Oturum aç"
+  },
+  "action_sign_in_again": {
+    "message": "Yeniden oturum aç"
+  },
+  "action_theme": {
+    "message": "Temayı değiştir"
+  },
+  "action_unpin": {
+    "message": "Sabitlemeyi kaldır"
+  },
+  "action_unread": {
+    "message": "Okunmadı olarak işaretle"
+  },
+  "address_hint": {
+    "message": "Önce tarayıcıda bu posta kutusunda oturum açın. Parola gerekmez: uzantı postaları açık oturumunuz üzerinden okur."
+  },
+  "address_subtitle": {
+    "message": "Bu tarayıcıdaki oturum üzerinden"
+  },
+  "all_mailboxes": {
+    "message": "Tüm posta kutuları"
+  },
+  "app_title": {
+    "message": "mailchecker · Posta"
+  },
+  "appearance_text": {
+    "message": "Pencere ve Ayarlar için tema ve vurgu rengi."
+  },
+  "appearance_title": {
+    "message": "Görünüm"
+  },
+  "badge_title": {
+    "message": "mailchecker · okunmamış: $1"
+  },
+  "badge_title_problems": {
+    "message": "mailchecker · okunmamış: $1 · hatalı posta kutusu: $2"
+  },
+  "busy_archiving": {
+    "message": "Arşivleniyor…"
+  },
+  "busy_deleting": {
+    "message": "Siliniyor…"
+  },
+  "check_text": {
+    "message": "Ne sıklıkla kontrol edileceği ve neyin gösterileceği."
+  },
+  "check_title": {
+    "message": "Posta kontrolü"
+  },
+  "confirm_delete_account": {
+    "message": "$1 uzantıdan kaldırılsın mı?"
+  },
+  "connected": {
+    "message": "$1 bağlandı"
+  },
+  "connected_plain": {
+    "message": "Bağlandı."
+  },
+  "copied_redirect": {
+    "message": "$1 yönlendirme adresi kopyalandı."
+  },
+  "copy_failed": {
+    "message": "Adres kopyalanamadı."
+  },
+  "copy_redirect": {
+    "message": "Yönlendirme adresini kopyala"
+  },
+  "copy_redirect_named": {
+    "message": "$1 yönlendirme adresini kopyala"
+  },
+  "error_account_changed": {
+    "message": "Oturum açma sırasında posta kutusu değişti. Tekrar deneyin."
+  },
+  "error_account_missing": {
+    "message": "Posta kutusu bulunamadı."
+  },
+  "error_bad_address": {
+    "message": "$1: geçersiz adres."
+  },
+  "error_bad_message": {
+    "message": "Geçersiz ileti."
+  },
+  "error_bad_response": {
+    "message": "$1 geçersiz bir yanıt döndürdü."
+  },
+  "error_check_failed": {
+    "message": "Posta kontrol edilemedi."
+  },
+  "error_delete_in_webmail": {
+    "message": "Bu iletiyi web postasında silin."
+  },
+  "error_generic": {
+    "message": "hata"
+  },
+  "error_gmail_action": {
+    "message": "Gmail işleme izin vermedi. Gmail’de tekrar deneyin."
+  },
+  "error_gmail_address": {
+    "message": "Gmail adresi belirlenemedi. Gmail’i bu tarayıcıda açıp tekrar deneyin."
+  },
+  "error_gmail_cookies": {
+    "message": "Gmail’de işlem yapmak için posta kutusunu Ayarlar’da yeniden bağlayın ve Gmail çerezlerine erişime izin verin."
+  },
+  "error_gmail_key": {
+    "message": "Gmail işlemler için sayfa anahtarını vermedi. Gmail’i bu tarayıcıda açıp tekrar deneyin."
+  },
+  "error_http_status": {
+    "message": "$1: $2 hatası."
+  },
+  "error_https_only": {
+    "message": "Yalnızca HTTPS adreslerine izin verilir."
+  },
+  "error_identity_denied": {
+    "message": "Tarayıcıyla oturum açma izni olmadan posta kutusu bağlanamaz."
+  },
+  "error_identity_permission": {
+    "message": "Uzantı ayarlarında tarayıcıyla oturum açmaya izin verin ve tekrar deneyin."
+  },
+  "error_in_webmail": {
+    "message": "Tarayıcı oturumuyla bağlanan “$1” posta kutusunda bu işlem web postasında yapılabilir: iletiyi orada açın."
+  },
+  "error_jmap_access": {
+    "message": "JMAP sunucusuna erişime izin verilmedi."
+  },
+  "error_jmap_folders": {
+    "message": "Posta kutusunda Taslaklar ve Gönderilenler klasörleri yok."
+  },
+  "error_jmap_generic": {
+    "message": "JMAP: $1."
+  },
+  "error_jmap_identity": {
+    "message": "JMAP: yanıt için gönderen adresi yok."
+  },
+  "error_jmap_mail": {
+    "message": "Sunucu JMAP Mail’i desteklemiyor."
+  },
+  "error_jmap_origin": {
+    "message": "JMAP API başka bir alan adında; bu tür sunucular desteklenmiyor."
+  },
+  "error_jmap_permission": {
+    "message": "JMAP sunucusuna erişime izin verin ve tekrar deneyin."
+  },
+  "error_jmap_rejected": {
+    "message": "JMAP belirteci reddedildi. Posta kutusunu kaldırıp yeni bir belirteç ekleyin."
+  },
+  "error_jmap_renew": {
+    "message": "JMAP için posta kutusunu kaldırıp yeni bir belirteçle yeniden ekleyin."
+  },
+  "error_jmap_send": {
+    "message": "JMAP: sunucu yanıtı göndermedi."
+  },
+  "error_jmap_token": {
+    "message": "API belirtecini boşluksuz girin."
+  },
+  "error_jmap_url": {
+    "message": "Geçersiz JMAP Session URL."
+  },
+  "error_mailru_action": {
+    "message": "Mail.ru işlemi tamamlamadı. Web postasında tekrar deneyin."
+  },
+  "error_mailru_address": {
+    "message": "Mail.ru adresini girin."
+  },
+  "error_need_https": {
+    "message": "$1: HTTPS adresi gerekli."
+  },
+  "error_no_address": {
+    "message": "$1 posta kutusu adresini döndürmedi."
+  },
+  "error_no_folder": {
+    "message": "Posta kutusunda “$1” klasörü yok."
+  },
+  "error_no_reply": {
+    "message": "Uzantı yanıt vermedi. Sayfayı yeniden yükleyin."
+  },
+  "error_oauth_cancelled": {
+    "message": "Oturum açma iptal edildi veya başarısız oldu."
+  },
+  "error_oauth_denied": {
+    "message": "$1 oturum açmayı reddetti."
+  },
+  "error_oauth_redirect": {
+    "message": "Geçersiz OAuth yönlendirme adresi."
+  },
+  "error_oauth_safari": {
+    "message": "Bu tarayıcıda oturum açma mailchecker uygulamasında (Safari) yapılır. JMAP veya Chrome kullanın."
+  },
+  "error_oauth_state": {
+    "message": "$1 oturum açma yanıtı doğrulanamadı."
+  },
+  "error_oauth_token": {
+    "message": "Oturum açma hizmeti geçerli bir belirteç döndürmedi."
+  },
+  "error_oauth_unconfigured": {
+    "message": "Bu derlemede oturum açma yapılandırılmamış: src/background/oauth/config.ts dosyasında OAuth Client ID’yi ayarlayın."
+  },
+  "error_rate_limited": {
+    "message": "“$1” erişimi geçici olarak sınırladı: çok fazla istek. Kontrol daha sonra tekrarlanacak."
+  },
+  "error_reply_text": {
+    "message": "Bir yanıt yazın (en fazla 100.000 karakter)."
+  },
+  "error_reply_webmail": {
+    "message": "Bu posta kutusunda yanıtlar web postasında yazılır."
+  },
+  "error_request_denied": {
+    "message": "Bu isteğe izin verilmiyor."
+  },
+  "error_session_expired": {
+    "message": "Oturumun süresi doldu. Yeniden oturum açın."
+  },
+  "error_session_host": {
+    "message": "Bu adres tarayıcı oturumunu kullanamaz."
+  },
+  "error_session_or_network": {
+    "message": "Bu tarayıcıda “$1” hizmetinde oturum açın (veya ağı kontrol edin) ve tekrar deneyin."
+  },
+  "error_sign_in_mailru": {
+    "message": "Bu tarayıcıda Mail.ru’da oturum açın ve tekrar deneyin."
+  },
+  "error_sign_in_webmail": {
+    "message": "Bu tarayıcıda “$1” hizmetinde oturum açın ve tekrar deneyin."
+  },
+  "error_sign_in_yandex": {
+    "message": "Bu tarayıcıda Yandex Mail’de oturum açın ve tekrar deneyin."
+  },
+  "error_site_denied": {
+    "message": "“$1” erişimi olmadan posta kutusu tarayıcı üzerinden bağlanamaz."
+  },
+  "error_site_permission": {
+    "message": "“$1” erişimine izin verin: posta kutusunu Ayarlar’da yeniden ekleyin."
+  },
+  "error_timeout": {
+    "message": "$1 zamanında yanıt vermedi."
+  },
+  "error_too_large": {
+    "message": "Sunucu çok büyük bir yanıt döndürdü."
+  },
+  "error_too_many_accounts": {
+    "message": "En fazla $1 posta kutusu bağlayabilirsiniz."
+  },
+  "error_unexpected_page": {
+    "message": "$1 beklenmeyen bir sayfa döndürdü."
+  },
+  "error_unexpected_reply": {
+    "message": "$1 beklenmeyen bir yanıt döndürdü."
+  },
+  "error_unknown": {
+    "message": "Bilinmeyen hata."
+  },
+  "error_unknown_action": {
+    "message": "Bilinmeyen işlem."
+  },
+  "error_unknown_color": {
+    "message": "Bilinmeyen renk."
+  },
+  "error_unknown_provider": {
+    "message": "Bilinmeyen posta kutusu türü."
+  },
+  "error_unreachable": {
+    "message": "$1 erişilemiyor. Ağı kontrol edin."
+  },
+  "error_webmail_timeout": {
+    "message": "“$1” yanıt vermiyor. Daha sonra tekrar deneyin."
+  },
+  "error_yandex_address": {
+    "message": "Yandex Mail adresini girin."
+  },
+  "extension_description": {
+    "message": "Araç çubuğunda posta: Gmail, Yandex Mail, Mail.ru, Microsoft 365 ve JMAP için birleşik gelen kutusu, güvenli okuma ve yanıt."
+  },
+  "feature_local": {
+    "message": "Yalnızca yerel"
+  },
+  "feature_local_text": {
+    "message": "Belirteçler tarayıcı profilinde kalır."
+  },
+  "feature_passwords": {
+    "message": "Parola yok"
+  },
+  "feature_passwords_text": {
+    "message": "Google, Microsoft veya web postası sayfalarında oturum açarsınız."
+  },
+  "feature_server": {
+    "message": "Sunucu yok"
+  },
+  "feature_server_text": {
+    "message": "İstekler doğrudan posta API’lerine gider."
+  },
+  "field_address": {
+    "message": "Posta kutusu adresi"
+  },
+  "field_api_token": {
+    "message": "API belirteci"
+  },
+  "field_optional": {
+    "message": "(isteğe bağlı)"
+  },
+  "field_webmail": {
+    "message": "Web postası"
+  },
+  "field_webmail_link": {
+    "message": "Web postası bağlantısı"
+  },
+  "filter_all": {
+    "message": "Tümü"
+  },
+  "folder_archive": {
+    "message": "Arşiv"
+  },
+  "folder_inbox": {
+    "message": "Gelen Kutusu"
+  },
+  "folder_trash": {
+    "message": "Çöp Kutusu"
+  },
+  "header_cc": {
+    "message": "Bilgi: $1"
+  },
+  "header_to": {
+    "message": "Alıcı: $1"
+  },
+  "hero_eyebrow": {
+    "message": "Tarayıcınızda bir posta kutusu"
+  },
+  "hero_lead": {
+    "message": "Gmail, Yandex Mail, Mail.ru, Microsoft 365 ve JMAP için sayaç, liste ve bildirimler. Kendi sunucusu ve ek uygulama yok."
+  },
+  "hint_archive": {
+    "message": "arşivle"
+  },
+  "hint_navigate": {
+    "message": "listede gezin"
+  },
+  "hint_pin": {
+    "message": "sabitle"
+  },
+  "hint_search": {
+    "message": "ara"
+  },
+  "inbox_empty": {
+    "message": "Hepsi bu kadar"
+  },
+  "inbox_empty_text": {
+    "message": "Burada yeni posta yok."
+  },
+  "interval_label": {
+    "message": "Aralık, dakika"
+  },
+  "interval_text": {
+    "message": "0,5 ile 60 arası."
+  },
+  "label_attachments": {
+    "message": "Ek var"
+  },
+  "label_categories": {
+    "message": "Kategoriler"
+  },
+  "label_mailboxes": {
+    "message": "Posta kutuları"
+  },
+  "label_message": {
+    "message": "İleti"
+  },
+  "label_message_text": {
+    "message": "İleti metni"
+  },
+  "label_messages": {
+    "message": "İletiler"
+  },
+  "label_pinned": {
+    "message": "Sabitlendi"
+  },
+  "label_sections": {
+    "message": "Bölümler"
+  },
+  "limit_label": {
+    "message": "Listedeki iletiler"
+  },
+  "limit_text": {
+    "message": "Posta kutusu başına en fazla 50."
+  },
+  "messages_count_one": {
+    "message": "$1 ileti"
+  },
+  "messages_count_other": {
+    "message": "$1 ileti"
+  },
+  "method_browser": {
+    "message": "Tarayıcı üzerinden"
+  },
+  "method_google": {
+    "message": "Google ile"
+  },
+  "no_subject": {
+    "message": "(konu yok)"
+  },
+  "notification_new": {
+    "message": "Yeni iletiler: $1"
+  },
+  "notifications_text": {
+    "message": "Yeni postalar için sistem bildirimi."
+  },
+  "oauth_has_id": {
+    "message": "· Client ID ayarlı"
+  },
+  "oauth_no_id": {
+    "message": "· Client ID ayarlı değil"
+  },
+  "oauth_note_build": {
+    "message": "Bu yöntemler, derlemede Client ID ayarlandığında çalışır:"
+  },
+  "oauth_note_setup": {
+    "message": "Google Cloud veya Microsoft Entra’da bir OAuth istemcisi oluşturun ve aşağıdaki yönlendirme adresini girin. Tarayıcı üzerinden bağlanan posta kutuları için gerekmez."
+  },
+  "oauth_text": {
+    "message": "Yalnızca uzantıyı derlemek için: “Google ile” ve Outlook bağlantıları."
+  },
+  "oauth_title": {
+    "message": "Google ve Microsoft ile oturum açma"
+  },
+  "oauth_unconfigured": {
+    "message": "Client ID yapılandırılmamış."
+  },
+  "popup_full": {
+    "message": "Tam"
+  },
+  "popup_label": {
+    "message": "Pencere"
+  },
+  "popup_mini": {
+    "message": "Mini"
+  },
+  "popup_text": {
+    "message": "Araç çubuğu düğmesiyle açılan pencerenin boyutu."
+  },
+  "privacy_images_one": {
+    "message": "Engellendi: $1 görsel"
+  },
+  "privacy_images_other": {
+    "message": "Engellendi: $1 görsel"
+  },
+  "privacy_trackers_one": {
+    "message": "ve $1 izleyici"
+  },
+  "privacy_trackers_other": {
+    "message": "ve $1 izleyici"
+  },
+  "provider_gmail_text": {
+    "message": "Bu tarayıcıdaki Gmail oturumu veya bir Google hesabı üzerinden."
+  },
+  "provider_jmap_text": {
+    "message": "Fastmail, Stalwart, Cyrus — API belirteciyle."
+  },
+  "provider_mailru_text": {
+    "message": "Bu tarayıcıdaki Mail.ru oturumu üzerinden."
+  },
+  "provider_outlook_text": {
+    "message": "Herhangi bir alan adında Outlook.com, Hotmail, Exchange Online."
+  },
+  "provider_yandex_text": {
+    "message": "Bu tarayıcıdaki Yandex Mail oturumu üzerinden."
+  },
+  "reader_empty": {
+    "message": "Bir ileti seçin"
+  },
+  "reader_eyebrow": {
+    "message": "Okuma"
+  },
+  "reader_failed": {
+    "message": "İleti açılamadı"
+  },
+  "reply_heading": {
+    "message": "Yanıt · $1"
+  },
+  "reply_hint": {
+    "message": "Göndermek için ⌘/Ctrl + Enter"
+  },
+  "reply_placeholder": {
+    "message": "Yanıt metni"
+  },
+  "reply_send": {
+    "message": "Gönder"
+  },
+  "reply_sending": {
+    "message": "Gönderiliyor…"
+  },
+  "reply_sent": {
+    "message": "Yanıt gönderildi."
+  },
+  "search_empty": {
+    "message": "Hiçbir şey bulunamadı"
+  },
+  "search_empty_text": {
+    "message": "Başka bir arama deneyin."
+  },
+  "search_placeholder": {
+    "message": "Tüm posta kutularında ara"
+  },
+  "search_results": {
+    "message": "Arama sonuçları"
+  },
+  "search_title": {
+    "message": "“$1”"
+  },
+  "section_inbox": {
+    "message": "Diğerleri"
+  },
+  "section_newsletters": {
+    "message": "Bültenler"
+  },
+  "section_notifications": {
+    "message": "Bildirimler"
+  },
+  "section_people": {
+    "message": "Kişisel"
+  },
+  "section_pinned": {
+    "message": "Sabitlenenler"
+  },
+  "service_mailru": {
+    "message": "Mail.ru"
+  },
+  "service_server": {
+    "message": "Sunucu"
+  },
+  "service_yandex": {
+    "message": "Yandex Mail"
+  },
+  "settings_title": {
+    "message": "mailchecker · Ayarlar"
+  },
+  "signed_in": {
+    "message": "Oturum açıldı: $1"
+  },
+  "snippet_full_text": {
+    "message": "$1\n\nMetnin tamamı web postasında: “Web postasında aç” düğmesini kullanın."
+  },
+  "status_wait": {
+    "message": "Lütfen bekleyin…"
+  },
+  "theme_auto": {
+    "message": "Otomatik"
+  },
+  "theme_auto_title": {
+    "message": "Tema: sistem"
+  },
+  "theme_dark": {
+    "message": "Koyu"
+  },
+  "theme_dark_title": {
+    "message": "Tema: koyu"
+  },
+  "theme_label": {
+    "message": "Tema"
+  },
+  "theme_light": {
+    "message": "Açık"
+  },
+  "theme_light_title": {
+    "message": "Tema: açık"
+  },
+  "theme_text": {
+    "message": "Açık, koyu veya sistemdeki gibi."
+  },
+  "theme_title": {
+    "message": "Tema: $1"
+  },
+  "unread_new_one": {
+    "message": "$1 yeni"
+  },
+  "unread_new_other": {
+    "message": "$1 yeni"
+  },
+  "view_inbox": {
+    "message": "Gelen Kutusu"
+  },
+  "welcome_eyebrow": {
+    "message": "Tarayıcınızda posta"
+  },
+  "welcome_text": {
+    "message": "Gmail, Yandex Mail, Mail.ru, Microsoft 365 veya herhangi bir alan adındaki JMAP posta kutusunu bağlayın."
+  },
+  "welcome_title_1": {
+    "message": "Tüm postalarınız"
+  },
+  "welcome_title_2": {
+    "message": "Tek yerde"
+  }
+}

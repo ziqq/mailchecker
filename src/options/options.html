@@ -8,7 +8,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>mailchecker · Настройки</title>
+    <title data-i18n="settings_title"></title>
     <link rel="stylesheet" href="options.css" />
     <script src="options.js" defer></script>
   </head>
@@ -17,27 +17,26 @@
       <div class="bar-inner">
         <span class="logo">mailchecker<span class="dot">.</span></span>
         <div class="bar-actions">
-          <span class="pill" id="version"></span>
-          <button class="round" id="theme" type="button" title="Тема"></button>
+          <button class="round" id="theme" type="button"></button>
         </div>
       </div>
     </header>
 
     <main>
       <section class="hero">
-        <p class="eyebrow">Почтовый ящик в браузере</p>
-        <h1>Вся почта<span class="dot">.</span> Сразу<span class="dot">.</span></h1>
-        <p class="lead">
-          Счётчик, список и уведомления для Gmail, Яндекс Почты, Почты Mail.ru, Microsoft 365 и JMAP. Без своего сервера
-          и дополнительных программ.
-        </p>
+        <p class="eyebrow" data-i18n="hero_eyebrow"></p>
+        <h1>
+          <span data-i18n="welcome_title_1"></span><span class="dot">.</span> <span data-i18n="welcome_title_2"></span
+          ><span class="dot">.</span>
+        </h1>
+        <p class="lead" data-i18n="hero_lead"></p>
       </section>
 
       <section class="card section" aria-labelledby="accounts-title">
         <div class="section-head">
           <div>
-            <h2 id="accounts-title">Ящики</h2>
-            <p>Подключённые адреса и их состояние.</p>
+            <h2 id="accounts-title" data-i18n="label_mailboxes"></h2>
+            <p data-i18n="accounts_text"></p>
           </div>
           <span class="pill" id="accounts-count">0</span>
         </div>
@@ -48,17 +47,21 @@
             >JMAP Session URL<input name="sessionURL" type="url" required value="https://api.fastmail.com/jmap/session"
           /></label>
           <label
-            >API-токен<input
+            ><span data-i18n="field_api_token"></span
+            ><input
               name="token"
               type="password"
               required
               autocomplete="off"
               placeholder="Fastmail: Settings → Privacy &amp; Security → API tokens"
           /></label>
-          <label>Веб-почта <span class="muted">(необязательно)</span><input name="webURL" type="url" /></label>
+          <label
+            ><span><span data-i18n="field_webmail"></span> <span class="muted" data-i18n="field_optional"></span></span
+            ><input name="webURL" type="url"
+          /></label>
           <div class="form-actions">
-            <button class="btn" type="button" id="jmap-cancel">Отмена</button>
-            <button class="btn primary" type="submit">Подключить</button>
+            <button class="btn" type="button" id="jmap-cancel" data-i18n="action_cancel"></button>
+            <button class="btn primary" type="submit" data-i18n="action_connect"></button>
           </div>
         </form>
         <dialog id="address-dialog" class="dialog" aria-labelledby="address-title">
@@ -67,17 +70,17 @@
               <span class="tile" id="address-mark"></span>
               <div>
                 <h3 id="address-title"></h3>
-                <p>Через вход в этом браузере</p>
+                <p data-i18n="address_subtitle"></p>
               </div>
             </div>
-            <label>Адрес ящика<input name="email" type="email" required autocomplete="email" /></label>
-            <p class="dialog-hint">
-              Сначала войдите в этот ящик в браузере. Пароль не нужен: расширение читает почту через ваш вход.
-            </p>
+            <label
+              ><span data-i18n="field_address"></span><input name="email" type="email" required autocomplete="email"
+            /></label>
+            <p class="dialog-hint" data-i18n="address_hint"></p>
             <p class="status" id="address-status" role="status"></p>
             <div class="form-actions">
-              <button class="btn" type="button" id="address-cancel">Отмена</button>
-              <button class="btn primary" type="submit">Подключить</button>
+              <button class="btn" type="button" id="address-cancel" data-i18n="action_cancel"></button>
+              <button class="btn primary" type="submit" data-i18n="action_connect"></button>
             </div>
           </form>
         </dialog>
@@ -87,87 +90,93 @@
       <section class="card section" aria-labelledby="appearance-title">
         <div class="section-head">
           <div>
-            <h2 id="appearance-title">Оформление</h2>
-            <p>Тема и акцентный цвет для окна и настроек.</p>
+            <h2 id="appearance-title" data-i18n="appearance_title"></h2>
+            <p data-i18n="appearance_text"></p>
           </div>
         </div>
         <div class="field-row">
           <div>
-            <strong>Тема</strong>
-            <p>Светлая, тёмная или как в системе.</p>
+            <strong data-i18n="theme_label"></strong>
+            <p data-i18n="theme_text"></p>
           </div>
           <div class="segmented" id="theme-control"></div>
         </div>
         <div class="field-row">
           <div>
-            <strong>Окно</strong>
-            <p>Размер окна по кнопке в панели браузера.</p>
+            <strong data-i18n="popup_label"></strong>
+            <p data-i18n="popup_text"></p>
           </div>
           <div class="segmented" id="popup-control"></div>
         </div>
         <div class="field-row">
           <div>
-            <strong>Акцент</strong>
-            <p>Цвет кнопок и выделения или графитовая палитра.</p>
+            <strong data-i18n="accent_label"></strong>
+            <p data-i18n="accent_text"></p>
           </div>
-          <div class="accents" id="palette-control" role="radiogroup" aria-label="Акцент"></div>
+          <div class="accents" id="palette-control" role="radiogroup" data-i18n-aria-label="accent_label"></div>
         </div>
       </section>
 
       <section class="card section" aria-labelledby="check-title">
         <div class="section-head">
           <div>
-            <h2 id="check-title">Проверка почты</h2>
-            <p>Как часто проверять и что показывать.</p>
+            <h2 id="check-title" data-i18n="check_title"></h2>
+            <p data-i18n="check_text"></p>
           </div>
         </div>
         <label class="field-row">
           <div>
-            <strong>Интервал, минут</strong>
-            <p>От 0,5 до 60.</p>
+            <strong data-i18n="interval_label"></strong>
+            <p data-i18n="interval_text"></p>
           </div>
           <input id="interval" class="number" type="number" min="0.5" max="60" step="0.5" />
         </label>
         <label class="field-row">
           <div>
-            <strong>Писем в списке</strong>
-            <p>На каждый ящик, до 50.</p>
+            <strong data-i18n="limit_label"></strong>
+            <p data-i18n="limit_text"></p>
           </div>
           <input id="limit" class="number" type="number" min="1" max="50" step="1" />
         </label>
         <label class="field-row">
           <div>
-            <strong>Уведомления</strong>
-            <p>Системное уведомление о новых письмах.</p>
+            <strong data-i18n="section_notifications"></strong>
+            <p data-i18n="notifications_text"></p>
           </div>
           <input id="notifications" class="switch" type="checkbox" />
         </label>
       </section>
 
-      <section class="card section" aria-labelledby="oauth-title">
-        <div class="section-head">
+      <details class="card section oauth">
+        <summary class="section-head">
           <div>
-            <h2 id="oauth-title">OAuth</h2>
-            <p>Client ID задаются в сборке: <code>src/background/oauth/config.ts</code>.</p>
+            <h2 data-i18n="oauth_title"></h2>
+            <p data-i18n="oauth_text"></p>
           </div>
-        </div>
+          <span class="tile" data-icon="chevron"></span>
+        </summary>
+        <p class="muted">
+          <span data-i18n="oauth_note_build"></span> <code>src/background/oauth/config.ts</code>.
+          <span data-i18n="oauth_note_setup"></span>
+        </p>
         <div id="oauth"></div>
-      </section>
+      </details>
 
       <ul class="features">
         <li>
           <span class="tile" data-icon="lock"></span>
-          <div><strong>Без сервера</strong><span>Запросы идут напрямую в API почты.</span></div>
+          <div><strong data-i18n="feature_server"></strong><span data-i18n="feature_server_text"></span></div>
         </li>
         <li>
           <span class="tile" data-icon="key"></span>
-          <div><strong>Без паролей</strong><span>Вход на страницах Google и Microsoft.</span></div>
+          <div><strong data-i18n="feature_passwords"></strong><span data-i18n="feature_passwords_text"></span></div>
         </li>
         <li>
           <span class="tile" data-icon="shield"></span>
-          <div><strong>Только локально</strong><span>Токены хранятся в профиле браузера.</span></div>
+          <div><strong data-i18n="feature_local"></strong><span data-i18n="feature_local_text"></span></div>
         </li>
       </ul>
+      <footer class="version"><span class="pill" id="version"></span></footer>
     </main>
   </body>
 </html>

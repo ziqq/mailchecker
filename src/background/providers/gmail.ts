@@ -11,14 +11,18 @@ import type {Account, Credentials, MailMessage, MessageAction} from '../../share
 import {requestJSON, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
 import {
+  bareAddress,
+  base64,
   categorize,
   count,
   decodeEntities,
   message,
+  replySubject,
   threadMessage,
   type Provider,
   type RawThreadMessage,
 } from './message';
+import {t} from '../../shared/i18n';
 
 /** Gmail API base for the signed-in user. */
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -135,7 +139,7 @@ export const gmail: Provider = {
   async connect() {
     const credentials = await oauth.google({interactive: true});
     const profile = await call<{emailAddress?: unknown}>(credentials, '/profile');
-    if (typeof profile?.emailAddress !== 'string') throw new Error('Gmail не вернул адрес ящика.');
+    if (typeof profile?.emailAddress !== 'string') throw new Error(t('error_no_address', 'Gmail'));
     return {email: profile.emailAddress, credentials, settings: {}};
   },
 
@@ -182,6 +186,31 @@ export const gmail: Provider = {
   },
 
   search: (account, query, limit) => list(account.credentials, query, limit),
+
+  // A plain-text RFC 5322 message in the original thread, with `In-Reply-To` and `References`.
+  async reply(account, item, text) {
+    const original = await call<GmailMessage>(
+      account.credentials,
+      `/messages/${encodeURIComponent(item.id)}?format=metadata` +
+        ['From', 'Reply-To', 'Subject', 'Message-ID', 'References'].map(name => `&metadataHeaders=${name}`).join(''),
+    );
+    const headers = headersOf(original?.payload);
+    const id = headers['message-id'] || '';
+    const lines = [
+      `To: ${bareAddress(headers['reply-to'] || headers.from || item.from)}`,
+      `Subject: =?UTF-8?B?${base64(replySubject(headers.subject || item.subject))}?=`,
+      ...(id ? [`In-Reply-To: ${id}`, `References: ${[headers.references, id].filter(Boolean).join(' ')}`] : []),
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      base64(text).replace(/.{76}/g, '$&\r\n'),
+    ];
+    await call(account.credentials, '/messages/send', {
+      method: 'POST',
+      json: {raw: base64(lines.join('\r\n'), true), threadId: original?.threadId || item.thread},
+    });
+  },
 
   webURL(account: Account, item?: MailMessage | null) {
     const base = `https://mail.google.com/mail/?authuser=${encodeURIComponent(account.email)}`;

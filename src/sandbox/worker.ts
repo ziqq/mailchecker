@@ -161,6 +161,9 @@ function answer(message: Request): unknown {
       return thread(message.account, message.message, message.thread);
     case 'SEARCH':
       return search(message.query);
+    case 'REPLY':
+      if (!message.text.trim()) throw new Error('Напишите ответ.');
+      return true;
     case 'PREFERENCES': {
       const sandbox = current();
       sandbox.preferences = preferences({...sandbox.preferences, ...message.value});

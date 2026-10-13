@@ -55,6 +55,8 @@ export interface AccountSettings {
   webURL?: string;
   /** Read through the browser's own sign-in instead of an API token (Gmail, Yandex Mail, Mail.ru). */
   browser?: boolean;
+  /** The colour chosen for the account, one of `ACCOUNT_COLORS`; by position when absent. */
+  color?: string;
 }
 
 /** A stored account, including credentials. */
@@ -145,6 +147,10 @@ export interface PublicAccount {
   email: string;
   /** Read through the browser's own sign-in. */
   browser: boolean;
+  /** The chosen colour, or empty for the colour by position. */
+  color: string;
+  /** Replies are written in the extension; otherwise they open in the webmail. */
+  reply: boolean;
 }
 
 /** State sent to the client pages and Settings. */
@@ -167,12 +173,14 @@ export type Request =
   | {type: 'OPEN_APP'}
   | {type: 'OPEN'; account: string; message?: string}
   | {type: 'THREAD'; account: string; message: string; thread: string}
+  | {type: 'REPLY'; account: string; message: string; text: string}
   | {type: 'ACT'; account: string; message: string; action: MessageAction}
   | {type: 'SEARCH'; query: string}
   | {type: 'SIGN_IN'; account: string}
   | {type: 'PREFERENCES'; value: Partial<Preferences>}
   | {type: 'ADD_ACCOUNT'; provider: ProviderID; input?: AccountInput; browser?: boolean}
-  | {type: 'REMOVE_ACCOUNT'; account: string};
+  | {type: 'REMOVE_ACCOUNT'; account: string}
+  | {type: 'ACCOUNT_COLOR'; account: string; color: string};
 
 /** A search hit: a message with its account. */
 export interface SearchHit {

@@ -20,7 +20,7 @@
  *
  * Usage: `node scripts/build.mjs [--target chromium|safari] [--outdir <directory>]`.
  */
-import {copyFile, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
+import {copyFile, mkdir, readdir, readFile, rm, writeFile} from 'node:fs/promises';
 import {dirname, relative, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
@@ -50,6 +50,29 @@ export const assets = {
   'fonts/inter-cyrillic.woff2': 'src/fonts/inter-cyrillic.woff2',
   'fonts/OFL.txt': 'src/fonts/OFL.txt',
 };
+
+/** Release builds read `chrome.i18n`: the sandbox's bundled messages become an empty module. */
+const releaseMessages = {
+  name: 'release-messages',
+  setup(build) {
+    build.onResolve({filter: /\/sandbox\/messages$/}, () => ({path: 'sandbox-messages', namespace: 'release'}));
+    build.onLoad({filter: /.*/, namespace: 'release'}, () => ({
+      contents: "export const sandboxMessages = () => ({}); export const sandboxLocale = () => 'en';",
+      loader: 'js',
+    }));
+  },
+};
+
+/** Returns [assets] with every `src/_locales/<locale>/messages.json`. */
+export async function localeAssets() {
+  const locales = await readdir(resolve(root, 'src/_locales'));
+  return {
+    ...assets,
+    ...Object.fromEntries(
+      locales.sort().map(name => [`_locales/${name}/messages.json`, `src/_locales/${name}/messages.json`]),
+    ),
+  };
+}
 
 /** Files copied into the sandbox build only: output path → source path. */
 export const sandboxAssets = {
@@ -105,10 +128,10 @@ export async function buildExtension({target = 'chromium', outdir, sandbox = fal
     banner: {js: "'use strict';"},
     define: {__TARGET__: JSON.stringify(target), __SANDBOX__: JSON.stringify(sandbox)},
     logLevel: 'warning',
-    plugins: [solidPlugin()],
+    plugins: [solidPlugin(), ...(sandbox ? [] : [releaseMessages])],
   });
   for (const [name, {css}] of Object.entries(styles)) await writeFile(resolve(out, name), css);
-  for (const [name, source] of Object.entries(sandbox ? {...assets, ...sandboxAssets} : assets)) {
+  for (const [name, source] of Object.entries({...(await localeAssets()), ...(sandbox ? sandboxAssets : {})})) {
     await mkdir(dirname(resolve(out, name)), {recursive: true});
     await copyFile(resolve(root, source), resolve(out, name));
   }

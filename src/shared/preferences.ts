@@ -13,7 +13,7 @@ import type {Palette, PopupSize, Preferences, Theme} from './types';
 
 /** Default preferences. */
 export const defaults: Readonly<Preferences> = Object.freeze({
-  interval: 2,
+  interval: 0.5,
   notifications: true,
   limit: 30,
   theme: 'auto',

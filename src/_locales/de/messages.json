@@ -1,0 +1,704 @@
+{
+  "accent_blue": {
+    "message": "Blau"
+  },
+  "accent_cyan": {
+    "message": "Cyan"
+  },
+  "accent_gray": {
+    "message": "Grau"
+  },
+  "accent_green": {
+    "message": "Grün"
+  },
+  "accent_label": {
+    "message": "Akzent"
+  },
+  "accent_neutral": {
+    "message": "Graphit"
+  },
+  "accent_orange": {
+    "message": "Orange"
+  },
+  "accent_pink": {
+    "message": "Rosa"
+  },
+  "accent_purple": {
+    "message": "Lila"
+  },
+  "accent_red": {
+    "message": "Rot"
+  },
+  "accent_text": {
+    "message": "Farbe von Schaltflächen und Auswahl oder die Graphit-Palette."
+  },
+  "accent_yellow": {
+    "message": "Gelb"
+  },
+  "account_checked": {
+    "message": "Ungelesen: $1 · geprüft $2"
+  },
+  "account_color": {
+    "message": "Farbe von $1"
+  },
+  "account_color_title": {
+    "message": "Postfachfarbe"
+  },
+  "account_removed": {
+    "message": "Postfach entfernt."
+  },
+  "account_unchecked": {
+    "message": "$1 · noch nicht geprüft"
+  },
+  "accounts_empty": {
+    "message": "Noch keine Postfächer. Fügen Sie unten das erste hinzu."
+  },
+  "accounts_text": {
+    "message": "Verbundene Adressen und ihr Status."
+  },
+  "action_add": {
+    "message": "Hinzufügen"
+  },
+  "action_add_mailbox": {
+    "message": "Postfach hinzufügen"
+  },
+  "action_archive": {
+    "message": "Archivieren"
+  },
+  "action_back": {
+    "message": "Zurück zur Liste"
+  },
+  "action_cancel": {
+    "message": "Abbrechen"
+  },
+  "action_check_now": {
+    "message": "Jetzt prüfen"
+  },
+  "action_connect": {
+    "message": "Verbinden"
+  },
+  "action_delete": {
+    "message": "Löschen"
+  },
+  "action_delete_account": {
+    "message": "$1 entfernen"
+  },
+  "action_full_screen": {
+    "message": "Im Vollbild öffnen"
+  },
+  "action_open_mail": {
+    "message": "Mail öffnen"
+  },
+  "action_open_webmail": {
+    "message": "Im Webmail öffnen"
+  },
+  "action_pin": {
+    "message": "Anheften"
+  },
+  "action_read": {
+    "message": "Als gelesen markieren"
+  },
+  "action_read_toggle": {
+    "message": "Gelesen oder ungelesen"
+  },
+  "action_reply": {
+    "message": "Antworten"
+  },
+  "action_settings": {
+    "message": "Einstellungen"
+  },
+  "action_show": {
+    "message": "Anzeigen"
+  },
+  "action_sign_in": {
+    "message": "Anmelden"
+  },
+  "action_sign_in_again": {
+    "message": "Erneut anmelden"
+  },
+  "action_theme": {
+    "message": "Design ändern"
+  },
+  "action_unpin": {
+    "message": "Lösen"
+  },
+  "action_unread": {
+    "message": "Als ungelesen markieren"
+  },
+  "address_hint": {
+    "message": "Melden Sie sich zuerst im Browser bei diesem Postfach an. Ein Passwort ist nicht nötig: Die Erweiterung liest E-Mails über Ihre Anmeldung."
+  },
+  "address_subtitle": {
+    "message": "Über die Anmeldung in diesem Browser"
+  },
+  "all_mailboxes": {
+    "message": "Alle Postfächer"
+  },
+  "app_title": {
+    "message": "mailchecker · Mail"
+  },
+  "appearance_text": {
+    "message": "Design und Akzentfarbe für das Fenster und die Einstellungen."
+  },
+  "appearance_title": {
+    "message": "Darstellung"
+  },
+  "badge_title": {
+    "message": "mailchecker · ungelesen: $1"
+  },
+  "badge_title_problems": {
+    "message": "mailchecker · ungelesen: $1 · Postfächer mit Fehlern: $2"
+  },
+  "busy_archiving": {
+    "message": "Wird archiviert…"
+  },
+  "busy_deleting": {
+    "message": "Wird gelöscht…"
+  },
+  "check_text": {
+    "message": "Wie oft geprüft wird und was angezeigt wird."
+  },
+  "check_title": {
+    "message": "E-Mail-Abruf"
+  },
+  "confirm_delete_account": {
+    "message": "$1 aus der Erweiterung entfernen?"
+  },
+  "connected": {
+    "message": "Verbunden: $1"
+  },
+  "connected_plain": {
+    "message": "Verbunden."
+  },
+  "copied_redirect": {
+    "message": "Weiterleitungsadresse für $1 kopiert."
+  },
+  "copy_failed": {
+    "message": "Die Adresse konnte nicht kopiert werden."
+  },
+  "copy_redirect": {
+    "message": "Weiterleitungsadresse kopieren"
+  },
+  "copy_redirect_named": {
+    "message": "Weiterleitungsadresse für $1 kopieren"
+  },
+  "error_account_changed": {
+    "message": "Das Postfach hat sich während der Anmeldung geändert. Versuchen Sie es erneut."
+  },
+  "error_account_missing": {
+    "message": "Postfach nicht gefunden."
+  },
+  "error_bad_address": {
+    "message": "$1: ungültige Adresse."
+  },
+  "error_bad_message": {
+    "message": "Ungültige Nachricht."
+  },
+  "error_bad_response": {
+    "message": "$1 hat eine ungültige Antwort geliefert."
+  },
+  "error_check_failed": {
+    "message": "E-Mails konnten nicht abgerufen werden."
+  },
+  "error_delete_in_webmail": {
+    "message": "Löschen Sie diese Nachricht im Webmail."
+  },
+  "error_generic": {
+    "message": "Fehler"
+  },
+  "error_gmail_action": {
+    "message": "Gmail hat die Aktion nicht zugelassen. Versuchen Sie es in Gmail erneut."
+  },
+  "error_gmail_address": {
+    "message": "Die Gmail-Adresse konnte nicht ermittelt werden. Öffnen Sie Gmail in diesem Browser und versuchen Sie es erneut."
+  },
+  "error_gmail_cookies": {
+    "message": "Für Aktionen in Gmail verbinden Sie das Postfach in den Einstellungen erneut und erlauben Sie den Zugriff auf Gmail-Cookies."
+  },
+  "error_gmail_key": {
+    "message": "Gmail hat den Seitenschlüssel für Aktionen nicht geliefert. Öffnen Sie Gmail in diesem Browser und versuchen Sie es erneut."
+  },
+  "error_http_status": {
+    "message": "$1: Fehler $2."
+  },
+  "error_https_only": {
+    "message": "Nur HTTPS-Adressen sind erlaubt."
+  },
+  "error_identity_denied": {
+    "message": "Ohne die Berechtigung zur Browser-Anmeldung kann das Postfach nicht verbunden werden."
+  },
+  "error_identity_permission": {
+    "message": "Erlauben Sie die Browser-Anmeldung in den Einstellungen der Erweiterung und versuchen Sie es erneut."
+  },
+  "error_in_webmail": {
+    "message": "Für das über die Browser-Anmeldung verbundene Postfach „$1“ ist diese Aktion im Webmail verfügbar: Öffnen Sie die Nachricht dort."
+  },
+  "error_jmap_access": {
+    "message": "Der Zugriff auf den JMAP-Server wurde nicht erlaubt."
+  },
+  "error_jmap_folders": {
+    "message": "Das Postfach hat keine Ordner „Entwürfe“ und „Gesendet“."
+  },
+  "error_jmap_generic": {
+    "message": "JMAP: $1."
+  },
+  "error_jmap_identity": {
+    "message": "JMAP: keine Absenderadresse für die Antwort."
+  },
+  "error_jmap_mail": {
+    "message": "Der Server unterstützt JMAP Mail nicht."
+  },
+  "error_jmap_origin": {
+    "message": "Die JMAP API liegt auf einer anderen Domain; solche Server werden nicht unterstützt."
+  },
+  "error_jmap_permission": {
+    "message": "Erlauben Sie den Zugriff auf den JMAP-Server und versuchen Sie es erneut."
+  },
+  "error_jmap_rejected": {
+    "message": "Das JMAP-Token wurde abgelehnt. Entfernen Sie das Postfach und fügen Sie ein neues Token hinzu."
+  },
+  "error_jmap_renew": {
+    "message": "Entfernen Sie bei JMAP das Postfach und fügen Sie es mit einem neuen Token erneut hinzu."
+  },
+  "error_jmap_send": {
+    "message": "JMAP: Der Server hat die Antwort nicht gesendet."
+  },
+  "error_jmap_token": {
+    "message": "Geben Sie das API-Token ohne Leerzeichen ein."
+  },
+  "error_jmap_url": {
+    "message": "Ungültige JMAP-Session-URL."
+  },
+  "error_mailru_action": {
+    "message": "Mail.ru hat die Aktion nicht ausgeführt. Versuchen Sie es im Webmail erneut."
+  },
+  "error_mailru_address": {
+    "message": "Geben Sie die Mail.ru-Adresse ein."
+  },
+  "error_need_https": {
+    "message": "$1: Eine HTTPS-Adresse ist erforderlich."
+  },
+  "error_no_address": {
+    "message": "$1 hat die Postfachadresse nicht geliefert."
+  },
+  "error_no_folder": {
+    "message": "Das Postfach hat keinen Ordner „$1“."
+  },
+  "error_no_reply": {
+    "message": "Die Erweiterung antwortet nicht. Laden Sie die Seite neu."
+  },
+  "error_oauth_cancelled": {
+    "message": "Die Anmeldung wurde abgebrochen oder ist fehlgeschlagen."
+  },
+  "error_oauth_denied": {
+    "message": "$1 hat die Anmeldung abgelehnt."
+  },
+  "error_oauth_redirect": {
+    "message": "Ungültige OAuth-Weiterleitungsadresse."
+  },
+  "error_oauth_safari": {
+    "message": "In diesem Browser erfolgt die Anmeldung in der mailchecker-App (Safari). Verwenden Sie JMAP oder Chrome."
+  },
+  "error_oauth_state": {
+    "message": "Die Anmeldeantwort von $1 hat die Prüfung nicht bestanden."
+  },
+  "error_oauth_token": {
+    "message": "Der Anmeldedienst hat kein gültiges Token geliefert."
+  },
+  "error_oauth_unconfigured": {
+    "message": "Die Anmeldung ist in diesem Build nicht eingerichtet: Legen Sie die OAuth Client ID in src/background/oauth/config.ts fest."
+  },
+  "error_rate_limited": {
+    "message": "„$1“ hat den Zugriff vorübergehend eingeschränkt: zu viele Anfragen. Die Prüfung wird später wiederholt."
+  },
+  "error_reply_text": {
+    "message": "Schreiben Sie eine Antwort (bis zu 100.000 Zeichen)."
+  },
+  "error_reply_webmail": {
+    "message": "Für dieses Postfach werden Antworten im Webmail geschrieben."
+  },
+  "error_request_denied": {
+    "message": "Diese Anfrage ist nicht erlaubt."
+  },
+  "error_session_expired": {
+    "message": "Sitzung abgelaufen. Melden Sie sich erneut an."
+  },
+  "error_session_host": {
+    "message": "Für diese Adresse ist die Browser-Anmeldung nicht möglich."
+  },
+  "error_session_or_network": {
+    "message": "Melden Sie sich in diesem Browser bei „$1“ an (oder prüfen Sie das Netzwerk) und versuchen Sie es erneut."
+  },
+  "error_sign_in_mailru": {
+    "message": "Melden Sie sich in diesem Browser bei Mail.ru an und versuchen Sie es erneut."
+  },
+  "error_sign_in_webmail": {
+    "message": "Melden Sie sich in diesem Browser bei „$1“ an und versuchen Sie es erneut."
+  },
+  "error_sign_in_yandex": {
+    "message": "Melden Sie sich in diesem Browser bei Yandex Mail an und versuchen Sie es erneut."
+  },
+  "error_site_denied": {
+    "message": "Ohne Zugriff auf „$1“ kann das Postfach nicht über den Browser verbunden werden."
+  },
+  "error_site_permission": {
+    "message": "Erlauben Sie den Zugriff auf „$1“: Fügen Sie das Postfach in den Einstellungen erneut hinzu."
+  },
+  "error_timeout": {
+    "message": "$1 hat nicht rechtzeitig geantwortet."
+  },
+  "error_too_large": {
+    "message": "Die Antwort des Servers ist zu groß."
+  },
+  "error_too_many_accounts": {
+    "message": "Sie können bis zu $1 Postfächer verbinden."
+  },
+  "error_unexpected_page": {
+    "message": "$1 hat eine unerwartete Seite geliefert."
+  },
+  "error_unexpected_reply": {
+    "message": "$1 hat eine unerwartete Antwort geliefert."
+  },
+  "error_unknown": {
+    "message": "Unbekannter Fehler."
+  },
+  "error_unknown_action": {
+    "message": "Unbekannte Aktion."
+  },
+  "error_unknown_color": {
+    "message": "Unbekannte Farbe."
+  },
+  "error_unknown_provider": {
+    "message": "Unbekannter Postfachtyp."
+  },
+  "error_unreachable": {
+    "message": "$1 ist nicht erreichbar. Prüfen Sie das Netzwerk."
+  },
+  "error_webmail_timeout": {
+    "message": "„$1“ antwortet nicht. Versuchen Sie es später erneut."
+  },
+  "error_yandex_address": {
+    "message": "Geben Sie die Yandex Mail-Adresse ein."
+  },
+  "extension_description": {
+    "message": "Mail-Client in der Symbolleiste: ein Posteingang, sicheres Lesen und Antworten für Gmail, Yandex Mail, Mail.ru, Microsoft 365, JMAP."
+  },
+  "feature_local": {
+    "message": "Nur lokal"
+  },
+  "feature_local_text": {
+    "message": "Tokens bleiben im Browserprofil."
+  },
+  "feature_passwords": {
+    "message": "Keine Passwörter"
+  },
+  "feature_passwords_text": {
+    "message": "Sie melden sich auf den Seiten von Google, Microsoft oder des Webmails an."
+  },
+  "feature_server": {
+    "message": "Kein Server"
+  },
+  "feature_server_text": {
+    "message": "Anfragen gehen direkt an die Mail-APIs."
+  },
+  "field_address": {
+    "message": "Postfachadresse"
+  },
+  "field_api_token": {
+    "message": "API-Token"
+  },
+  "field_optional": {
+    "message": "(optional)"
+  },
+  "field_webmail": {
+    "message": "Webmail"
+  },
+  "field_webmail_link": {
+    "message": "Webmail-Link"
+  },
+  "filter_all": {
+    "message": "Alle"
+  },
+  "folder_archive": {
+    "message": "Archiv"
+  },
+  "folder_inbox": {
+    "message": "Posteingang"
+  },
+  "folder_trash": {
+    "message": "Papierkorb"
+  },
+  "header_cc": {
+    "message": "Cc: $1"
+  },
+  "header_to": {
+    "message": "An: $1"
+  },
+  "hero_eyebrow": {
+    "message": "Ein Postfach im Browser"
+  },
+  "hero_lead": {
+    "message": "Zähler, Liste und Benachrichtigungen für Gmail, Yandex Mail, Mail.ru, Microsoft 365 und JMAP. Ohne eigenen Server und ohne zusätzliche Apps."
+  },
+  "hint_archive": {
+    "message": "archivieren"
+  },
+  "hint_navigate": {
+    "message": "durch die Liste bewegen"
+  },
+  "hint_pin": {
+    "message": "anheften"
+  },
+  "hint_search": {
+    "message": "suchen"
+  },
+  "inbox_empty": {
+    "message": "Alles erledigt"
+  },
+  "inbox_empty_text": {
+    "message": "Hier gibt es keine neuen E-Mails."
+  },
+  "interval_label": {
+    "message": "Intervall, Minuten"
+  },
+  "interval_text": {
+    "message": "Von 0,5 bis 60."
+  },
+  "label_attachments": {
+    "message": "Mit Anhängen"
+  },
+  "label_categories": {
+    "message": "Kategorien"
+  },
+  "label_mailboxes": {
+    "message": "Postfächer"
+  },
+  "label_message": {
+    "message": "Nachricht"
+  },
+  "label_message_text": {
+    "message": "Nachrichtentext"
+  },
+  "label_messages": {
+    "message": "Nachrichten"
+  },
+  "label_pinned": {
+    "message": "Angeheftet"
+  },
+  "label_sections": {
+    "message": "Bereiche"
+  },
+  "limit_label": {
+    "message": "Nachrichten in der Liste"
+  },
+  "limit_text": {
+    "message": "Pro Postfach, bis zu 50."
+  },
+  "messages_count_one": {
+    "message": "$1 Nachricht"
+  },
+  "messages_count_other": {
+    "message": "$1 Nachrichten"
+  },
+  "method_browser": {
+    "message": "Über den Browser"
+  },
+  "method_google": {
+    "message": "Mit Google"
+  },
+  "no_subject": {
+    "message": "(kein Betreff)"
+  },
+  "notification_new": {
+    "message": "Neue Nachrichten: $1"
+  },
+  "notifications_text": {
+    "message": "Eine Systembenachrichtigung über neue E-Mails."
+  },
+  "oauth_has_id": {
+    "message": "· Client ID festgelegt"
+  },
+  "oauth_no_id": {
+    "message": "· Client ID nicht festgelegt"
+  },
+  "oauth_note_build": {
+    "message": "Diese Methoden funktionieren, wenn im Build eine Client ID festgelegt ist:"
+  },
+  "oauth_note_setup": {
+    "message": "Erstellen Sie einen OAuth-Client in Google Cloud oder Microsoft Entra und tragen Sie unten die Weiterleitungsadresse ein. Für über den Browser verbundene Postfächer ist das nicht nötig."
+  },
+  "oauth_text": {
+    "message": "Nur für den Build der Erweiterung: Verbindungen „Mit Google“ und Outlook."
+  },
+  "oauth_title": {
+    "message": "Anmeldung mit Google und Microsoft"
+  },
+  "oauth_unconfigured": {
+    "message": "Client ID ist nicht eingerichtet."
+  },
+  "popup_full": {
+    "message": "Voll"
+  },
+  "popup_label": {
+    "message": "Fenster"
+  },
+  "popup_mini": {
+    "message": "Mini"
+  },
+  "popup_text": {
+    "message": "Größe des Fensters, das über die Symbolleiste geöffnet wird."
+  },
+  "privacy_images_one": {
+    "message": "Blockiert: $1 Bild"
+  },
+  "privacy_images_other": {
+    "message": "Blockiert: $1 Bilder"
+  },
+  "privacy_trackers_one": {
+    "message": "und $1 Tracker"
+  },
+  "privacy_trackers_other": {
+    "message": "und $1 Tracker"
+  },
+  "provider_gmail_text": {
+    "message": "Über die Gmail-Anmeldung in diesem Browser oder ein Google-Konto."
+  },
+  "provider_jmap_text": {
+    "message": "Fastmail, Stalwart, Cyrus – mit einem API-Token."
+  },
+  "provider_mailru_text": {
+    "message": "Über die Mail.ru-Anmeldung in diesem Browser."
+  },
+  "provider_outlook_text": {
+    "message": "Outlook.com, Hotmail, Exchange Online auf jeder Domain."
+  },
+  "provider_yandex_text": {
+    "message": "Über die Yandex Mail-Anmeldung in diesem Browser."
+  },
+  "reader_empty": {
+    "message": "Nachricht auswählen"
+  },
+  "reader_eyebrow": {
+    "message": "Lesen"
+  },
+  "reader_failed": {
+    "message": "Die Nachricht konnte nicht geöffnet werden"
+  },
+  "reply_heading": {
+    "message": "Antwort · $1"
+  },
+  "reply_hint": {
+    "message": "⌘/Ctrl + Enter zum Senden"
+  },
+  "reply_placeholder": {
+    "message": "Antworttext"
+  },
+  "reply_send": {
+    "message": "Senden"
+  },
+  "reply_sending": {
+    "message": "Wird gesendet…"
+  },
+  "reply_sent": {
+    "message": "Antwort gesendet."
+  },
+  "search_empty": {
+    "message": "Nichts gefunden"
+  },
+  "search_empty_text": {
+    "message": "Versuchen Sie eine andere Suche."
+  },
+  "search_placeholder": {
+    "message": "Alle Postfächer durchsuchen"
+  },
+  "search_results": {
+    "message": "Suchergebnisse"
+  },
+  "search_title": {
+    "message": "„$1“"
+  },
+  "section_inbox": {
+    "message": "Sonstige"
+  },
+  "section_newsletters": {
+    "message": "Newsletter"
+  },
+  "section_notifications": {
+    "message": "Hinweise"
+  },
+  "section_people": {
+    "message": "Persönlich"
+  },
+  "section_pinned": {
+    "message": "Angeheftet"
+  },
+  "service_mailru": {
+    "message": "Mail.ru"
+  },
+  "service_server": {
+    "message": "Server"
+  },
+  "service_yandex": {
+    "message": "Yandex Mail"
+  },
+  "settings_title": {
+    "message": "mailchecker · Einstellungen"
+  },
+  "signed_in": {
+    "message": "Angemeldet: $1"
+  },
+  "snippet_full_text": {
+    "message": "$1\n\nDer vollständige Text ist im Webmail: Verwenden Sie „Im Webmail öffnen“."
+  },
+  "status_wait": {
+    "message": "Bitte warten…"
+  },
+  "theme_auto": {
+    "message": "Auto"
+  },
+  "theme_auto_title": {
+    "message": "Design: System"
+  },
+  "theme_dark": {
+    "message": "Dunkel"
+  },
+  "theme_dark_title": {
+    "message": "Design: dunkel"
+  },
+  "theme_label": {
+    "message": "Design"
+  },
+  "theme_light": {
+    "message": "Hell"
+  },
+  "theme_light_title": {
+    "message": "Design: hell"
+  },
+  "theme_text": {
+    "message": "Hell, dunkel oder wie im System."
+  },
+  "theme_title": {
+    "message": "Design: $1"
+  },
+  "unread_new_one": {
+    "message": "$1 neu"
+  },
+  "unread_new_other": {
+    "message": "$1 neu"
+  },
+  "view_inbox": {
+    "message": "Posteingang"
+  },
+  "welcome_eyebrow": {
+    "message": "E-Mail im Browser"
+  },
+  "welcome_text": {
+    "message": "Verbinden Sie Gmail, Yandex Mail, Mail.ru, Microsoft 365 oder ein JMAP-Postfach auf beliebiger Domain."
+  },
+  "welcome_title_1": {
+    "message": "Alle E-Mails"
+  },
+  "welcome_title_2": {
+    "message": "Auf einen Blick"
+  }
+}

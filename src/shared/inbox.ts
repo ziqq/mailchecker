@@ -9,6 +9,7 @@
  * @module shared/inbox
  */
 import type {Category, MailMessage, Mailbox, PublicAccount} from './types';
+import {t} from './i18n';
 
 /** A message with its account ID. */
 export interface Entry {
@@ -23,21 +24,23 @@ export type Item = {kind: 'message'; entry: Entry} | {kind: 'stack'; key: string
 export type Filter = 'all' | 'pinned' | Category;
 
 /** List sections in display order. */
-export type Section = {id: 'pinned' | Category; title: string; items: Item[]};
+export type Section = {id: 'pinned' | 'inbox' | Category; title: string; items: Item[]};
 
 /** Section titles. */
 const TITLES: Record<Section['id'], string> = {
-  pinned: 'Закреплённые',
-  people: 'Люди',
-  notifications: 'Уведомления',
-  newsletters: 'Рассылки',
+  pinned: t('section_pinned'),
+  inbox: t('section_inbox'),
+  people: t('section_people'),
+  notifications: t('section_notifications'),
+  newsletters: t('section_newsletters'),
 };
 
 /** Account accent colours by position. */
 export const ACCOUNT_COLORS = ['#ff9418', '#4f8cff', '#3ecf8e', '#c084fc', '#f472b6', '#facc15', '#22d3ee', '#fb7185'];
 
-/** Returns the colour of an account by its position. */
+/** Returns the colour chosen for an account, or its colour by position. */
 export const accountColor = (accounts: PublicAccount[], id: string): string =>
+  accounts.find(account => account.id === id)?.color ||
   ACCOUNT_COLORS[
     Math.max(
       0,
@@ -93,8 +96,8 @@ export function stack(entries: Entry[]): Item[] {
 /**
  * Builds Smart Inbox sections for a category filter.
  *
- * `all` shows pinned messages first, then people, notifications and
- * newsletters; `pinned` or a category shows only its messages.
+ * `all` shows pinned messages first, then every other message newest first,
+ * repeated notifications stacked; `pinned` or a category shows only its messages.
  */
 export function sections(entries: Entry[], filter: Filter): Section[] {
   if (filter === 'pinned')
@@ -109,10 +112,9 @@ export function sections(entries: Entry[], filter: Filter): Section[] {
     return [{id: filter, title: TITLES[filter], items: stack(entries.filter(e => e.message.category === filter))}];
   const pinned = entries.filter(entry => entry.message.pinned);
   const rest = entries.filter(entry => !entry.message.pinned);
-  const order: Section['id'][] = ['people', 'notifications', 'newsletters'];
   return [
     {id: 'pinned' as const, title: TITLES.pinned, items: pinned.map(entry => ({kind: 'message' as const, entry}))},
-    ...order.map(id => ({id, title: TITLES[id], items: stack(rest.filter(entry => entry.message.category === id))})),
+    {id: 'inbox' as const, title: TITLES.inbox, items: stack(rest)},
   ].filter(section => section.items.length);
 }
 

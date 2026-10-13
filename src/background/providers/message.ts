@@ -19,6 +19,7 @@ import type {
   MessageAction,
   ThreadMessage,
 } from '../../shared/types';
+import {t} from '../../shared/i18n';
 
 /** Result of connecting a mailbox. */
 export interface Connection {
@@ -42,9 +43,11 @@ export interface Provider {
   /** Messages of a conversation with bodies, oldest first. */
   thread(account: Account, message: MailMessage): Promise<ThreadMessage[]>;
   /** Applies an action to one message. */
-  act(account: Account, message: Pick<MailMessage, 'id'>, action: MessageAction): Promise<void>;
+  act(account: Account, message: MailMessage, action: MessageAction): Promise<void>;
   /** Searches all mail of the account, newest first. */
   search(account: Account, query: string, limit: number): Promise<MailMessage[]>;
+  /** Sends a plain-text reply to a listed message; without it replies open in the webmail. */
+  reply?(account: Account, message: MailMessage, text: string): Promise<void>;
   /** The webmail page for the Inbox or a message. */
   webURL(account: Account, message?: MailMessage | null): string;
 }
@@ -152,7 +155,7 @@ export function message(value: RawMessage): MailMessage {
     id: text(value.id, 512),
     thread: text(value.thread, 512),
     from: text(value.from, 320),
-    subject: text(value.subject, 300) || '(без темы)',
+    subject: text(value.subject, 300) || t('no_subject'),
     snippet: text(value.snippet, 300),
     date: timestamp(value.date),
     link: httpsLink(value.link),
@@ -195,7 +198,7 @@ export function threadMessage(value: RawThreadMessage): ThreadMessage {
     from: text(value.from, 320),
     to: text(value.to, 2000),
     cc: text(value.cc, 2000),
-    subject: text(value.subject, 300) || '(без темы)',
+    subject: text(value.subject, 300) || t('no_subject'),
     date: timestamp(value.date),
     html: String(value.html ?? '').slice(0, MAX_HTML),
     text: String(value.text ?? '').slice(0, MAX_HTML),
@@ -223,3 +226,19 @@ export const addresses = (list: {name?: string; address?: string; email?: string
       return item.name ? `${item.name} <${address}>` : address;
     })
     .join(', ');
+
+/** Returns the subject of a reply: `Re: ` once in front of the original subject. */
+export const replySubject = (subject: string): string => (/^re:/i.test(subject.trim()) ? subject : `Re: ${subject}`);
+
+/** Returns the bare address of a `Name <address>` sender, or the value itself. */
+export const bareAddress = (value: string): string => (/<([^<>]+)>\s*$/.exec(value)?.[1] || value).trim();
+
+/** Returns base64 of the UTF-8 bytes of [value]; [url] gives the URL-safe alphabet without padding. */
+export function base64(value: string, url = false): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  for (let index = 0; index < bytes.length; index += 0x8000)
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  const encoded = btoa(binary);
+  return url ? encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : encoded;
+}

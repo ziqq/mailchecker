@@ -14,6 +14,7 @@ import {batch, createMemo, createRoot, createSignal} from 'solid-js';
 import {request, errorMessage} from '../shared/dom';
 import {counts, merge, order, sections, type Entry, type Filter} from '../shared/inbox';
 import type {MessageAction, Preferences, PublicState, SearchHit, ThreadMessage} from '../shared/types';
+import {t} from '../shared/i18n';
 
 /** Where the client runs: the toolbar popup or a full browser tab. */
 export const mode: 'popup' | 'app' = document.documentElement.dataset.mode === 'app' ? 'app' : 'popup';
@@ -38,7 +39,11 @@ export const store = createRoot(() => {
   const [results, setResults] = createSignal<Entry[] | null>(null);
   const [searching, setSearching] = createSignal(false);
   const [refreshing, setRefreshing] = createSignal(false);
-  const [toast, setToast] = createSignal('');
+  const [toast, setToast] = createSignal<{text: string; error: boolean} | null>(null);
+  /** The reply editor is open for the selected message. */
+  const [replying, setReplying] = createSignal(false);
+  /** The archive or trash in progress, shown over the window; empty when idle. */
+  const [busy, setBusy] = createSignal('');
 
   /** All Inbox entries of the selected account(s). */
   const entries = createMemo(() => {
@@ -52,8 +57,8 @@ export const store = createRoot(() => {
     if (hits)
       return [
         {
-          id: 'people' as const,
-          title: 'Результаты поиска',
+          id: 'inbox' as const,
+          title: t('search_results'),
           items: hits.map(entry => ({kind: 'message' as const, entry})),
         },
       ];
@@ -73,10 +78,16 @@ export const store = createRoot(() => {
     return navigation().find(entry => entry.account === selection.account && entry.message.id === selection.id) || null;
   });
 
+  /** Shows a transient message; errors are red. */
+  function notify(text: string, error = false): void {
+    const value = {text, error};
+    setToast(value);
+    setTimeout(() => setToast(current => (current === value ? null : current)), 5000);
+  }
+
   /** Shows a transient error. */
   function fail(error: unknown): void {
-    setToast(errorMessage(error));
-    setTimeout(() => setToast(''), 5000);
+    notify(errorMessage(error), true);
   }
 
   /** Loads the public state. */
@@ -86,6 +97,13 @@ export const store = createRoot(() => {
     } catch (error) {
       fail(error);
     }
+  }
+
+  /** Loads the state, then checks now if a mailbox was last checked more than 30 seconds ago. */
+  async function open(): Promise<void> {
+    await load();
+    const boxes = Object.values(state()?.mailboxes || {});
+    if (boxes.some(box => box.checkedAt < Date.now() - 30_000)) await refresh();
   }
 
   /** Checks all mailboxes now. */
@@ -100,8 +118,30 @@ export const store = createRoot(() => {
     }
   }
 
+  /** Opens the reply editor, or the message in the webmail when the account replies there. */
+  function startReply(): void {
+    const entry = current();
+    if (!entry) return;
+    if (state()?.accounts.find(account => account.id === entry.account)?.reply) setReplying(true);
+    else request({type: 'OPEN', account: entry.account, message: entry.message.id}).catch(fail);
+  }
+
+  /** Sends a reply to [entry]; returns whether it was sent. */
+  async function reply(entry: Entry, text: string): Promise<boolean> {
+    try {
+      await request<boolean>({type: 'REPLY', account: entry.account, message: entry.message.id, text});
+      setReplying(false);
+      notify(t('reply_sent'));
+      return true;
+    } catch (error) {
+      fail(error);
+      return false;
+    }
+  }
+
   /** Selects an entry, or clears the selection. */
   function select(entry: Entry | null): void {
+    setReplying(false);
     setSelected(entry ? {account: entry.account, id: entry.message.id, thread: entry.message.thread} : null);
   }
 
@@ -155,6 +195,7 @@ export const store = createRoot(() => {
       const index = items.indexOf(entry);
       next = items[index + 1] || items[index - 1] || null;
     }
+    if (leaving) setBusy(t(action === 'trash' ? 'busy_deleting' : 'busy_archiving'));
     try {
       const value = await request<PublicState>({
         type: 'ACT',
@@ -186,6 +227,8 @@ export const store = createRoot(() => {
       });
     } catch (error) {
       fail(error);
+    } finally {
+      if (leaving) setBusy('');
     }
   }
 
@@ -231,11 +274,17 @@ export const store = createRoot(() => {
     results,
     searching,
     refreshing,
+    busy,
     toast,
+    replying,
+    setReplying,
+    startReply,
+    reply,
     entries,
     list,
     unread,
     load,
+    open,
     refresh,
     select,
     move,

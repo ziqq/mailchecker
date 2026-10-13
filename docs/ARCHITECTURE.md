@@ -48,7 +48,7 @@ Keyboard: `J`/`K` or arrows move, `E` archives, `#`/`Delete` trashes, `U` toggle
 
 ### Smart Inbox
 
-`providers/message.ts#categorize` assigns **people**, **notifications** or **newsletters** from Gmail category labels, `List-Unsubscribe`/`Precedence` headers (Graph: `unsubscribeEnabled`) and automated sender addresses. `shared/inbox.ts` merges accounts newest first, shows pinned messages first and stacks notifications with the same sender and subject into one `×N` item.
+`providers/message.ts#categorize` assigns **people**, **notifications** or **newsletters** from Gmail category labels, `List-Unsubscribe`/`Precedence` headers (Graph: `unsubscribeEnabled`) and automated sender addresses. `shared/inbox.ts` merges accounts newest first into one list (pinned messages first; «Уведомления» and «Рассылки» filter by category) and stacks notifications with the same sender and subject into one `×N` item.
 
 ### Reading safely
 
@@ -71,6 +71,8 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 | `PREFERENCES`                   | client, Settings | Save bounded preferences and reschedule checks.                        |
 | `OPTIONS`                       | client           | Open Settings.                                                         |
 | `ADD_ACCOUNT`, `REMOVE_ACCOUNT` | Settings         | Connect or remove a mailbox.                                           |
+| `ACCOUNT_COLOR`                 | Settings         | Set a mailbox colour from `ACCOUNT_COLORS` (empty: by position).       |
+| `REPLY`                         | Client           | Send a plain-text reply; accounts without `reply` open the webmail.    |
 
 ## Service worker
 
@@ -87,8 +89,8 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 | `providers/gmail.ts`                              | Gmail API: Inbox list with labels, MIME bodies, threads, label actions, search.                                                                                                     |
 | `providers/outlook.ts`                            | Microsoft Graph: Inbox list, conversation messages and attachments, PATCH/move, `$search`.                                                                                          |
 | `providers/jmap.ts`                               | JMAP: Mailbox/Email query/get/set, Thread/get with body values, `text` search.                                                                                                      |
-| `providers/session.ts`                            | Mailboxes read through the browser's sign-in: no credentials; Inbox only, actions and bodies in the webmail.                                                                        |
-| `providers/gmailweb.ts`, `yandex.ts`, `mailru.ts` | Gmail unread Atom feed, Yandex lite Inbox page, Mail.ru checker API; parsers are pure and tested.                                                                                   |
+| `providers/session.ts`                            | Mailboxes read through the browser's sign-in: no credentials; the Inbox, the full text and the actions each webmail supports, the rest in the webmail.                              |
+| `providers/gmailweb.ts`, `yandex.ts`, `mailru.ts` | Gmail unread Atom feed, Yandex lite Inbox page, Mail.ru webmail API; parsers are pure and tested.                                                                                   |
 
 ### Stored data
 
@@ -110,6 +112,10 @@ Expired tokens are renewed before a call; a token the provider rejects is renewe
 ## Browsers
 
 Chromium browsers load `build/`. Safari loads `build-safari/` inside a containing app; its API gaps (no `identity`, no `notifications`) and the plan for the app are in [Safari](SAFARI.md). All browser-specific calls go through `background/platform.ts`.
+
+## Localization
+
+Interface strings live in `src/_locales/<locale>/messages.json` (13 locales, `en` is the default) and are read through `shared/i18n.ts`: `t(key, ...values)` for `$1`…`$9` substitutions, `tn(key, count)` for counted strings (`key_one`, `key_few`, `key_many`, `key_other`, chosen with `Intl.PluralRules`) and `localize()` for `data-i18n` attributes in static HTML. The browser picks the locale from its language. The worker localizes its error messages the same way. Without `chrome.i18n` (the sandbox and unit tests) the Russian messages are read from `sandbox/messages.ts`; release builds replace that module with an empty one. `scripts/check.mjs` checks that every locale has the English keys and that every key used in code exists. Dates and sizes use `Intl` with the interface language. In the dark theme `sanitize.ts` adapts each colour of an HTML message (light backgrounds darker, dark text lighter) instead of inverting the page.
 
 ## Styles
 

@@ -5,7 +5,7 @@
  *
  * Renders the original toolbar icons into `src/icons/` without dependencies.
  *
- * A near-black rounded square with an orange envelope and a dark flap,
+ * A near-black rounded square with a white rounded envelope and a dark flap,
  * supersampled 4× for anti-aliasing and encoded as RGBA PNG.
  *
  * Usage: `node scripts/icons.mjs`.
@@ -20,7 +20,7 @@ const out = resolve(dirname(fileURLToPath(import.meta.url)), '../src/icons');
 
 /** Background, envelope and flap colours. */
 const BG = [11, 11, 13];
-const ENVELOPE = [255, 148, 24];
+const ENVELOPE = [250, 250, 250];
 const FLAP = [11, 11, 13];
 
 /** CRC-32 lookup table for PNG chunks. */
@@ -53,14 +53,19 @@ function sample(x, y, n) {
   const cx = Math.min(Math.max(x, r), n - r);
   const cy = Math.min(Math.max(y, r), n - r);
   if ((x - cx) ** 2 + (y - cy) ** 2 > r * r) return null;
-  const left = n * 0.2;
-  const right = n * 0.8;
-  const top = n * 0.29;
-  const bottom = n * 0.71;
+  const left = n * 0.12;
+  const right = n * 0.88;
+  const top = n * 0.24;
+  const bottom = n * 0.76;
   if (x < left || x > right || y < top || y > bottom) return BG;
+  // Rounded envelope corners.
+  const corner = n * 0.06;
+  const ex = Math.min(Math.max(x, left + corner), right - corner);
+  const ey = Math.min(Math.max(y, top + corner), bottom - corner);
+  if ((x - ex) ** 2 + (y - ey) ** 2 > corner * corner) return BG;
   const u = (x - left) / (right - left);
   const flap = top + (bottom - top) * 0.58 * (1 - Math.abs(u * 2 - 1));
-  return Math.abs(y - flap) < Math.max(n * 0.035, 3) ? FLAP : ENVELOPE;
+  return Math.abs(y - flap) < Math.max(n * 0.05, 3) ? FLAP : ENVELOPE;
 }
 
 /** Renders a PNG of [size] pixels. */

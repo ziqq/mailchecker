@@ -1,0 +1,692 @@
+{
+  "accent_blue": {
+    "message": "ブルー"
+  },
+  "accent_cyan": {
+    "message": "シアン"
+  },
+  "accent_gray": {
+    "message": "グレー"
+  },
+  "accent_green": {
+    "message": "グリーン"
+  },
+  "accent_label": {
+    "message": "アクセント"
+  },
+  "accent_neutral": {
+    "message": "グラファイト"
+  },
+  "accent_orange": {
+    "message": "オレンジ"
+  },
+  "accent_pink": {
+    "message": "ピンク"
+  },
+  "accent_purple": {
+    "message": "パープル"
+  },
+  "accent_red": {
+    "message": "レッド"
+  },
+  "accent_text": {
+    "message": "ボタンと選択項目の色、またはグラファイトのパレット。"
+  },
+  "accent_yellow": {
+    "message": "イエロー"
+  },
+  "account_checked": {
+    "message": "未読：$1 · $2 に確認"
+  },
+  "account_color": {
+    "message": "$1 の色"
+  },
+  "account_color_title": {
+    "message": "メールボックスの色"
+  },
+  "account_removed": {
+    "message": "メールボックスを削除しました。"
+  },
+  "account_unchecked": {
+    "message": "$1 · まだ確認していません"
+  },
+  "accounts_empty": {
+    "message": "メールボックスはまだありません。下から最初のメールボックスを追加してください。"
+  },
+  "accounts_text": {
+    "message": "接続済みのアドレスとその状態。"
+  },
+  "action_add": {
+    "message": "追加"
+  },
+  "action_add_mailbox": {
+    "message": "メールボックスを追加"
+  },
+  "action_archive": {
+    "message": "アーカイブ"
+  },
+  "action_back": {
+    "message": "一覧に戻る"
+  },
+  "action_cancel": {
+    "message": "キャンセル"
+  },
+  "action_check_now": {
+    "message": "今すぐ確認"
+  },
+  "action_connect": {
+    "message": "接続"
+  },
+  "action_delete": {
+    "message": "削除"
+  },
+  "action_delete_account": {
+    "message": "$1 を削除"
+  },
+  "action_full_screen": {
+    "message": "全画面で開く"
+  },
+  "action_open_mail": {
+    "message": "メールを開く"
+  },
+  "action_open_webmail": {
+    "message": "Web メールで開く"
+  },
+  "action_pin": {
+    "message": "固定"
+  },
+  "action_read": {
+    "message": "既読にする"
+  },
+  "action_read_toggle": {
+    "message": "既読または未読"
+  },
+  "action_reply": {
+    "message": "返信"
+  },
+  "action_settings": {
+    "message": "設定"
+  },
+  "action_show": {
+    "message": "表示"
+  },
+  "action_sign_in": {
+    "message": "ログイン"
+  },
+  "action_sign_in_again": {
+    "message": "再ログイン"
+  },
+  "action_theme": {
+    "message": "テーマを変更"
+  },
+  "action_unpin": {
+    "message": "固定を解除"
+  },
+  "action_unread": {
+    "message": "未読にする"
+  },
+  "address_hint": {
+    "message": "先にブラウザでこのメールボックスにログインしてください。パスワードは不要です。拡張機能はログイン状態を使ってメールを読み込みます。"
+  },
+  "address_subtitle": {
+    "message": "このブラウザのログイン状態を使用"
+  },
+  "all_mailboxes": {
+    "message": "すべて"
+  },
+  "app_title": {
+    "message": "mailchecker · メール"
+  },
+  "appearance_text": {
+    "message": "ウィンドウと設定画面のテーマとアクセントカラー。"
+  },
+  "appearance_title": {
+    "message": "外観"
+  },
+  "badge_title": {
+    "message": "mailchecker · 未読：$1"
+  },
+  "badge_title_problems": {
+    "message": "mailchecker · 未読：$1 · エラーのあるメールボックス：$2"
+  },
+  "busy_archiving": {
+    "message": "アーカイブしています…"
+  },
+  "busy_deleting": {
+    "message": "削除しています…"
+  },
+  "check_text": {
+    "message": "確認の頻度と表示する内容。"
+  },
+  "check_title": {
+    "message": "メールの確認"
+  },
+  "confirm_delete_account": {
+    "message": "$1 を拡張機能から削除しますか？"
+  },
+  "connected": {
+    "message": "$1 を接続しました"
+  },
+  "connected_plain": {
+    "message": "接続しました。"
+  },
+  "copied_redirect": {
+    "message": "$1 のリダイレクト アドレスをコピーしました。"
+  },
+  "copy_failed": {
+    "message": "アドレスをコピーできませんでした。"
+  },
+  "copy_redirect": {
+    "message": "リダイレクト アドレスをコピー"
+  },
+  "copy_redirect_named": {
+    "message": "$1 のリダイレクト アドレスをコピー"
+  },
+  "error_account_changed": {
+    "message": "ログイン中にメールボックスが変わりました。もう一度お試しください。"
+  },
+  "error_account_missing": {
+    "message": "メールボックスが見つかりません。"
+  },
+  "error_bad_address": {
+    "message": "$1：アドレスが無効です。"
+  },
+  "error_bad_message": {
+    "message": "メッセージが無効です。"
+  },
+  "error_bad_response": {
+    "message": "$1 から無効な応答が返されました。"
+  },
+  "error_check_failed": {
+    "message": "メールを確認できませんでした。"
+  },
+  "error_delete_in_webmail": {
+    "message": "このメッセージは Web メールで削除してください。"
+  },
+  "error_generic": {
+    "message": "エラー"
+  },
+  "error_gmail_action": {
+    "message": "Gmail でこの操作が許可されませんでした。Gmail でもう一度お試しください。"
+  },
+  "error_gmail_address": {
+    "message": "Gmail のアドレスを特定できませんでした。このブラウザで Gmail を開いてから、もう一度お試しください。"
+  },
+  "error_gmail_cookies": {
+    "message": "Gmail で操作するには、設定でメールボックスを再接続し、Gmail の Cookie へのアクセスを許可してください。"
+  },
+  "error_gmail_key": {
+    "message": "Gmail から操作用のページキーが提供されませんでした。このブラウザで Gmail を開いてから、もう一度お試しください。"
+  },
+  "error_http_status": {
+    "message": "$1：エラー $2。"
+  },
+  "error_https_only": {
+    "message": "HTTPS アドレスのみ使用できます。"
+  },
+  "error_identity_denied": {
+    "message": "ブラウザのログイン権限がないと、メールボックスを接続できません。"
+  },
+  "error_identity_permission": {
+    "message": "拡張機能の設定でブラウザのログインを許可してから、もう一度お試しください。"
+  },
+  "error_in_webmail": {
+    "message": "ブラウザのログイン状態で接続した「$1」メールボックスでは、この操作は Web メールで行えます。Web メールでメッセージを開いてください。"
+  },
+  "error_jmap_access": {
+    "message": "JMAP サーバーへのアクセスが許可されませんでした。"
+  },
+  "error_jmap_folders": {
+    "message": "メールボックスに「下書き」と「送信済み」フォルダがありません。"
+  },
+  "error_jmap_generic": {
+    "message": "JMAP：$1。"
+  },
+  "error_jmap_identity": {
+    "message": "JMAP：返信用の差出人アドレスがありません。"
+  },
+  "error_jmap_mail": {
+    "message": "サーバーが JMAP Mail に対応していません。"
+  },
+  "error_jmap_origin": {
+    "message": "JMAP API が別のドメインにあります。このようなサーバーには対応していません。"
+  },
+  "error_jmap_permission": {
+    "message": "JMAP サーバーへのアクセスを許可してから、もう一度お試しください。"
+  },
+  "error_jmap_rejected": {
+    "message": "JMAP トークンが拒否されました。メールボックスを削除し、新しいトークンで追加してください。"
+  },
+  "error_jmap_renew": {
+    "message": "JMAP の場合は、メールボックスを削除し、新しいトークンで追加し直してください。"
+  },
+  "error_jmap_send": {
+    "message": "JMAP：サーバーが返信を送信しませんでした。"
+  },
+  "error_jmap_token": {
+    "message": "API トークンをスペースなしで入力してください。"
+  },
+  "error_jmap_url": {
+    "message": "JMAP Session URL が無効です。"
+  },
+  "error_mailru_action": {
+    "message": "Mail.ru で操作が完了しませんでした。Web メールでもう一度お試しください。"
+  },
+  "error_mailru_address": {
+    "message": "Mail.ru のアドレスを入力してください。"
+  },
+  "error_need_https": {
+    "message": "$1：HTTPS アドレスが必要です。"
+  },
+  "error_no_address": {
+    "message": "$1 からメールボックスのアドレスが返されませんでした。"
+  },
+  "error_no_folder": {
+    "message": "メールボックスに「$1」フォルダがありません。"
+  },
+  "error_no_reply": {
+    "message": "拡張機能が応答しませんでした。ページを再読み込みしてください。"
+  },
+  "error_oauth_cancelled": {
+    "message": "ログインがキャンセルされたか、失敗しました。"
+  },
+  "error_oauth_denied": {
+    "message": "$1 がログインを拒否しました。"
+  },
+  "error_oauth_redirect": {
+    "message": "OAuth のリダイレクト アドレスが無効です。"
+  },
+  "error_oauth_safari": {
+    "message": "このブラウザでは、ログインは mailchecker アプリ（Safari）で行います。JMAP または Chrome をご利用ください。"
+  },
+  "error_oauth_state": {
+    "message": "$1 のログイン応答を検証できませんでした。"
+  },
+  "error_oauth_token": {
+    "message": "ログイン サービスから有効なトークンが返されませんでした。"
+  },
+  "error_oauth_unconfigured": {
+    "message": "このビルドではログインが設定されていません。src/background/oauth/config.ts で OAuth Client ID を設定してください。"
+  },
+  "error_rate_limited": {
+    "message": "「$1」へのアクセスが一時的に制限されています（リクエストが多すぎます）。後でもう一度確認します。"
+  },
+  "error_reply_text": {
+    "message": "返信を入力してください（100,000 文字以内）。"
+  },
+  "error_reply_webmail": {
+    "message": "このメールボックスでは、返信は Web メールで作成します。"
+  },
+  "error_request_denied": {
+    "message": "このリクエストは許可されていません。"
+  },
+  "error_session_expired": {
+    "message": "セッションの有効期限が切れました。もう一度ログインしてください。"
+  },
+  "error_session_host": {
+    "message": "このアドレスではブラウザのログインを使用できません。"
+  },
+  "error_session_or_network": {
+    "message": "このブラウザで「$1」にログインして（またはネットワークを確認して）から、もう一度お試しください。"
+  },
+  "error_sign_in_mailru": {
+    "message": "このブラウザで Mail.ru にログインしてから、もう一度お試しください。"
+  },
+  "error_sign_in_webmail": {
+    "message": "このブラウザで「$1」にログインしてから、もう一度お試しください。"
+  },
+  "error_sign_in_yandex": {
+    "message": "このブラウザで Yandex Mail にログインしてから、もう一度お試しください。"
+  },
+  "error_site_denied": {
+    "message": "「$1」へのアクセス権がないと、ブラウザ経由でメールボックスを接続できません。"
+  },
+  "error_site_permission": {
+    "message": "「$1」へのアクセスを許可してください。設定でメールボックスを追加し直してください。"
+  },
+  "error_timeout": {
+    "message": "$1 から時間内に応答がありませんでした。"
+  },
+  "error_too_large": {
+    "message": "サーバーからの応答が大きすぎます。"
+  },
+  "error_too_many_accounts": {
+    "message": "接続できるメールボックスは最大 $1 個です。"
+  },
+  "error_unexpected_page": {
+    "message": "$1 から予期しないページが返されました。"
+  },
+  "error_unexpected_reply": {
+    "message": "$1 から予期しない応答が返されました。"
+  },
+  "error_unknown": {
+    "message": "不明なエラーです。"
+  },
+  "error_unknown_action": {
+    "message": "不明な操作です。"
+  },
+  "error_unknown_color": {
+    "message": "不明な色です。"
+  },
+  "error_unknown_provider": {
+    "message": "不明なメールボックスの種類です。"
+  },
+  "error_unreachable": {
+    "message": "$1 に接続できません。ネットワークを確認してください。"
+  },
+  "error_webmail_timeout": {
+    "message": "「$1」が応答していません。しばらくしてからもう一度お試しください。"
+  },
+  "error_yandex_address": {
+    "message": "Yandex Mail のアドレスを入力してください。"
+  },
+  "extension_description": {
+    "message": "ツールバーのメール クライアント。Gmail、Yandex Mail、Mail.ru、Microsoft 365、JMAP の統合受信トレイ、安全な閲覧と返信。"
+  },
+  "feature_local": {
+    "message": "ローカルのみ"
+  },
+  "feature_local_text": {
+    "message": "トークンはブラウザのプロファイルに保存されます。"
+  },
+  "feature_passwords": {
+    "message": "パスワード不要"
+  },
+  "feature_passwords_text": {
+    "message": "ログインは Google、Microsoft、または Web メールのページで行います。"
+  },
+  "feature_server": {
+    "message": "サーバー不要"
+  },
+  "feature_server_text": {
+    "message": "リクエストはメール API に直接送信されます。"
+  },
+  "field_address": {
+    "message": "メールボックスのアドレス"
+  },
+  "field_api_token": {
+    "message": "API トークン"
+  },
+  "field_optional": {
+    "message": "（省略可）"
+  },
+  "field_webmail": {
+    "message": "Web メール"
+  },
+  "field_webmail_link": {
+    "message": "Web メールのリンク"
+  },
+  "filter_all": {
+    "message": "すべて"
+  },
+  "folder_archive": {
+    "message": "アーカイブ"
+  },
+  "folder_inbox": {
+    "message": "受信トレイ"
+  },
+  "folder_trash": {
+    "message": "ゴミ箱"
+  },
+  "header_cc": {
+    "message": "Cc：$1"
+  },
+  "header_to": {
+    "message": "宛先：$1"
+  },
+  "hero_eyebrow": {
+    "message": "ブラウザの中のメールボックス"
+  },
+  "hero_lead": {
+    "message": "Gmail、Yandex Mail、Mail.ru、Microsoft 365、JMAP の件数表示、一覧、通知。独自のサーバーも追加のアプリも不要です。"
+  },
+  "hint_archive": {
+    "message": "アーカイブ"
+  },
+  "hint_navigate": {
+    "message": "一覧内を移動"
+  },
+  "hint_pin": {
+    "message": "固定"
+  },
+  "hint_search": {
+    "message": "検索"
+  },
+  "inbox_empty": {
+    "message": "すべて完了"
+  },
+  "inbox_empty_text": {
+    "message": "新着メールはありません。"
+  },
+  "interval_label": {
+    "message": "間隔（分）"
+  },
+  "interval_text": {
+    "message": "0.5～60。"
+  },
+  "label_attachments": {
+    "message": "添付ファイルあり"
+  },
+  "label_categories": {
+    "message": "カテゴリ"
+  },
+  "label_mailboxes": {
+    "message": "メールボックス"
+  },
+  "label_message": {
+    "message": "メッセージ"
+  },
+  "label_message_text": {
+    "message": "メッセージ本文"
+  },
+  "label_messages": {
+    "message": "メッセージ"
+  },
+  "label_pinned": {
+    "message": "固定済み"
+  },
+  "label_sections": {
+    "message": "セクション"
+  },
+  "limit_label": {
+    "message": "一覧に表示するメッセージ数"
+  },
+  "limit_text": {
+    "message": "メールボックスごとに最大 50 件。"
+  },
+  "messages_count_other": {
+    "message": "$1 件のメッセージ"
+  },
+  "method_browser": {
+    "message": "ブラウザ経由"
+  },
+  "method_google": {
+    "message": "Google で接続"
+  },
+  "no_subject": {
+    "message": "（件名なし）"
+  },
+  "notification_new": {
+    "message": "新着メッセージ：$1"
+  },
+  "notifications_text": {
+    "message": "新着メールをシステム通知でお知らせします。"
+  },
+  "oauth_has_id": {
+    "message": "· Client ID 設定済み"
+  },
+  "oauth_no_id": {
+    "message": "· Client ID 未設定"
+  },
+  "oauth_note_build": {
+    "message": "これらの方法は、ビルドに Client ID が設定されている場合に使用できます："
+  },
+  "oauth_note_setup": {
+    "message": "Google Cloud または Microsoft Entra で OAuth クライアントを作成し、下のリダイレクト アドレスを入力してください。ブラウザ経由で接続したメールボックスには不要です。"
+  },
+  "oauth_text": {
+    "message": "拡張機能のビルド時のみ：「Google で接続」と Outlook の接続。"
+  },
+  "oauth_title": {
+    "message": "Google と Microsoft でログイン"
+  },
+  "oauth_unconfigured": {
+    "message": "Client ID が設定されていません。"
+  },
+  "popup_full": {
+    "message": "フル"
+  },
+  "popup_label": {
+    "message": "ウィンドウ"
+  },
+  "popup_mini": {
+    "message": "ミニ"
+  },
+  "popup_text": {
+    "message": "ツールバーのボタンから開くウィンドウのサイズ。"
+  },
+  "privacy_images_other": {
+    "message": "ブロック済み：画像 $1 件"
+  },
+  "privacy_trackers_other": {
+    "message": "トラッカー $1 件"
+  },
+  "provider_gmail_text": {
+    "message": "このブラウザの Gmail のログイン状態、または Google アカウントを使用。"
+  },
+  "provider_jmap_text": {
+    "message": "Fastmail、Stalwart、Cyrus — API トークンで接続。"
+  },
+  "provider_mailru_text": {
+    "message": "このブラウザの Mail.ru のログイン状態を使用。"
+  },
+  "provider_outlook_text": {
+    "message": "Outlook.com、Hotmail、Exchange Online（任意のドメイン）。"
+  },
+  "provider_yandex_text": {
+    "message": "このブラウザの Yandex Mail のログイン状態を使用。"
+  },
+  "reader_empty": {
+    "message": "メッセージを選択してください"
+  },
+  "reader_eyebrow": {
+    "message": "閲覧"
+  },
+  "reader_failed": {
+    "message": "メッセージを開けませんでした"
+  },
+  "reply_heading": {
+    "message": "返信 · $1"
+  },
+  "reply_hint": {
+    "message": "⌘/Ctrl + Enter で送信"
+  },
+  "reply_placeholder": {
+    "message": "返信の本文"
+  },
+  "reply_send": {
+    "message": "送信"
+  },
+  "reply_sending": {
+    "message": "送信しています…"
+  },
+  "reply_sent": {
+    "message": "返信を送信しました。"
+  },
+  "search_empty": {
+    "message": "見つかりませんでした"
+  },
+  "search_empty_text": {
+    "message": "別のキーワードでお試しください。"
+  },
+  "search_placeholder": {
+    "message": "すべてのメールボックスを検索"
+  },
+  "search_results": {
+    "message": "検索結果"
+  },
+  "search_title": {
+    "message": "「$1」"
+  },
+  "section_inbox": {
+    "message": "その他"
+  },
+  "section_newsletters": {
+    "message": "ニュースレター"
+  },
+  "section_notifications": {
+    "message": "通知"
+  },
+  "section_people": {
+    "message": "個人"
+  },
+  "section_pinned": {
+    "message": "固定済み"
+  },
+  "service_mailru": {
+    "message": "Mail.ru"
+  },
+  "service_server": {
+    "message": "サーバー"
+  },
+  "service_yandex": {
+    "message": "Yandex Mail"
+  },
+  "settings_title": {
+    "message": "mailchecker · 設定"
+  },
+  "signed_in": {
+    "message": "ログイン中：$1"
+  },
+  "snippet_full_text": {
+    "message": "$1\n\n全文は Web メールで確認できます。「Web メールで開く」を使用してください。"
+  },
+  "status_wait": {
+    "message": "お待ちください…"
+  },
+  "theme_auto": {
+    "message": "自動"
+  },
+  "theme_auto_title": {
+    "message": "テーマ：システム"
+  },
+  "theme_dark": {
+    "message": "ダーク"
+  },
+  "theme_dark_title": {
+    "message": "テーマ：ダーク"
+  },
+  "theme_label": {
+    "message": "テーマ"
+  },
+  "theme_light": {
+    "message": "ライト"
+  },
+  "theme_light_title": {
+    "message": "テーマ：ライト"
+  },
+  "theme_text": {
+    "message": "ライト、ダーク、またはシステムに合わせる。"
+  },
+  "theme_title": {
+    "message": "テーマ：$1"
+  },
+  "unread_new_other": {
+    "message": "新着 $1 件"
+  },
+  "view_inbox": {
+    "message": "受信トレイ"
+  },
+  "welcome_eyebrow": {
+    "message": "ブラウザでメール"
+  },
+  "welcome_text": {
+    "message": "Gmail、Yandex Mail、Mail.ru、Microsoft 365、または任意のドメインの JMAP メールボックスを接続できます。"
+  },
+  "welcome_title_1": {
+    "message": "すべてのメールを"
+  },
+  "welcome_title_2": {
+    "message": "ひとつの場所で"
+  }
+}

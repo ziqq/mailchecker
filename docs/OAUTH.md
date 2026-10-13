@@ -26,10 +26,10 @@ The matching private key is not in the repository. Keep `keys/extension-private-
 
 1. Azure Portal → App registrations → New registration → _Accounts in any organizational directory and personal Microsoft accounts_.
 2. Authentication → Add a platform → **Mobile and desktop applications** → the `/microsoft` URI above.
-3. API permissions → Microsoft Graph → Delegated: `Mail.ReadWrite`, `User.Read`, `offline_access`, `openid`, `email`.
+3. API permissions → Microsoft Graph → Delegated: `Mail.ReadWrite`, `Mail.Send` (replies), `User.Read`, `offline_access`, `openid`, `email`.
 4. Put the Application (client) ID in `oauthConfig.microsoft`.
 
-Some organizations require admin consent for `Mail.ReadWrite`.
+Some organizations require admin consent for `Mail.ReadWrite` and `Mail.Send`.
 
 ## Verification
 

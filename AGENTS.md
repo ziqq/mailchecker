@@ -23,7 +23,8 @@ Author: Anton Ustinoff. License: [GPL v3](LICENSE) (`GPL-3.0-only`). Every sourc
 2. Inspect `git status` and the relevant diff first. Never overwrite the maintainer's edits without confirmation.
 3. Avoid overengineering. Follow existing modules and keep changes narrow.
 4. Keep `CHANGELOG.md` newest first with **DEPRECATED**, **ADDED**, **CHANGED**, **FIXED**; omit unused categories.
-5. Use English identifiers, documentation and commits. UI text is Russian. Discuss decisions in the maintainer's language.
+5. Use English identifiers, documentation and commits. Discuss decisions in the maintainer's language.
+6. UI text is localized: never hard-code it. Add each string to `src/_locales/en/messages.json` and every other locale, and read it with `t()` / `tn()` from `shared/i18n.ts` (static HTML: `data-i18n`). `scripts/check.mjs` fails on a missing key.
 
 ## Agent workflow
 
@@ -39,7 +40,8 @@ Run `npm ci` and `npm run build`, then load `build/` as an unpacked extension in
 
 ## Project structure
 
-- `src/shared/`: types, preferences, formatting, DOM helpers and icons; side-effect-free modules used by every context.
+- `src/shared/`: types, preferences, formatting, DOM helpers, icons and `i18n.ts`; side-effect-free modules used by every context.
+- `src/_locales/`: interface strings for `chrome.i18n` in 13 languages (`en` is the default and the reference; plurals are `key_<CLDR form>`).
 - `src/background/`: trusted service worker. `index.ts` routes messages; `storage`, `http`, `accounts` and `mailbox` hold storage, bounded requests, credentials, checks and actions; `platform.ts` is the only place for browser-specific APIs.
 - `src/background/providers/`: Gmail, Microsoft Graph and JMAP adapters implementing `Provider` from `message.ts`.
 - `src/background/oauth/`: public client IDs and Google/Microsoft flows. Never add a client secret.

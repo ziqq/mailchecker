@@ -1,0 +1,692 @@
+{
+  "accent_blue": {
+    "message": "蓝色"
+  },
+  "accent_cyan": {
+    "message": "青色"
+  },
+  "accent_gray": {
+    "message": "灰色"
+  },
+  "accent_green": {
+    "message": "绿色"
+  },
+  "accent_label": {
+    "message": "强调色"
+  },
+  "accent_neutral": {
+    "message": "石墨色"
+  },
+  "accent_orange": {
+    "message": "橙色"
+  },
+  "accent_pink": {
+    "message": "粉色"
+  },
+  "accent_purple": {
+    "message": "紫色"
+  },
+  "accent_red": {
+    "message": "红色"
+  },
+  "accent_text": {
+    "message": "按钮和选中项的颜色，或石墨色调。"
+  },
+  "accent_yellow": {
+    "message": "黄色"
+  },
+  "account_checked": {
+    "message": "未读：$1 · 检查于 $2"
+  },
+  "account_color": {
+    "message": "$1 的颜色"
+  },
+  "account_color_title": {
+    "message": "邮箱颜色"
+  },
+  "account_removed": {
+    "message": "邮箱已移除。"
+  },
+  "account_unchecked": {
+    "message": "$1 · 尚未检查"
+  },
+  "accounts_empty": {
+    "message": "还没有邮箱。请在下方添加第一个。"
+  },
+  "accounts_text": {
+    "message": "已连接的地址及其状态。"
+  },
+  "action_add": {
+    "message": "添加"
+  },
+  "action_add_mailbox": {
+    "message": "添加邮箱"
+  },
+  "action_archive": {
+    "message": "归档"
+  },
+  "action_back": {
+    "message": "返回列表"
+  },
+  "action_cancel": {
+    "message": "取消"
+  },
+  "action_check_now": {
+    "message": "立即检查"
+  },
+  "action_connect": {
+    "message": "连接"
+  },
+  "action_delete": {
+    "message": "删除"
+  },
+  "action_delete_account": {
+    "message": "移除 $1"
+  },
+  "action_full_screen": {
+    "message": "全屏打开"
+  },
+  "action_open_mail": {
+    "message": "打开邮件"
+  },
+  "action_open_webmail": {
+    "message": "在网页版邮箱中打开"
+  },
+  "action_pin": {
+    "message": "置顶"
+  },
+  "action_read": {
+    "message": "标记为已读"
+  },
+  "action_read_toggle": {
+    "message": "已读或未读"
+  },
+  "action_reply": {
+    "message": "回复"
+  },
+  "action_settings": {
+    "message": "设置"
+  },
+  "action_show": {
+    "message": "显示"
+  },
+  "action_sign_in": {
+    "message": "登录"
+  },
+  "action_sign_in_again": {
+    "message": "重新登录"
+  },
+  "action_theme": {
+    "message": "切换主题"
+  },
+  "action_unpin": {
+    "message": "取消置顶"
+  },
+  "action_unread": {
+    "message": "标记为未读"
+  },
+  "address_hint": {
+    "message": "请先在浏览器中登录此邮箱。无需密码：扩展程序通过你的登录状态读取邮件。"
+  },
+  "address_subtitle": {
+    "message": "通过此浏览器中的登录状态"
+  },
+  "all_mailboxes": {
+    "message": "所有邮箱"
+  },
+  "app_title": {
+    "message": "mailchecker · 邮件"
+  },
+  "appearance_text": {
+    "message": "窗口和设置页的主题与强调色。"
+  },
+  "appearance_title": {
+    "message": "外观"
+  },
+  "badge_title": {
+    "message": "mailchecker · 未读：$1"
+  },
+  "badge_title_problems": {
+    "message": "mailchecker · 未读：$1 · 出错的邮箱：$2"
+  },
+  "busy_archiving": {
+    "message": "正在归档…"
+  },
+  "busy_deleting": {
+    "message": "正在删除…"
+  },
+  "check_text": {
+    "message": "检查频率和显示内容。"
+  },
+  "check_title": {
+    "message": "邮件检查"
+  },
+  "confirm_delete_account": {
+    "message": "要从扩展程序中移除 $1 吗？"
+  },
+  "connected": {
+    "message": "已连接 $1"
+  },
+  "connected_plain": {
+    "message": "已连接。"
+  },
+  "copied_redirect": {
+    "message": "已复制 $1 重定向地址。"
+  },
+  "copy_failed": {
+    "message": "无法复制地址。"
+  },
+  "copy_redirect": {
+    "message": "复制重定向地址"
+  },
+  "copy_redirect_named": {
+    "message": "复制 $1 重定向地址"
+  },
+  "error_account_changed": {
+    "message": "登录过程中邮箱发生了变化。请重试。"
+  },
+  "error_account_missing": {
+    "message": "找不到邮箱。"
+  },
+  "error_bad_address": {
+    "message": "$1：地址无效。"
+  },
+  "error_bad_message": {
+    "message": "邮件无效。"
+  },
+  "error_bad_response": {
+    "message": "$1 返回了无效的响应。"
+  },
+  "error_check_failed": {
+    "message": "无法检查邮件。"
+  },
+  "error_delete_in_webmail": {
+    "message": "请在网页版邮箱中删除此邮件。"
+  },
+  "error_generic": {
+    "message": "错误"
+  },
+  "error_gmail_action": {
+    "message": "Gmail 不允许此操作。请在 Gmail 中重试。"
+  },
+  "error_gmail_address": {
+    "message": "无法确定 Gmail 地址。请在此浏览器中打开 Gmail 后重试。"
+  },
+  "error_gmail_cookies": {
+    "message": "要在 Gmail 中执行操作，请在设置中重新连接邮箱，并允许访问 Gmail Cookie。"
+  },
+  "error_gmail_key": {
+    "message": "Gmail 未提供执行操作所需的页面密钥。请在此浏览器中打开 Gmail 后重试。"
+  },
+  "error_http_status": {
+    "message": "$1：错误 $2。"
+  },
+  "error_https_only": {
+    "message": "仅允许 HTTPS 地址。"
+  },
+  "error_identity_denied": {
+    "message": "未获得浏览器登录权限，无法连接邮箱。"
+  },
+  "error_identity_permission": {
+    "message": "请在扩展程序设置中允许浏览器登录，然后重试。"
+  },
+  "error_in_webmail": {
+    "message": "“$1”邮箱通过浏览器登录状态连接，此操作需在网页版邮箱中进行：请在那里打开这封邮件。"
+  },
+  "error_jmap_access": {
+    "message": "未获准访问 JMAP 服务器。"
+  },
+  "error_jmap_folders": {
+    "message": "邮箱中没有“草稿”和“已发送”文件夹。"
+  },
+  "error_jmap_generic": {
+    "message": "JMAP：$1。"
+  },
+  "error_jmap_identity": {
+    "message": "JMAP：没有可用于回复的发件人地址。"
+  },
+  "error_jmap_mail": {
+    "message": "服务器不支持 JMAP Mail。"
+  },
+  "error_jmap_origin": {
+    "message": "JMAP API 位于其他域名，不支持此类服务器。"
+  },
+  "error_jmap_permission": {
+    "message": "请允许访问 JMAP 服务器，然后重试。"
+  },
+  "error_jmap_rejected": {
+    "message": "JMAP 令牌被拒绝。请移除邮箱并添加新令牌。"
+  },
+  "error_jmap_renew": {
+    "message": "对于 JMAP，请移除邮箱并使用新令牌重新添加。"
+  },
+  "error_jmap_send": {
+    "message": "JMAP：服务器未发送回复。"
+  },
+  "error_jmap_token": {
+    "message": "请输入不含空格的 API 令牌。"
+  },
+  "error_jmap_url": {
+    "message": "JMAP Session URL 无效。"
+  },
+  "error_mailru_action": {
+    "message": "Mail.ru 未完成此操作。请在网页版邮箱中重试。"
+  },
+  "error_mailru_address": {
+    "message": "请输入 Mail.ru 地址。"
+  },
+  "error_need_https": {
+    "message": "$1：需要 HTTPS 地址。"
+  },
+  "error_no_address": {
+    "message": "$1 未返回邮箱地址。"
+  },
+  "error_no_folder": {
+    "message": "邮箱中没有“$1”文件夹。"
+  },
+  "error_no_reply": {
+    "message": "扩展程序没有响应。请重新加载页面。"
+  },
+  "error_oauth_cancelled": {
+    "message": "登录已取消或失败。"
+  },
+  "error_oauth_denied": {
+    "message": "$1 拒绝了登录。"
+  },
+  "error_oauth_redirect": {
+    "message": "OAuth 重定向地址无效。"
+  },
+  "error_oauth_safari": {
+    "message": "在此浏览器中，登录需在 mailchecker 应用（Safari）中进行。请使用 JMAP 或 Chrome。"
+  },
+  "error_oauth_state": {
+    "message": "$1 登录响应未通过验证。"
+  },
+  "error_oauth_token": {
+    "message": "登录服务未返回有效令牌。"
+  },
+  "error_oauth_unconfigured": {
+    "message": "此版本未配置登录：请在 src/background/oauth/config.ts 中设置 OAuth Client ID。"
+  },
+  "error_rate_limited": {
+    "message": "“$1”暂时限制了访问：请求过多。稍后将重新检查。"
+  },
+  "error_reply_text": {
+    "message": "请填写回复（最多 100,000 个字符）。"
+  },
+  "error_reply_webmail": {
+    "message": "此邮箱需在网页版邮箱中回复。"
+  },
+  "error_request_denied": {
+    "message": "不允许此请求。"
+  },
+  "error_session_expired": {
+    "message": "会话已过期。请重新登录。"
+  },
+  "error_session_host": {
+    "message": "此地址无法使用浏览器登录。"
+  },
+  "error_session_or_network": {
+    "message": "请在此浏览器中登录“$1”（或检查网络），然后重试。"
+  },
+  "error_sign_in_mailru": {
+    "message": "请在此浏览器中登录 Mail.ru，然后重试。"
+  },
+  "error_sign_in_webmail": {
+    "message": "请在此浏览器中登录“$1”，然后重试。"
+  },
+  "error_sign_in_yandex": {
+    "message": "请在此浏览器中登录 Yandex Mail，然后重试。"
+  },
+  "error_site_denied": {
+    "message": "未获得“$1”的访问权限，无法通过浏览器连接邮箱。"
+  },
+  "error_site_permission": {
+    "message": "请允许访问“$1”：在设置中重新添加邮箱。"
+  },
+  "error_timeout": {
+    "message": "$1 未及时响应。"
+  },
+  "error_too_large": {
+    "message": "服务器返回的响应过大。"
+  },
+  "error_too_many_accounts": {
+    "message": "最多可连接 $1 个邮箱。"
+  },
+  "error_unexpected_page": {
+    "message": "$1 返回了意外的页面。"
+  },
+  "error_unexpected_reply": {
+    "message": "$1 返回了意外的响应。"
+  },
+  "error_unknown": {
+    "message": "未知错误。"
+  },
+  "error_unknown_action": {
+    "message": "未知操作。"
+  },
+  "error_unknown_color": {
+    "message": "未知颜色。"
+  },
+  "error_unknown_provider": {
+    "message": "未知的邮箱类型。"
+  },
+  "error_unreachable": {
+    "message": "无法访问 $1。请检查网络。"
+  },
+  "error_webmail_timeout": {
+    "message": "“$1”没有响应。请稍后重试。"
+  },
+  "error_yandex_address": {
+    "message": "请输入 Yandex Mail 地址。"
+  },
+  "extension_description": {
+    "message": "工具栏中的邮件客户端：为 Gmail、Yandex Mail、Mail.ru、Microsoft 365 和 JMAP 提供统一收件箱、安全阅读与回复。"
+  },
+  "feature_local": {
+    "message": "仅在本地"
+  },
+  "feature_local_text": {
+    "message": "令牌保存在浏览器配置文件中。"
+  },
+  "feature_passwords": {
+    "message": "无需密码"
+  },
+  "feature_passwords_text": {
+    "message": "你在 Google、Microsoft 或网页版邮箱的页面上登录。"
+  },
+  "feature_server": {
+    "message": "无需服务器"
+  },
+  "feature_server_text": {
+    "message": "请求直接发送到邮件 API。"
+  },
+  "field_address": {
+    "message": "邮箱地址"
+  },
+  "field_api_token": {
+    "message": "API 令牌"
+  },
+  "field_optional": {
+    "message": "（可选）"
+  },
+  "field_webmail": {
+    "message": "网页版邮箱"
+  },
+  "field_webmail_link": {
+    "message": "网页版邮箱链接"
+  },
+  "filter_all": {
+    "message": "全部"
+  },
+  "folder_archive": {
+    "message": "归档"
+  },
+  "folder_inbox": {
+    "message": "收件箱"
+  },
+  "folder_trash": {
+    "message": "已删除"
+  },
+  "header_cc": {
+    "message": "抄送：$1"
+  },
+  "header_to": {
+    "message": "收件人：$1"
+  },
+  "hero_eyebrow": {
+    "message": "浏览器中的邮箱"
+  },
+  "hero_lead": {
+    "message": "为 Gmail、Yandex Mail、Mail.ru、Microsoft 365 和 JMAP 提供计数、列表和通知。无自有服务器，也无需额外应用。"
+  },
+  "hint_archive": {
+    "message": "归档"
+  },
+  "hint_navigate": {
+    "message": "在列表中移动"
+  },
+  "hint_pin": {
+    "message": "置顶"
+  },
+  "hint_search": {
+    "message": "搜索"
+  },
+  "inbox_empty": {
+    "message": "全部处理完毕"
+  },
+  "inbox_empty_text": {
+    "message": "这里没有新邮件。"
+  },
+  "interval_label": {
+    "message": "间隔（分钟）"
+  },
+  "interval_text": {
+    "message": "0.5 到 60。"
+  },
+  "label_attachments": {
+    "message": "有附件"
+  },
+  "label_categories": {
+    "message": "类别"
+  },
+  "label_mailboxes": {
+    "message": "邮箱"
+  },
+  "label_message": {
+    "message": "邮件"
+  },
+  "label_message_text": {
+    "message": "邮件正文"
+  },
+  "label_messages": {
+    "message": "邮件"
+  },
+  "label_pinned": {
+    "message": "已置顶"
+  },
+  "label_sections": {
+    "message": "分区"
+  },
+  "limit_label": {
+    "message": "列表中的邮件数"
+  },
+  "limit_text": {
+    "message": "每个邮箱最多 50 封。"
+  },
+  "messages_count_other": {
+    "message": "$1 封邮件"
+  },
+  "method_browser": {
+    "message": "通过浏览器"
+  },
+  "method_google": {
+    "message": "使用 Google"
+  },
+  "no_subject": {
+    "message": "（无主题）"
+  },
+  "notification_new": {
+    "message": "新邮件：$1"
+  },
+  "notifications_text": {
+    "message": "有新邮件时显示系统通知。"
+  },
+  "oauth_has_id": {
+    "message": "· 已设置 Client ID"
+  },
+  "oauth_no_id": {
+    "message": "· 未设置 Client ID"
+  },
+  "oauth_note_build": {
+    "message": "在版本中设置了 Client ID 后，以下方式可用："
+  },
+  "oauth_note_setup": {
+    "message": "在 Google Cloud 或 Microsoft Entra 中创建 OAuth 客户端，并填入下方的重定向地址。通过浏览器连接的邮箱不需要此项。"
+  },
+  "oauth_text": {
+    "message": "仅用于构建扩展程序：“使用 Google”和 Outlook 连接。"
+  },
+  "oauth_title": {
+    "message": "使用 Google 和 Microsoft 登录"
+  },
+  "oauth_unconfigured": {
+    "message": "未配置 Client ID。"
+  },
+  "popup_full": {
+    "message": "完整"
+  },
+  "popup_label": {
+    "message": "窗口"
+  },
+  "popup_mini": {
+    "message": "迷你"
+  },
+  "popup_text": {
+    "message": "从工具栏按钮打开的窗口大小。"
+  },
+  "privacy_images_other": {
+    "message": "已拦截：$1 张图片"
+  },
+  "privacy_trackers_other": {
+    "message": "和 $1 个跟踪器"
+  },
+  "provider_gmail_text": {
+    "message": "通过此浏览器中的 Gmail 登录状态或 Google 帐号。"
+  },
+  "provider_jmap_text": {
+    "message": "Fastmail、Stalwart、Cyrus — 使用 API 令牌。"
+  },
+  "provider_mailru_text": {
+    "message": "通过此浏览器中的 Mail.ru 登录状态。"
+  },
+  "provider_outlook_text": {
+    "message": "任意域名上的 Outlook.com、Hotmail、Exchange Online。"
+  },
+  "provider_yandex_text": {
+    "message": "通过此浏览器中的 Yandex Mail 登录状态。"
+  },
+  "reader_empty": {
+    "message": "选择一封邮件"
+  },
+  "reader_eyebrow": {
+    "message": "阅读"
+  },
+  "reader_failed": {
+    "message": "无法打开邮件"
+  },
+  "reply_heading": {
+    "message": "回复 · $1"
+  },
+  "reply_hint": {
+    "message": "⌘/Ctrl + Enter 发送"
+  },
+  "reply_placeholder": {
+    "message": "回复内容"
+  },
+  "reply_send": {
+    "message": "发送"
+  },
+  "reply_sending": {
+    "message": "正在发送…"
+  },
+  "reply_sent": {
+    "message": "回复已发送。"
+  },
+  "search_empty": {
+    "message": "未找到结果"
+  },
+  "search_empty_text": {
+    "message": "请尝试其他搜索词。"
+  },
+  "search_placeholder": {
+    "message": "搜索所有邮箱"
+  },
+  "search_results": {
+    "message": "搜索结果"
+  },
+  "search_title": {
+    "message": "“$1”"
+  },
+  "section_inbox": {
+    "message": "其他"
+  },
+  "section_newsletters": {
+    "message": "新闻简报"
+  },
+  "section_notifications": {
+    "message": "通知"
+  },
+  "section_people": {
+    "message": "个人"
+  },
+  "section_pinned": {
+    "message": "已置顶"
+  },
+  "service_mailru": {
+    "message": "Mail.ru"
+  },
+  "service_server": {
+    "message": "服务器"
+  },
+  "service_yandex": {
+    "message": "Yandex Mail"
+  },
+  "settings_title": {
+    "message": "mailchecker · 设置"
+  },
+  "signed_in": {
+    "message": "已登录：$1"
+  },
+  "snippet_full_text": {
+    "message": "$1\n\n完整内容请在网页版邮箱中查看：点击“在网页版邮箱中打开”。"
+  },
+  "status_wait": {
+    "message": "请稍候…"
+  },
+  "theme_auto": {
+    "message": "自动"
+  },
+  "theme_auto_title": {
+    "message": "主题：跟随系统"
+  },
+  "theme_dark": {
+    "message": "深色"
+  },
+  "theme_dark_title": {
+    "message": "主题：深色"
+  },
+  "theme_label": {
+    "message": "主题"
+  },
+  "theme_light": {
+    "message": "浅色"
+  },
+  "theme_light_title": {
+    "message": "主题：浅色"
+  },
+  "theme_text": {
+    "message": "浅色、深色或跟随系统。"
+  },
+  "theme_title": {
+    "message": "主题：$1"
+  },
+  "unread_new_other": {
+    "message": "$1 封新邮件"
+  },
+  "view_inbox": {
+    "message": "收件箱"
+  },
+  "welcome_eyebrow": {
+    "message": "浏览器中的邮件"
+  },
+  "welcome_text": {
+    "message": "连接 Gmail、Yandex Mail、Mail.ru、Microsoft 365 或任意域名上的 JMAP 邮箱。"
+  },
+  "welcome_title_1": {
+    "message": "你的所有邮件"
+  },
+  "welcome_title_2": {
+    "message": "一览无余"
+  }
+}

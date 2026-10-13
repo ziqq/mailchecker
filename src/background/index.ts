@@ -14,10 +14,11 @@
  */
 import {preferences} from '../shared/preferences';
 import type {MessageAction, Preferences, Reply, RequestType} from '../shared/types';
-import {addAccount, publicState, removeAccount, signIn} from './accounts';
-import {act, checkAccount, checkAll, open, openNotification, search, thread, updateBadge} from './mailbox';
+import {addAccount, publicState, removeAccount, setAccountColor, signIn} from './accounts';
+import {act, checkAccount, checkAll, open, openNotification, reply, search, thread, updateBadge} from './mailbox';
 import {hasNotifications, openApp} from './platform';
 import {readStore, writeStore} from './storage';
+import {t} from '../shared/i18n';
 
 /** Alarm name for periodic checks. */
 const ALARM = 'check';
@@ -31,6 +32,7 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'STATE',
     'CHECK',
     'THREAD',
+    'REPLY',
     'ACT',
     'SEARCH',
     'OPEN',
@@ -39,7 +41,16 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'PREFERENCES',
     'OPTIONS',
   ]),
-  options: new Set<RequestType>(['STATE', 'CHECK', 'OPEN', 'SIGN_IN', 'PREFERENCES', 'ADD_ACCOUNT', 'REMOVE_ACCOUNT']),
+  options: new Set<RequestType>([
+    'STATE',
+    'CHECK',
+    'OPEN',
+    'SIGN_IN',
+    'PREFERENCES',
+    'ADD_ACCOUNT',
+    'REMOVE_ACCOUNT',
+    'ACCOUNT_COLOR',
+  ]),
 });
 
 /** Returns which extension page sent a message, or `null`. */
@@ -61,7 +72,7 @@ async function schedule(): Promise<void> {
 /** Throws unless the optional `identity` permission is granted. */
 async function requireIdentity(): Promise<void> {
   if (!(await chrome.permissions.contains({permissions: ['identity']})))
-    throw new Error('Разрешите вход через браузер в настройках расширения и повторите.');
+    throw new Error(t('error_identity_permission'));
 }
 
 /** An untrusted message; fields are validated per type. */
@@ -76,7 +87,7 @@ type Message = {type?: unknown} & Record<string, unknown>;
 async function handle(message: Message, sender: chrome.runtime.MessageSender): Promise<unknown> {
   const page = senderPage(sender);
   const type = message?.type as RequestType;
-  if (!page || typeof type !== 'string' || !allowed[page].has(type)) throw new Error('Этот запрос не разрешён.');
+  if (!page || typeof type !== 'string' || !allowed[page].has(type)) throw new Error(t('error_request_denied'));
   const account = String(message.account ?? '');
   switch (type) {
     case 'STATE':
@@ -89,6 +100,9 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       return publicState(await readStore());
     case 'THREAD':
       return thread(account, String(message.message ?? ''), String(message.thread ?? ''));
+    case 'REPLY':
+      await reply(account, String(message.message ?? ''), String(message.text ?? ''));
+      return true;
     case 'SEARCH':
       return search(String(message.query ?? ''));
     case 'OPEN_APP':
@@ -135,6 +149,9 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       await updateBadge();
       return {email: added.email, state: publicState(await readStore())};
     }
+    case 'ACCOUNT_COLOR':
+      await setAccountColor(account, String(message.color ?? '').slice(0, 16));
+      return publicState(await readStore());
     case 'REMOVE_ACCOUNT':
       await removeAccount(account);
       await updateBadge();
@@ -145,7 +162,7 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
 chrome.runtime.onMessage.addListener((message: Message, sender, reply: (value: Reply) => void) => {
   handle(message, sender).then(
     value => reply({ok: true, value}),
-    (error: Error) => reply({ok: false, error: error?.message || 'Неизвестная ошибка.'}),
+    (error: Error) => reply({ok: false, error: error?.message || t('error_unknown')}),
   );
   return true;
 });

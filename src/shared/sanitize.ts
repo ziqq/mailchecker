@@ -12,6 +12,11 @@
  * with its own Content Security Policy, so CSS `url()` loads are blocked
  * too unless remote content is allowed.
  *
+ * In the dark theme each colour of the message is adapted on its own, as
+ * dark-mode mail clients do: light backgrounds become dark and dark text
+ * becomes light, keeping hue and saturation; colours already fit for a dark
+ * page and images are left as they are.
+ *
  * @module shared/sanitize
  */
 
@@ -72,13 +77,124 @@ function isTracker(image: Element): boolean {
   );
 }
 
+/** Named colours whose lightness matters in mail: greys, white and black. */
+const NAMED: Readonly<Record<string, string>> = Object.freeze({
+  white: '#ffffff',
+  black: '#000000',
+  gray: '#808080',
+  grey: '#808080',
+  silver: '#c0c0c0',
+  gainsboro: '#dcdcdc',
+  whitesmoke: '#f5f5f5',
+  lightgray: '#d3d3d3',
+  lightgrey: '#d3d3d3',
+  darkgray: '#a9a9a9',
+  darkgrey: '#a9a9a9',
+  dimgray: '#696969',
+  dimgrey: '#696969',
+  snow: '#fffafa',
+  ivory: '#fffff0',
+  linen: '#faf0e6',
+  beige: '#f5f5dc',
+  navy: '#000080',
+});
+
+/** Colour literals in CSS: hex, `rgb()`/`rgba()` and the names above. */
+const COLOR = new RegExp(`#[0-9a-f]{3,8}\\b|rgba?\\([^)]*\\)|\\b(?:${Object.keys(NAMED).join('|')})\\b`, 'gi');
+
+/** Returns red, green, blue (0–255) and alpha of a colour literal, or null. */
+function parseColor(value: string): [number, number, number, number] | null {
+  const literal = NAMED[value.toLowerCase()] || value;
+  const hex = /^#([0-9a-f]{3,8})$/i.exec(literal)?.[1];
+  if (hex) {
+    const full = hex.length <= 4 ? [...hex].map(char => char + char).join('') : hex;
+    if (full.length !== 6 && full.length !== 8) return null;
+    const [r, g, b, a = 255] = (full.match(/../g) || []).map(pair => parseInt(pair, 16));
+    return [r, g, b, a / 255];
+  }
+  const parts = /^rgba?\(([^)]*)\)$/i
+    .exec(literal)?.[1]
+    .split(/[\s,/]+/)
+    .filter(Boolean);
+  if (!parts || parts.length < 3) return null;
+  const channel = (part: string) => (part.endsWith('%') ? (parseFloat(part) * 255) / 100 : parseFloat(part));
+  const alpha = parts[3] == null ? 1 : parts[3].endsWith('%') ? parseFloat(parts[3]) / 100 : parseFloat(parts[3]);
+  const rgb = parts.slice(0, 3).map(channel);
+  return rgb.some(Number.isNaN) || Number.isNaN(alpha) ? null : [rgb[0], rgb[1], rgb[2], alpha];
+}
+
+/** The dark page under a message. */
+const PAGE = '#171717';
+
+/** Returns two hex digits for an alpha from 0 to 1. */
+const alphaHex = (alpha: number): string =>
+  Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0');
+
+/**
+ * Returns [value] adapted to a dark page. Every grey or near-white background,
+ * white paper included, becomes [PAGE]: the message reads as one dark surface. A coloured
+ * background lighter than half is mirrored to a dark one, a foreground darker
+ * than half to a light one.
+ *
+ * @param value A colour literal.
+ * @param background Whether the colour paints a background.
+ */
+export function darkColor(value: string, background: boolean): string {
+  const rgb = parseColor(value);
+  if (!rgb) return value;
+  const [r, g, b] = rgb.slice(0, 3).map(channel => Math.min(255, Math.max(0, channel)) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const lightness = (max + min) / 2;
+  const delta = max - min;
+  const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
+  // Grey and near-white (lightly tinted paper) backgrounds are the page itself.
+  if (background && (saturation <= 0.15 || lightness >= 0.9)) return rgb[3] < 1 ? `${PAGE}${alphaHex(rgb[3])}` : PAGE;
+  if (background ? lightness <= 0.5 : lightness >= 0.5) return value;
+  const hue =
+    delta === 0 ? 0 : max === r ? ((g - b) / delta + 6) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+  // Black text becomes `#e8e8e8`; light coloured backgrounds stay above the page.
+  const mirrored = background ? Math.max(0.09, 1 - lightness) : Math.min(0.91, 1 - lightness);
+  const chroma = (1 - Math.abs(2 * mirrored - 1)) * saturation;
+  const x = chroma * (1 - Math.abs((hue % 2) - 1));
+  const m = mirrored - chroma / 2;
+  const [red, green, blue] = [
+    [chroma, x, 0],
+    [x, chroma, 0],
+    [0, chroma, x],
+    [0, x, chroma],
+    [x, 0, chroma],
+    [chroma, 0, x],
+  ][Math.floor(hue) % 6].map(channel => Math.round((channel + m) * 255));
+  return rgb[3] < 1 ? `rgba(${red}, ${green}, ${blue}, ${rgb[3]})` : `rgb(${red}, ${green}, ${blue})`;
+}
+
+/** CSS properties whose colours paint a background; other colour properties are foregrounds. */
+const BACKGROUND = /^(?:background|background-color|background-image)$/i;
+
+/** Properties whose colours are adapted. */
+const COLORED =
+  /^(?:background|background-color|background-image|color|border(?:-[a-z]+)*-?color|border(?:-[a-z]+)?|outline(?:-color)?|text-decoration-color|fill|stroke)$/i;
+
+/** Returns CSS declarations (a `style` attribute or a stylesheet) with colours adapted to a dark page. */
+export function darkCSS(css: string): string {
+  return css.replace(/([a-z-]+)(\s*:\s*)([^;{}]+)/gi, (whole, property: string, colon: string, value: string) =>
+    COLORED.test(property)
+      ? property + colon + value.replace(COLOR, color => darkColor(color, BACKGROUND.test(property)))
+      : whole,
+  );
+}
+
 /**
  * Sanitizes an HTML email body.
  *
  * @param html Untrusted HTML.
  * @param allowRemote Whether remote images may load.
+ * @param dark Whether to adapt the message's colours to the dark theme.
  */
-export function sanitizeEmail(html: string, allowRemote: boolean): SanitizedBody {
+export function sanitizeEmail(html: string, allowRemote: boolean, dark = false): SanitizedBody {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   let blocked = 0;
   let trackers = 0;
@@ -122,8 +238,22 @@ export function sanitizeEmail(html: string, allowRemote: boolean): SanitizedBody
       element.setAttribute('target', '_blank');
       element.setAttribute('rel', 'noopener noreferrer');
     }
+    if (dark) {
+      const style = element.getAttribute('style');
+      if (style) element.setAttribute('style', darkCSS(style));
+      for (const [name, background] of [
+        ['bgcolor', true],
+        ['color', false],
+        ['text', false],
+      ] as const) {
+        const value = element.getAttribute(name);
+        if (value) element.setAttribute(name, darkColor(value.trim(), background));
+      }
+    }
   }
-  const css = styles.map(style => `<style>${style.replace(/<\/style/gi, '')}</style>`).join('');
+  const css = styles
+    .map(style => `<style>${(dark ? darkCSS(style) : style).replace(/<\/style/gi, '')}</style>`)
+    .join('');
   return {html: css + (doc.body?.innerHTML || ''), blocked: blocked + trackers, trackers};
 }
 
@@ -149,7 +279,7 @@ export function textToHTML(text: string): string {
  *
  * @param body Sanitized body markup.
  * @param options.allowRemote Whether remote images and fonts may load.
- * @param options.dark Whether to use the dark plain-text palette (HTML mail keeps a light paper).
+ * @param options.dark Whether to use the dark palette; HTML mail is adapted by [sanitizeEmail].
  * @param options.plain Whether the body came from plain text.
  */
 export function frameDocument(
@@ -158,13 +288,13 @@ export function frameDocument(
 ): string {
   const remote = allowRemote ? ' https: http:' : '';
   const csp = `default-src 'none'; img-src data:${remote}; style-src 'unsafe-inline'; font-src data:${remote}`;
-  const background = plain && dark ? '#151619' : '#ffffff';
-  const color = plain && dark ? '#f2f1ed' : '#1a1a1a';
+  const background = dark ? (plain ? '#151619' : PAGE) : '#ffffff';
+  const color = dark ? (plain ? '#f2f1ed' : '#e8e8e8') : '#1a1a1a';
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><base target="_blank"><style>
 html,body{margin:0;background:${background};color:${color}}html{overflow-y:hidden}
 body{padding:16px 18px;font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow-wrap:anywhere}
-img{max-width:100%;height:auto}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:rgba(127,127,127,.15)}
-table{max-width:100%}pre{white-space:pre-wrap}a{color:${plain && dark ? '#ffb562' : '#0b62d6'}}
+img{max-width:100%;height:auto}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:${dark && !plain ? 'transparent' : 'rgba(127,127,127,.15)'}}
+table{max-width:100%}pre{white-space:pre-wrap}a{color:${dark ? '#8ab4f8' : '#0b62d6'}}
 .plain{white-space:pre-wrap}blockquote{margin:8px 0;padding-left:12px;border-left:3px solid rgba(127,127,127,.35);color:inherit}
 </style></head><body>${body}</body></html>`;
 }

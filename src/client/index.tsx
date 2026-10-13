@@ -15,6 +15,7 @@
 import {createEffect, onCleanup, onMount, Show} from 'solid-js';
 import {render} from 'solid-js/web';
 import {applyTheme} from '../shared/dom';
+import {localize} from '../shared/i18n';
 import {MessageList} from './components/MessageList';
 import {Reader} from './components/Reader';
 import {Sidebar} from './components/Sidebar';
@@ -52,6 +53,9 @@ function onKey(event: KeyboardEvent): void {
     case 's':
       if (entry) store.act(entry, entry.message.pinned ? 'unpin' : 'pin');
       break;
+    case 'r':
+      store.startReply();
+      break;
     case '/':
       document.getElementById('search')?.focus();
       break;
@@ -76,7 +80,7 @@ function App() {
     document.documentElement.dataset.size = preferences.popup;
   });
   onMount(() => {
-    store.load();
+    store.open();
     document.addEventListener('keydown', onKey);
     onCleanup(() => document.removeEventListener('keydown', onKey));
     if (__SANDBOX__) return;
@@ -92,10 +96,20 @@ function App() {
       <Sidebar />
       <MessageList />
       <Reader />
-      <Show when={store.toast()}>
-        <div class="toast" role="alert">
-          {store.toast()}
+      <Show when={store.busy()}>
+        <div class="busy" role="status">
+          <div class="busy-card">
+            <span class="spinner" />
+            {store.busy()}
+          </div>
         </div>
+      </Show>
+      <Show when={store.toast()}>
+        {toast => (
+          <div class="toast" classList={{error: toast().error}} role={toast().error ? 'alert' : 'status'}>
+            {toast().text}
+          </div>
+        )}
       </Show>
     </div>
   );
@@ -105,4 +119,5 @@ function App() {
 if (mode === 'popup' && Math.min(screen.width, screen.height) < 820 && matchMedia('(pointer: coarse)').matches)
   document.documentElement.dataset.narrow = 'true';
 
+localize();
 render(() => <App />, document.getElementById('root')!);

@@ -212,6 +212,11 @@ input {
   color: var(--soft-text);
   font-size: 13px;
   font-weight: 800;
+  // The mailbox colour: a ring in the account colour.
+  &.ringed {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 // Segmented control.

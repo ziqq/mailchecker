@@ -56,6 +56,38 @@ for (const file of await files(resolve(root, 'src'))) {
   );
 }
 
+// Locales: every language has the English keys (a counted string needs at least `key_other`, the
+// language picks its other plural forms), every key used in code exists, and the store description fits.
+const PLURAL = /_(zero|one|two|few|many|other)$/;
+const locales = await readdir(resolve(root, 'src/_locales'));
+const messages = Object.fromEntries(
+  await Promise.all(
+    locales.map(async name => [
+      name,
+      JSON.parse(await readFile(resolve(root, 'src/_locales', name, 'messages.json'), 'utf8')),
+    ]),
+  ),
+);
+expect(manifest.default_locale === 'en' && messages.en, 'The default locale must be `en`.');
+const required = [...new Set(Object.keys(messages.en || {}).map(key => key.replace(PLURAL, '_other')))];
+for (const [name, list] of Object.entries(messages)) {
+  for (const key of required) expect(list[key]?.message, `_locales/${name}: missing ${key}.`);
+  for (const key of Object.keys(list))
+    expect(required.includes(key.replace(PLURAL, '_other')), `_locales/${name}: unknown key ${key}.`);
+  expect(
+    (list.extension_description?.message || '').length <= 132,
+    `_locales/${name}: the description is over 132 characters.`,
+  );
+}
+for (const file of await files(resolve(root, 'src'))) {
+  if (!/\.(ts|tsx|html)$/.test(file)) continue;
+  const source = await readFile(file, 'utf8');
+  for (const [, call, attribute] of source.matchAll(/\bt\('([a-z0-9_]+)'|data-i18n(?:-[a-z-]+)?="([a-z0-9_]+)"/g))
+    expect(messages.en?.[call || attribute], `${file}: no message ${call || attribute}.`);
+  for (const [, key] of source.matchAll(/\btn\('([a-z0-9_]+)'/g))
+    expect(messages.en?.[`${key}_other`], `${file}: no message ${key}_other.`);
+}
+
 for (const target of ['chromium', 'safari']) {
   const outdir = await mkdtemp(join(tmpdir(), `mailchecker-${target}-`));
   try {
@@ -78,6 +110,10 @@ for (const target of ['chromium', 'safari']) {
     ];
     const client = await readFile(join(outdir, 'client.js'), 'utf8');
     expect(!client.includes('createFixtures'), `${target}: sandbox fixtures must not ship.`);
+    expect(
+      !client.includes(JSON.stringify(messages.ru.reader_empty.message).slice(1, -1)),
+      `${target}: the sandbox messages must not ship.`,
+    );
     for (const name of referenced) {
       const info = await stat(join(outdir, name)).catch(() => null);
       expect(info?.isFile() && info.size > 0, `${target}: missing build file ${name}.`);
