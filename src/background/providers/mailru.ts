@@ -19,7 +19,7 @@
  */
 import type {Account, InboxResult, MailMessage} from '../../shared/types';
 import {AuthError, requestJSON, type RequestOptions} from '../http';
-import {categorize, message} from './message';
+import {bareAddress, categorize, message, replySubject} from './message';
 import {firstAddress, sessionProvider} from './session';
 
 /** The webmail API. */
@@ -165,6 +165,18 @@ export const mailru = sessionProvider({
         OPTIONS,
       ),
     );
+  },
+  // The compose fields of the webmail API; `source.reply` links the reply to the original.
+  async reply(account, item, text) {
+    const html = text.replace(/[&<>"]/g, char => `&#${char.charCodeAt(0)};`).replace(/\n/g, '<br>');
+    await post(account.email, 'messages/send', {
+      attaches: JSON.stringify({list: []}),
+      body: JSON.stringify({html, text}),
+      correspondents: JSON.stringify({to: bareAddress(item.from), cc: '', bcc: ''}),
+      source: JSON.stringify({reply: item.id}),
+      subject: replySubject(item.subject),
+      send_date: '0',
+    });
   },
   actions: ['read', 'unread', 'trash'],
   async act(account, item, action) {

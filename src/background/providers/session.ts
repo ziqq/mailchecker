@@ -34,6 +34,8 @@ export interface SessionAdapter {
   actions?: readonly MessageAction[];
   /** Applies one of [actions] to a listed message in the webmail. */
   act?(account: Account, message: MailMessage, action: MessageAction): Promise<void>;
+  /** Sends a plain-text reply, when the webmail API allows it. */
+  reply?(account: Account, message: MailMessage, text: string): Promise<void>;
 }
 
 /**
@@ -142,6 +144,7 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
     async search() {
       return [];
     },
+    reply: adapter.reply && ((account, item, text) => adapter.reply!(account, item, text)),
     webURL: (account, message) => adapter.webURL(account, message),
   };
 }

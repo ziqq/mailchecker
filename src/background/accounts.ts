@@ -68,6 +68,7 @@ export function publicState(store: Store): PublicState {
       email: account.email,
       browser: account.settings?.browser === true,
       color: account.settings?.color || '',
+      reply: typeof adapter(account).reply === 'function',
     })),
     mailboxes: store.mailboxes || {},
     oauth: {

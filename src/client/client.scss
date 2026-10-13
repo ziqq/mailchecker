@@ -810,6 +810,51 @@ kbd {
   white-space: nowrap;
 }
 
+// The reply editor under a conversation.
+.composer {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 4px);
+  background: var(--surface-2);
+  .eyebrow {
+    margin: 0;
+  }
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 10px 12px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-solid);
+    color: var(--text);
+    font: inherit;
+    &:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--primary) 70%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+  }
+  .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    .muted {
+      margin-right: auto;
+      font-size: 12px;
+      // Touch screens have no shortcut keys.
+      @media (hover: none) {
+        display: none;
+      }
+    }
+  }
+}
+
 // An archive or trash in progress: the window is blurred under a progress card.
 .busy {
   position: fixed;
@@ -854,10 +899,14 @@ kbd {
   max-width: min(520px, calc(100vw - 32px));
   padding: 10px 14px;
   transform: translateX(-50%);
-  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+  border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface-solid);
   box-shadow: 0 16px 50px rgb(0 0 0 / 35%);
-  color: var(--danger);
+  color: var(--text);
   font-size: 13px;
+  &.error {
+    border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+    color: var(--danger);
+  }
 }

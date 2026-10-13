@@ -19,6 +19,7 @@ const paths: Readonly<Record<string, string>> = Object.freeze({
   theme: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m0 0v18',
   check: 'm5 12 4 4L20 5',
   copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
+  reply: 'm9 7-5 5 5 5M4 12h10a6 6 0 0 1 6 6v1',
   trash: 'M4 6h16M9 6V4h6v2m3 0-1 15H7L6 6',
   external: 'M14 3h7v7m0-7-12 12M11 3H3v18h18v-8',
   mail: 'M3 5h18v14H3zm0 1 9 7 9-7',

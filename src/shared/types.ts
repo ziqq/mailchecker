@@ -149,6 +149,8 @@ export interface PublicAccount {
   browser: boolean;
   /** The chosen colour, or empty for the colour by position. */
   color: string;
+  /** Replies are written in the extension; otherwise they open in the webmail. */
+  reply: boolean;
 }
 
 /** State sent to the client pages and Settings. */
@@ -171,6 +173,7 @@ export type Request =
   | {type: 'OPEN_APP'}
   | {type: 'OPEN'; account: string; message?: string}
   | {type: 'THREAD'; account: string; message: string; thread: string}
+  | {type: 'REPLY'; account: string; message: string; text: string}
   | {type: 'ACT'; account: string; message: string; action: MessageAction}
   | {type: 'SEARCH'; query: string}
   | {type: 'SIGN_IN'; account: string}

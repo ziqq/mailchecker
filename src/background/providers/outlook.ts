@@ -168,4 +168,12 @@ export const outlook: Provider = {
   },
 
   webURL: (_account, item) => item?.link || 'https://outlook.office.com/mail/inbox',
+
+  // Graph quotes the original message under the comment, as Outlook's own reply does.
+  async reply(account, item, text) {
+    await call(account.credentials, `/messages/${encodeURIComponent(item.id)}/reply`, {
+      method: 'POST',
+      json: {comment: text},
+    });
+  },
 };

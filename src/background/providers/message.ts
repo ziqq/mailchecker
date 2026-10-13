@@ -45,6 +45,8 @@ export interface Provider {
   act(account: Account, message: MailMessage, action: MessageAction): Promise<void>;
   /** Searches all mail of the account, newest first. */
   search(account: Account, query: string, limit: number): Promise<MailMessage[]>;
+  /** Sends a plain-text reply to a listed message; without it replies open in the webmail. */
+  reply?(account: Account, message: MailMessage, text: string): Promise<void>;
   /** The webmail page for the Inbox or a message. */
   webURL(account: Account, message?: MailMessage | null): string;
 }
@@ -223,3 +225,19 @@ export const addresses = (list: {name?: string; address?: string; email?: string
       return item.name ? `${item.name} <${address}>` : address;
     })
     .join(', ');
+
+/** Returns the subject of a reply: `Re: ` once in front of the original subject. */
+export const replySubject = (subject: string): string => (/^re:/i.test(subject.trim()) ? subject : `Re: ${subject}`);
+
+/** Returns the bare address of a `Name <address>` sender, or the value itself. */
+export const bareAddress = (value: string): string => (/<([^<>]+)>\s*$/.exec(value)?.[1] || value).trim();
+
+/** Returns base64 of the UTF-8 bytes of [value]; [url] gives the URL-safe alphabet without padding. */
+export function base64(value: string, url = false): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  for (let index = 0; index < bytes.length; index += 0x8000)
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  const encoded = btoa(binary);
+  return url ? encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : encoded;
+}

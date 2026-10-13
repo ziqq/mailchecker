@@ -22,11 +22,11 @@ import {oauthConfig as config} from './config';
 /** OAuth providers. */
 export type OAuthProvider = 'google' | 'microsoft';
 
-/** Gmail scope: read, mark read and move to Trash. */
+/** Gmail scope: read, mark read, move to Trash and send replies. */
 export const GOOGLE_SCOPE = 'https://www.googleapis.com/auth/gmail.modify';
 
-/** Microsoft Graph scopes; `offline_access` returns a refresh token. */
-export const MICROSOFT_SCOPE = 'offline_access openid email User.Read Mail.ReadWrite';
+/** Microsoft Graph scopes; `offline_access` returns a refresh token, `Mail.Send` sends replies. */
+export const MICROSOFT_SCOPE = 'offline_access openid email User.Read Mail.ReadWrite Mail.Send';
 
 /** Microsoft identity platform endpoints for work, school and personal accounts. */
 const MICROSOFT = 'https://login.microsoftonline.com/common/oauth2/v2.0';

@@ -194,6 +194,24 @@ export async function thread(accountID: string, messageID: string, threadID: str
 }
 
 /**
+ * Sends a plain-text reply to a listed message.
+ *
+ * @param accountID The account ID.
+ * @param messageID The message replied to.
+ * @param text The reply text.
+ */
+export async function reply(accountID: string, messageID: string, text: string): Promise<void> {
+  if (!messageID || messageID.length > 512) throw new Error('Некорректное письмо.');
+  if (!text.trim() || text.length > 100_000) throw new Error('Напишите ответ (до 100 000 символов).');
+  const {mailboxes = {}} = await readStore();
+  const item = lookup(mailboxes[accountID], messageID);
+  await withAccount(accountID, (module, account) => {
+    if (!module.reply) throw new Error('Для этого ящика ответ пишется в веб-почте.');
+    return module.reply(account, item, text);
+  });
+}
+
+/**
  * Searches all accounts and merges hits, newest first.
  *
  * Accounts that fail are skipped so one broken mailbox does not hide results.

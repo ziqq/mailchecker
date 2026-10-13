@@ -15,6 +15,7 @@ import {createMemo, createResource, createSignal, For, Match, Show, Switch} from
 import {request} from '../../shared/dom';
 import {initial, plural, senderName, shortDate} from '../../shared/format';
 import {icon} from '../../shared/icons';
+import type {Entry} from '../../shared/inbox';
 import type {ThreadMessage} from '../../shared/types';
 import {store} from '../store';
 import {MailFrame} from './MailFrame';
@@ -118,6 +119,44 @@ function Message(props: {message: ThreadMessage; open: boolean; allowRemote: boo
   );
 }
 
+/** The reply editor under a conversation: plain text, sent by the worker. */
+function Composer(props: {entry: Entry}) {
+  const [text, setText] = createSignal('');
+  const [sending, setSending] = createSignal(false);
+  const send = async (event: Event) => {
+    event.preventDefault();
+    if (!text().trim() || sending()) return;
+    setSending(true);
+    if (!(await store.reply(props.entry, text()))) setSending(false);
+  };
+  return (
+    <form class="composer" onSubmit={send}>
+      <p class="eyebrow">Ответ · {senderName(props.entry.message.from)}</p>
+      <textarea
+        ref={element => queueMicrotask(() => element.focus())}
+        rows={6}
+        maxLength={100_000}
+        placeholder="Текст ответа"
+        value={text()}
+        onInput={event => setText(event.currentTarget.value)}
+        onKeyDown={event => {
+          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) send(event);
+          if (event.key === 'Escape') store.setReplying(false);
+        }}
+      />
+      <div class="form-actions">
+        <span class="muted">⌘/Ctrl + Enter — отправить</span>
+        <button class="btn" type="button" onClick={() => store.setReplying(false)}>
+          Отмена
+        </button>
+        <button class="btn primary" type="submit" disabled={!text().trim() || sending()}>
+          {sending() ? 'Отправляем…' : 'Отправить'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 /** The reading pane. */
 export function Reader() {
   const [allowed, setAllowed] = createSignal<ReadonlySet<string>>(new Set());
@@ -168,6 +207,15 @@ export function Reader() {
           <Show when={entry()}>
             {current => (
               <>
+                <button
+                  class="round"
+                  type="button"
+                  title="Ответить · R"
+                  aria-label="Ответить"
+                  onClick={() => store.startReply()}
+                >
+                  {icon('reply')}
+                </button>
                 <button
                   class="round"
                   type="button"
@@ -265,6 +313,7 @@ export function Reader() {
                       />
                     )}
                   </For>
+                  <Show when={store.replying() && entry()}>{current => <Composer entry={current()} />}</Show>
                 </>
               )}
             </Match>

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.8
+
+- **ADDED**: «Ответить» (`R`) in the reader: a plain-text editor for Gmail and Outlook through sign-in, JMAP and Mail.ru; Gmail and Yandex Mail through the browser open the message in the webmail. Outlook asks for the `Mail.Send` permission on the next sign-in
+- **CHANGED**: mailboxes are checked every 30 seconds by default and when the popup opens if the last check is older than that
+- **CHANGED**: success messages (a sent reply) use the neutral toast; errors stay red
+
 ## 0.0.7
 
 - **ADDED**: a colour per mailbox: click the avatar in Settings → Ящики to pick it

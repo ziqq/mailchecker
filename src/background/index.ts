@@ -15,7 +15,7 @@
 import {preferences} from '../shared/preferences';
 import type {MessageAction, Preferences, Reply, RequestType} from '../shared/types';
 import {addAccount, publicState, removeAccount, setAccountColor, signIn} from './accounts';
-import {act, checkAccount, checkAll, open, openNotification, search, thread, updateBadge} from './mailbox';
+import {act, checkAccount, checkAll, open, openNotification, reply, search, thread, updateBadge} from './mailbox';
 import {hasNotifications, openApp} from './platform';
 import {readStore, writeStore} from './storage';
 
@@ -31,6 +31,7 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'STATE',
     'CHECK',
     'THREAD',
+    'REPLY',
     'ACT',
     'SEARCH',
     'OPEN',
@@ -98,6 +99,9 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       return publicState(await readStore());
     case 'THREAD':
       return thread(account, String(message.message ?? ''), String(message.thread ?? ''));
+    case 'REPLY':
+      await reply(account, String(message.message ?? ''), String(message.text ?? ''));
+      return true;
     case 'SEARCH':
       return search(String(message.query ?? ''));
     case 'OPEN_APP':

@@ -15,10 +15,10 @@ A mail client that lives in the browser toolbar, for mailboxes on **any domain**
 ## Features
 
 - **Opens from the toolbar:** click the icon for a full client (780×600, or a one-column mini popup 400×600 set in Settings): list, reader and actions without leaving the page. ⤢ opens the same client full screen in a tab.
-- **Unified Inbox** across all accounts, with an account switcher and per-account colours.
+- **Unified Inbox** across all accounts, with an account switcher and a colour you pick per account.
 - **Smart Inbox:** one list newest first with pinned messages on top; «Уведомления» and «Рассылки» filters; repeated notifications (CI failures, alerts) stacked into one `×N` item.
 - **Safe reading:** conversations with collapsed history, sanitized HTML in a script-free sandbox, remote images and trackers blocked until you allow them.
-- **Actions** synced with the provider: archive, trash, read/unread, pin; search across all accounts; keyboard shortcuts.
+- **Actions** synced with the provider: archive, trash, read/unread, pin, reply (in the extension, or in the webmail where no send API exists); search across all accounts; keyboard shortcuts.
 - **Responsive:** three columns in a wide tab, two in the popup, one with back navigation on narrow screens and iPhone.
 - **Badge and notifications** for new mail; theme (auto/light/dark) and palette (black and white graphite by default, or nine accent colours).
 - **Chromium and Safari** from one codebase — see [Safari](docs/SAFARI.md).

@@ -12,10 +12,13 @@
  */
 import type {Account, MailMessage} from '../../shared/types';
 import {AuthError, requestJSON} from '../http';
-import {addresses, categorize, count, message, threadMessage, type Provider} from './message';
+import {addresses, categorize, count, message, replySubject, threadMessage, type Provider} from './message';
 
 /** JMAP capabilities used by every request. */
 const USING = ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'];
+
+/** The JMAP capability for sending mail. */
+const SUBMISSION = 'urn:ietf:params:jmap:submission';
 
 /** One JMAP method call: name, arguments without `accountId`, tag. */
 type Call = [string, Record<string, unknown>, string];
@@ -92,16 +95,16 @@ async function session(account: Pick<Account, 'credentials' | 'settings'>) {
   return {apiURL, accountID, username: String(value.username || 'JMAP').slice(0, 320)};
 }
 
-/** Runs JMAP method calls and returns responses by call tag. */
+/** Runs JMAP method calls (with the capabilities in [using]) and returns responses by call tag. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function run(account: Account, calls: Call[]): Promise<Record<string, any>> {
+async function run(account: Account, calls: Call[], using = USING): Promise<Record<string, any>> {
   const current = await session(account);
   const value = await requestJSON<{methodResponses?: [string, Record<string, unknown>, string][]}>(current.apiURL, {
     method: 'POST',
     token: account.credentials.token,
     service: 'JMAP',
     json: {
-      using: USING,
+      using,
       methodCalls: calls.map(([name, args, tag]) => [name, {accountId: current.accountID, ...args}, tag]),
     },
   });
@@ -265,4 +268,68 @@ export const jmap: Provider = {
   search: (account, text, limit) => query(account, {text}, limit),
 
   webURL: account => account.settings.webURL || new URL(sessionURL(account)).origin,
+
+  // A draft in Drafts, submitted with the first identity and moved to Sent on success (RFC 8621 §7).
+  async reply(account, item, text) {
+    const roles = await mailboxes(account);
+    if (!roles.drafts || !roles.sent) throw new Error('В ящике нет папок «Черновики» и «Отправленные».');
+    const replies = await run(
+      account,
+      [
+        ['Identity/get', {ids: null}, 'identities'],
+        [
+          'Email/get',
+          {ids: [item.id], properties: ['messageId', 'references', 'from', 'replyTo', 'subject']},
+          'original',
+        ],
+      ],
+      [...USING, SUBMISSION],
+    );
+    const identity = replies.identities?.list?.[0] as {id?: string; email?: string; name?: string} | undefined;
+    const original = replies.original?.list?.[0] as
+      | {messageId?: string[]; references?: string[]; from?: unknown[]; replyTo?: unknown[]; subject?: string}
+      | undefined;
+    if (!identity?.id || !identity.email) throw new Error('JMAP: нет адреса отправителя для ответа.');
+    const ids = Array.isArray(original?.messageId) ? original.messageId : [];
+    const set = await run(
+      account,
+      [
+        [
+          'Email/set',
+          {
+            create: {
+              draft: {
+                mailboxIds: {[roles.drafts.id]: true},
+                keywords: {$draft: true, $seen: true},
+                from: [{email: identity.email, name: identity.name || null}],
+                to: original?.replyTo?.length ? original.replyTo : original?.from || [],
+                subject: replySubject(original?.subject || item.subject),
+                inReplyTo: ids.length ? ids : null,
+                references: ids.length ? [...(original?.references || []), ...ids] : null,
+                bodyValues: {body: {value: text}},
+                textBody: [{partId: 'body', type: 'text/plain'}],
+              },
+            },
+          },
+          'email',
+        ],
+        [
+          'EmailSubmission/set',
+          {
+            create: {send: {identityId: identity.id, emailId: '#draft'}},
+            onSuccessUpdateEmail: {
+              '#send': {
+                [`mailboxIds/${roles.drafts.id}`]: null,
+                [`mailboxIds/${roles.sent.id}`]: true,
+                'keywords/$draft': null,
+              },
+            },
+          },
+          'submission',
+        ],
+      ],
+      [...USING, SUBMISSION],
+    );
+    if (set.email?.notCreated || set.submission?.notCreated) throw new Error('JMAP: сервер не отправил ответ.');
+  },
 };

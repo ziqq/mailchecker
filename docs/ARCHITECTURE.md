@@ -72,6 +72,7 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 | `OPTIONS`                       | client           | Open Settings.                                                         |
 | `ADD_ACCOUNT`, `REMOVE_ACCOUNT` | Settings         | Connect or remove a mailbox.                                           |
 | `ACCOUNT_COLOR`                 | Settings         | Set a mailbox colour from `ACCOUNT_COLORS` (empty: by position).       |
+| `REPLY`                         | Client           | Send a plain-text reply; accounts without `reply` open the webmail.    |
 
 ## Service worker
 

@@ -52,6 +52,9 @@ function onKey(event: KeyboardEvent): void {
     case 's':
       if (entry) store.act(entry, entry.message.pinned ? 'unpin' : 'pin');
       break;
+    case 'r':
+      store.startReply();
+      break;
     case '/':
       document.getElementById('search')?.focus();
       break;
@@ -76,7 +79,7 @@ function App() {
     document.documentElement.dataset.size = preferences.popup;
   });
   onMount(() => {
-    store.load();
+    store.open();
     document.addEventListener('keydown', onKey);
     onCleanup(() => document.removeEventListener('keydown', onKey));
     if (__SANDBOX__) return;
@@ -101,9 +104,11 @@ function App() {
         </div>
       </Show>
       <Show when={store.toast()}>
-        <div class="toast" role="alert">
-          {store.toast()}
-        </div>
+        {toast => (
+          <div class="toast" classList={{error: toast().error}} role={toast().error ? 'alert' : 'status'}>
+            {toast().text}
+          </div>
+        )}
       </Show>
     </div>
   );

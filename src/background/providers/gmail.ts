@@ -11,10 +11,13 @@ import type {Account, Credentials, MailMessage, MessageAction} from '../../share
 import {requestJSON, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
 import {
+  bareAddress,
+  base64,
   categorize,
   count,
   decodeEntities,
   message,
+  replySubject,
   threadMessage,
   type Provider,
   type RawThreadMessage,
@@ -182,6 +185,31 @@ export const gmail: Provider = {
   },
 
   search: (account, query, limit) => list(account.credentials, query, limit),
+
+  // A plain-text RFC 5322 message in the original thread, with `In-Reply-To` and `References`.
+  async reply(account, item, text) {
+    const original = await call<GmailMessage>(
+      account.credentials,
+      `/messages/${encodeURIComponent(item.id)}?format=metadata` +
+        ['From', 'Reply-To', 'Subject', 'Message-ID', 'References'].map(name => `&metadataHeaders=${name}`).join(''),
+    );
+    const headers = headersOf(original?.payload);
+    const id = headers['message-id'] || '';
+    const lines = [
+      `To: ${bareAddress(headers['reply-to'] || headers.from || item.from)}`,
+      `Subject: =?UTF-8?B?${base64(replySubject(headers.subject || item.subject))}?=`,
+      ...(id ? [`In-Reply-To: ${id}`, `References: ${[headers.references, id].filter(Boolean).join(' ')}`] : []),
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      base64(text).replace(/.{76}/g, '$&\r\n'),
+    ];
+    await call(account.credentials, '/messages/send', {
+      method: 'POST',
+      json: {raw: base64(lines.join('\r\n'), true), threadId: original?.threadId || item.thread},
+    });
+  },
 
   webURL(account: Account, item?: MailMessage | null) {
     const base = `https://mail.google.com/mail/?authuser=${encodeURIComponent(account.email)}`;
