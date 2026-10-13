@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.12
+
+- **FIXED**: grey backgrounds of dark HTML mail differed from band to band; white paper is now the page and every other grey background (header bands, panels, blocked images) one colour, `#2b2b2b`
+
 ## 0.0.11
 
 - **FIXED**: dark grey bands in HTML mail (headers meant to stand out on white) nearly merged with the dark page; they are lifted to `#2b2b2b` so they still read as bands

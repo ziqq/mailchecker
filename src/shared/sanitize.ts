@@ -123,14 +123,17 @@ function parseColor(value: string): [number, number, number, number] | null {
   return rgb.some(Number.isNaN) || Number.isNaN(alpha) ? null : [rgb[0], rgb[1], rgb[2], alpha];
 }
 
-/** The lightness of dark grey backgrounds on the dark page: clearly above the `#171717` surface. */
-const BAND = 0.17;
+/** The dark page under a message. */
+const PAGE = '#171717';
+
+/** Every other grey background on the dark page (header bands, panels, image areas): one colour above the page. */
+const BAND = '#2b2b2b';
 
 /**
- * Returns [value] adapted to a dark page: a background lighter than half is
- * mirrored to a dark one, a foreground darker than half to a light one. A
- * near-black grey background (a header band meant to stand out on white) is
- * lifted above the page so it still reads as a band.
+ * Returns [value] adapted to a dark page. Grey backgrounds take two colours
+ * only: white paper becomes [PAGE], any other grey [BAND], so a message's
+ * bands and panels match. A coloured background lighter than half is mirrored
+ * to a dark one, a foreground darker than half to a light one.
  *
  * @param value A colour literal.
  * @param background Whether the colour paints a background.
@@ -144,17 +147,19 @@ export function darkColor(value: string, background: boolean): string {
   const lightness = (max + min) / 2;
   const delta = max - min;
   const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
-  if (background && lightness <= 0.5) {
-    if (saturation > 0.15 || lightness >= BAND) return value;
-  } else if (!background && lightness >= 0.5) return value;
+  if (background && saturation <= 0.15) {
+    const grey = lightness >= 0.96 ? PAGE : BAND;
+    return rgb[3] < 1
+      ? `${grey}${Math.round(rgb[3] * 255)
+          .toString(16)
+          .padStart(2, '0')}`
+      : grey;
+  }
+  if (background ? lightness <= 0.5 : lightness >= 0.5) return value;
   const hue =
     delta === 0 ? 0 : max === r ? ((g - b) / delta + 6) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
-  // White paper becomes the reader surface (`#171717`); black text becomes `#e8e8e8`; dark grey bands become `#2b2b2b`.
-  const mirrored = background
-    ? lightness <= 0.5
-      ? BAND
-      : Math.max(0.09, 1 - lightness)
-    : Math.min(0.91, 1 - lightness);
+  // Black text becomes `#e8e8e8`; light coloured backgrounds stay above the page.
+  const mirrored = background ? Math.max(0.09, 1 - lightness) : Math.min(0.91, 1 - lightness);
   const chroma = (1 - Math.abs(2 * mirrored - 1)) * saturation;
   const x = chroma * (1 - Math.abs((hue % 2) - 1));
   const m = mirrored - chroma / 2;
@@ -286,12 +291,12 @@ export function frameDocument(
 ): string {
   const remote = allowRemote ? ' https: http:' : '';
   const csp = `default-src 'none'; img-src data:${remote}; style-src 'unsafe-inline'; font-src data:${remote}`;
-  const background = dark ? (plain ? '#151619' : '#171717') : '#ffffff';
+  const background = dark ? (plain ? '#151619' : PAGE) : '#ffffff';
   const color = dark ? (plain ? '#f2f1ed' : '#e8e8e8') : '#1a1a1a';
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><base target="_blank"><style>
 html,body{margin:0;background:${background};color:${color}}html{overflow-y:hidden}
 body{padding:16px 18px;font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;overflow-wrap:anywhere}
-img{max-width:100%;height:auto}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:rgba(127,127,127,.15)}
+img{max-width:100%;height:auto}img[data-blocked]{display:inline-block;min-width:16px;min-height:16px;background:${dark && !plain ? BAND : 'rgba(127,127,127,.15)'}}
 table{max-width:100%}pre{white-space:pre-wrap}a{color:${dark ? '#8ab4f8' : '#0b62d6'}}
 .plain{white-space:pre-wrap}blockquote{margin:8px 0;padding-left:12px;border-left:3px solid rgba(127,127,127,.35);color:inherit}
 </style></head><body>${body}</body></html>`;
