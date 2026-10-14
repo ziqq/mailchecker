@@ -35,10 +35,13 @@ const bundled = (
         name: 'mock-worker-transport',
         /** Routes actual store requests to the test worker, without replacing the store logic. */
         setup(builder) {
-          builder.onLoad({filter: /shared[\\/]dom\.ts$/}, () => ({
-            contents:
-              'export const request = message => globalThis.transport(message); export const errorMessage = error => error.message;',
+          builder.onLoad({filter: /shared[\\/]dom\.ts$/}, async () => ({
+            contents: (await readFile(resolve(root, 'src/shared/dom.ts'), 'utf8')).replace(
+              /export async function request<R = unknown>\(message: Request\): Promise<R> \{[\s\S]*?\n\}/,
+              'export const request = message => globalThis.transport(message);',
+            ),
             loader: 'ts',
+            resolveDir: resolve(root, 'src/shared'),
           }));
         },
       },
@@ -82,13 +85,23 @@ function start() {
     mailboxes: {A: {messages: [message('m1')], unread: 0, checkedAt: Date.now(), error: '', reauth: false}},
     oauth: {},
   };
-  const server = {bodies: [body('m1', 'Old body')], search: [], calls: [], request: null};
+  const server = {bodies: [body('m1', 'Old body')], search: [], calls: [], request: null, authenticated: false};
+  const document = Object.assign(new EventTarget(), {
+    documentElement: {dataset: {mode: 'app'}},
+    visibilityState: 'visible',
+  });
+  const window = new EventTarget();
   const context = createContext({
-    document: {documentElement: {dataset: {mode: 'app'}}},
+    document,
+    window,
     setTimeout: () => 0,
     clearTimeout() {},
     async transport(request) {
       server.calls.push(request);
+      if (server.authenticated && (request.type === 'CHECK' || request.type === 'SIGN_IN')) {
+        data.mailboxes.A.reauth = false;
+        data.mailboxes.A.error = '';
+      }
       if (request.type === 'THREAD') return server.request ? server.request(request) : structuredClone(server.bodies);
       if (request.type === 'SEARCH') return structuredClone(server.search);
       if (request.type === 'REPLY') {
@@ -103,7 +116,7 @@ function start() {
     },
   });
   runInContext(bundled, context);
-  return {store: context.client, data, server};
+  return {store: context.client, data, server, document, window};
 }
 
 test('conversation refresh returns new mail while timestamp-only checks reuse the cache', async () => {
@@ -192,4 +205,62 @@ test('reader metadata survives a filter or Inbox refresh that hides the selected
   assert.equal(w.server.calls.at(-1).message, 'm1');
   assert.equal(w.server.calls.at(-1).action, 'trash');
   assert.equal(w.store.selected(), null);
+});
+
+test('returning from browser sign-in rechecks once and removes the old authentication error', async () => {
+  const w = start();
+  w.data.accounts[0].browser = true;
+  w.data.mailboxes.A.reauth = true;
+  w.data.mailboxes.A.error = 'Sign in';
+  await w.store.load();
+  await w.store.signIn('A');
+  assert.equal(w.store.state().mailboxes.A.reauth, true);
+  w.server.authenticated = true;
+  w.window.dispatchEvent(new Event('focus'));
+  w.document.dispatchEvent(new Event('visibilitychange'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(w.server.calls.filter(call => call.type === 'CHECK').length, 1);
+  assert.equal(w.store.state().mailboxes.A.reauth, false);
+  assert.equal(w.store.state().mailboxes.A.error, '');
+});
+
+test('a recent browser sign-in error is checked when the popup is reopened', async () => {
+  const w = start();
+  w.data.accounts[0].browser = true;
+  w.data.mailboxes.A.reauth = true;
+  w.data.mailboxes.A.error = 'Sign in';
+  w.server.authenticated = true;
+  await w.store.open();
+  assert.equal(w.server.calls.filter(call => call.type === 'CHECK').length, 1);
+  assert.equal(w.store.state().mailboxes.A.reauth, false);
+});
+
+test('browser sign-in return waits until the page is visible', async () => {
+  const w = start();
+  w.data.accounts[0].browser = true;
+  w.data.mailboxes.A.reauth = true;
+  await w.store.load();
+  await w.store.signIn('A');
+  w.document.visibilityState = 'hidden';
+  w.window.dispatchEvent(new Event('focus'));
+  assert.equal(w.server.calls.filter(call => call.type === 'CHECK').length, 0);
+  w.server.authenticated = true;
+  w.document.visibilityState = 'visible';
+  w.document.dispatchEvent(new Event('visibilitychange'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(w.store.state().mailboxes.A.reauth, false);
+});
+
+test('a completed sign-in cancels a previous pending return check', async () => {
+  const w = start();
+  w.data.accounts[0].browser = true;
+  w.data.mailboxes.A.reauth = true;
+  await w.store.load();
+  await w.store.signIn('A');
+  w.server.authenticated = true;
+  await w.store.signIn('A');
+  w.window.dispatchEvent(new Event('focus'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(w.server.calls.filter(call => call.type === 'CHECK').length, 0);
+  assert.equal(w.store.state().mailboxes.A.reauth, false);
 });

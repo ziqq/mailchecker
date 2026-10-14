@@ -110,14 +110,28 @@ export function parseInbox(html: string, now = Date.now()): InboxResult {
 /** Session request options. */
 const OPTIONS = {session: true, service: t('service_yandex')};
 
+/** Matches one trusted class token in a quoted or unquoted opening tag. */
+function classTag(name: string): RegExp {
+  return new RegExp(
+    `\\bclass\\s*=\\s*(?:"(?:[^"]*\\s)?${name}(?:\\s[^"]*)?"|'(?:[^']*\\s)?${name}(?:\\s[^']*)?'|${name}(?=[\\s>]))`,
+  );
+}
+
 /** Reads the mailbox address from the lite page's account header, never from message senders. */
 export function parseOwner(html: string): string {
-  const [account] = elements(html, 'div', /class=["'][^"']*\bb-head-user\b[^"']*["']/, 0, 1);
-  const login = account
-    ? pick(account, [
-        /<a\b[^>]*href=["']https:\/\/passport\.yandex\.(?:ru|com)\/profile\/avatars\/?["'][^>]*>([\s\S]*?)<\/a>/,
+  const [account] = elements(html, 'div', classTag('b-head-user'), 0, 1);
+  const [active] = account ? elements(account, 'li', classTag('b-dropdown__visible'), 0, 1) : [];
+  const login = active
+    ? pick(active, [
+        // Yandex formats the first letter in a nested <b>; the accessible name keeps the login intact.
+        /<a\b[^>]*\baria-label=["']([^"']+)["']/,
+        /<a\b[^>]*>([\s\S]*?)<\/a>/,
       ])
-    : '';
+    : account
+      ? pick(account, [
+          /<a\b[^>]*href=["']https:\/\/passport\.yandex\.(?:ru|com)\/profile\/avatars\/?["'][^>]*>([\s\S]*?)<\/a>/,
+        ])
+      : '';
   if (/^[\w.-]+$/.test(login)) return `${login.toLowerCase()}@yandex.ru`;
   const header =
     login ||

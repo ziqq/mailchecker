@@ -11,7 +11,7 @@
  * @module client/store
  */
 import {batch, createMemo, createRoot, createSignal} from 'solid-js';
-import {request, errorMessage} from '../shared/dom';
+import {request, errorMessage, afterReturn} from '../shared/dom';
 import {counts, merge, order, sections, type Entry, type Filter} from '../shared/inbox';
 import type {MessageAction, Preferences, PublicState, SearchHit, ThreadMessage} from '../shared/types';
 import {t} from '../shared/i18n';
@@ -57,6 +57,8 @@ export const store = createRoot(() => {
   const [replying, setReplying] = createSignal(false);
   /** The archive or trash in progress, shown over the window; empty when idle. */
   const [busy, setBusy] = createSignal('');
+  /** Cancels a pending browser-session check when another sign-in starts. */
+  let cancelSignInRetry: (() => void) | undefined;
 
   /** All Inbox entries of the selected account(s). */
   const entries = createMemo(() => {
@@ -132,11 +134,33 @@ export const store = createRoot(() => {
     }
   }
 
-  /** Loads the state, then checks now if a mailbox was last checked more than 30 seconds ago. */
+  /** Loads the state, then checks old mailboxes and browser sessions awaiting sign-in. */
   async function open(): Promise<void> {
     await load();
     const boxes = Object.values(state()?.mailboxes || {});
-    if (boxes.some(box => box.checkedAt < Date.now() - 30_000)) await refresh();
+    const current = state();
+    const browserSignIn = current?.accounts.some(account => account.browser && current.mailboxes[account.id]?.reauth);
+    if (browserSignIn || boxes.some(box => box.checkedAt < Date.now() - 30_000)) await refresh();
+  }
+
+  /** Rechecks sign-in now and once on returning from webmail when the browser session still needs authentication. */
+  async function signIn(accountID: string): Promise<void> {
+    cancelSignInRetry?.();
+    cancelSignInRetry = undefined;
+    try {
+      const value = await request<PublicState>({type: 'SIGN_IN', account: accountID});
+      updateState(value);
+      if (
+        value.accounts.some(account => account.id === accountID && account.browser) &&
+        value.mailboxes[accountID]?.reauth
+      )
+        cancelSignInRetry = afterReturn(() => {
+          cancelSignInRetry = undefined;
+          return refresh();
+        });
+    } catch (error) {
+      fail(error);
+    }
   }
 
   /** Checks all mailboxes now. */
@@ -367,6 +391,7 @@ export const store = createRoot(() => {
     load,
     open,
     refresh,
+    signIn,
     select,
     move,
     toggleStack,

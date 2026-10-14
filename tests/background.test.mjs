@@ -755,9 +755,14 @@ for (const action of ['archive', 'trash']) {
 
 /** A Yandex lite account menu and message list; sender text must not establish ownership. */
 function yandexHTML(owner, unread = true, header = 'menu') {
+  const name =
+    header === 'plain'
+      ? owner
+      : `<span class="b-pseudo-link"><b class="b-user"><b class="b-user__first-letter">${owner[0]}</b>${owner.slice(1)}</b></span>`;
+  const label = header === 'plain' ? '' : ` aria-label="${owner}"`;
   const login =
-    header === 'menu'
-      ? `<div class="b-head-user"><div class="b-dropdown"><ul><li class="b-dropdown__item b-dropdown__visible"><a href="https://passport.yandex.ru/profile/avatars/" class="b-dropdown__or">${owner}</a></li></ul></div></div>`
+    header === 'menu' || header === 'plain'
+      ? `<div class="b-head-user"><div class="b-dropdown"><ul><li class="b-dropdown__item b-dropdown__visible"><a href="https://passport.yandex.ru/profile/avatars/" class="b-dropdown__or"${label}>${name}</a></li></ul></div></div>`
       : header === 'legacy'
         ? `<span class="b-head-user__login">${owner}</span>`
         : '';
@@ -826,19 +831,24 @@ for (const [provider, webURL] of [
   ['mailru', 'https://e.mail.ru/inbox/'],
 ]) {
   for (const page of ['popup', 'options']) {
-    test(`${page} sign-in opens ${provider} webmail without rechecking a refused session`, async () => {
+    test(`${page} sign-in checks ${provider} before opening webmail for a refused session`, async () => {
       const w = startWorker({identity: false});
       w.stores.local.accounts = [
         {id: 'session', provider, email: 'me@example.test', credentials: {token: ''}, settings: {browser: true}},
       ];
       w.stores.local.mailboxes = {session: {messages: [], unread: 0, error: 'Sign in', reauth: true, checkedAt: 1}};
       const before = structuredClone(w.stores.local);
+      let checks = 0;
       w.context.fetch = async () => {
-        assert.fail('Sign-in must open the webmail, not repeat a refused request');
+        checks++;
+        return json({}, 401);
       };
       await w.ok({type: 'SIGN_IN', account: 'session'}, page);
       assert.deepEqual(w.tabs, [webURL]);
-      assert.deepEqual(w.stores.local, before, 'opening a tab must not claim successful authentication');
+      assert.equal(checks, 1);
+      assert.deepEqual(w.stores.local.accounts, before.accounts);
+      assert.equal(w.stores.local.mailboxes.session.reauth, true);
+      assert.equal(w.stores.local.mailboxes.session.unread, 0);
     });
   }
 }
@@ -907,4 +917,53 @@ test('Yandex thread links cannot claim a successful row read without a supported
   assert.equal(result.ok, false);
   assert.equal(w.stores.local.mailboxes[account].messages[0].unread, true);
   assert.equal(bodies, 0);
+});
+
+for (const page of ['popup', 'options']) {
+  test(page + ' sign-in clears a stale Yandex error when the current session is valid', async () => {
+    const w = startWorker({identity: false});
+    w.stores.local.accounts = [
+      {
+        id: 'session',
+        provider: 'yandex',
+        email: 'my.address@yandex.ru',
+        credentials: {token: ''},
+        settings: {browser: true},
+      },
+    ];
+    w.stores.local.mailboxes = {
+      session: {messages: [], unread: 0, error: 'Sign in', reauth: true, checkedAt: Date.now()},
+    };
+    w.context.fetch = async () => new Response(yandexHTML('my-address'));
+    const state = await w.ok({type: 'SIGN_IN', account: 'session'}, page);
+    assert.equal(state.mailboxes.session.reauth, false);
+    assert.equal(state.mailboxes.session.error, '');
+    assert.deepEqual(w.tabs, [], 'a valid session must not send the user through sign-in again');
+  });
+}
+
+for (const attributes of ['unquoted', 'changed profile URL']) {
+  test('Yandex recognises the active account menu with ' + attributes, async () => {
+    const w = startWorker();
+    let html = yandexHTML('my-address');
+    if (attributes === 'unquoted')
+      html = html
+        .replace('class="b-head-user"', 'class=b-head-user')
+        .replace('class="b-dropdown__item b-dropdown__visible"', 'class=b-dropdown__visible');
+    else
+      html = html.replace(
+        'https://passport.yandex.ru/profile/avatars/',
+        '//passport.yandex.ru/profile/avatars/?origin=mail',
+      );
+    w.context.fetch = async () => new Response(html);
+    await w.ok({type: 'ADD_ACCOUNT', provider: 'yandex', browser: true, input: {email: 'my.address@yandex.ru'}});
+    assert.equal(w.stores.local.mailboxes[w.stores.local.accounts[0].id].reauth, false);
+  });
+}
+
+test('Yandex keeps accepting a plain account-menu login without an accessible name', async () => {
+  const w = startWorker();
+  w.context.fetch = async () => new Response(yandexHTML('my-address', true, 'plain'));
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'yandex', browser: true, input: {email: 'my.address@yandex.ru'}});
+  assert.equal(w.stores.local.mailboxes[w.stores.local.accounts[0].id].reauth, false);
 });

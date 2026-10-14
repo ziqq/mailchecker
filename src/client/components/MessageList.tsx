@@ -8,7 +8,6 @@
  * @module client/components/MessageList
  */
 import {createSignal, For, Match, Show, Switch} from 'solid-js';
-import {request} from '../../shared/dom';
 import {initial, senderName, shortDate} from '../../shared/format';
 import {t, tn} from '../../shared/i18n';
 import {accountColor, type Entry, type Filter, type Item} from '../../shared/inbox';
@@ -187,7 +186,12 @@ function Notices() {
             <button
               class="btn primary small"
               type="button"
-              onClick={() => request({type: 'SIGN_IN', account: account.id}).then(() => store.load(), store.fail)}
+              onClick={async event => {
+                const button = event.currentTarget;
+                button.disabled = true;
+                await store.signIn(account.id);
+                button.disabled = false;
+              }}
             >
               {t('action_sign_in')}
             </button>

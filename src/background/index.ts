@@ -117,8 +117,11 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
     case 'SIGN_IN': {
       const stored = ((await readStore()).accounts || []).find(item => item.id === account);
       if (stored?.settings?.browser) {
-        await open(account);
-        return publicState(await readStore());
+        await checkAccount(account);
+        await updateBadge();
+        const state = publicState(await readStore());
+        if (state.mailboxes[account]?.reauth) await open(account);
+        return state;
       }
       await requireIdentity();
       await signIn(account);

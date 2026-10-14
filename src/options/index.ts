@@ -11,18 +11,29 @@
  *
  * @module options/index
  */
-import {applyTheme, byID, el, errorMessage, request} from '../shared/dom';
+import {afterReturn, applyTheme, byID, el, errorMessage, request} from '../shared/dom';
 import {initial, shortDate} from '../shared/format';
 import {icon, providerMark} from '../shared/icons';
 import {ACCOUNT_COLORS, accountColor} from '../shared/inbox';
 import {accents, palettes, popupSizes, themes} from '../shared/preferences';
-import type {Palette, PopupSize, Preferences, ProviderID, PublicState, Request, Theme} from '../shared/types';
+import type {
+  Palette,
+  PopupSize,
+  Preferences,
+  ProviderID,
+  PublicAccount,
+  PublicState,
+  Request,
+  Theme,
+} from '../shared/types';
 import {localize, t} from '../shared/i18n';
 
 /** The rendered public state. */
 let state: PublicState | null = null;
 /** The account whose colour palette is open, or empty. */
 let colorsFor = '';
+/** Cancels a pending browser-session check when another sign-in starts. */
+let cancelSignInRetry: (() => void) | undefined;
 
 const form = byID<HTMLFormElement>('jmap-form');
 const addressDialog = byID<HTMLDialogElement>('address-dialog');
@@ -135,6 +146,27 @@ async function run(button: HTMLButtonElement, message: Request, done: (value: St
   }
 }
 
+/** Reports the verified state and schedules one check on return when sign-in opened the webmail. */
+function signedIn(account: PublicAccount): string {
+  const box = state?.mailboxes[account.id];
+  if (account.browser && box?.reauth) {
+    cancelSignInRetry = afterReturn(() => {
+      cancelSignInRetry = undefined;
+      request<PublicState>({type: 'CHECK'}).then(
+        value => {
+          state = value;
+          const error = value.mailboxes[account.id]?.error;
+          status(error || t('signed_in', account.email), Boolean(error));
+          render();
+        },
+        error => status(errorMessage(error), true),
+      );
+    });
+    return t('error_sign_in_webmail', account.label);
+  }
+  return box?.error || t('signed_in', account.email);
+}
+
 /** Requests the browser sign-in permission inside a click. */
 async function allowIdentity(): Promise<boolean> {
   if (await chrome.permissions.request({permissions: ['identity']})) return true;
@@ -203,7 +235,7 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
         el(
           'button',
           {
-            class: 'avatar ringed',
+            class: 'avatar ringed account-color-toggle',
             type: 'button',
             style: `--ring: ${color}`,
             title: t('account_color_title'),
@@ -215,8 +247,9 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
             },
           },
           initial(account.email),
+          el('span', {class: 'account-color-caret', 'aria-hidden': 'true'}, icon('chevron')),
         ),
-        el('div', {class: 'account-main'}, el('strong', {}, account.email), detail, colors),
+        el('div', {class: 'account-main'}, el('strong', {}, account.email), detail),
         el('span', {class: 'tile', title: account.label}, providerMark(account.provider)),
         el(
           'div',
@@ -229,13 +262,11 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
                   type: 'button',
                   onclick: async (event: Event) => {
                     const button = event.currentTarget as HTMLButtonElement;
-                    if (account.browser || (await allowIdentity()))
-                      await run(button, {type: 'SIGN_IN', account: account.id}, () =>
-                        t(
-                          account.browser ? 'error_sign_in_webmail' : 'signed_in',
-                          account.browser ? account.label : account.email,
-                        ),
-                      );
+                    if (account.browser || (await allowIdentity())) {
+                      cancelSignInRetry?.();
+                      cancelSignInRetry = undefined;
+                      await run(button, {type: 'SIGN_IN', account: account.id}, () => signedIn(account));
+                    }
                   },
                 },
                 t('action_sign_in_again'),
@@ -269,6 +300,7 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
             icon('trash'),
           ),
         ),
+        colors,
       );
     }),
   );

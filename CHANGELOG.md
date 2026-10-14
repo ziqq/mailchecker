@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.0.25
+
+- **CHANGED**: mailbox colour selection opens from an avatar with a persistent dropdown caret; the extra per-account text buttons are removed
+
+## 0.0.24
+
+- **CHANGED**: Settings exposes mailbox colour through a labelled button instead of an undisclosed avatar action
+- **FIXED**: expanding mailbox colours keeps the avatar and account actions fixed in their row at wide and phone widths
+
+## 0.0.23
+
+- **FIXED**: Yandex account-menu ownership uses the accessible login name, so first-letter formatting no longer rejects an already authenticated mailbox
+
+## 0.0.22
+
+- **FIXED**: browser-session sign-in verifies the current session before opening webmail, clearing stale authentication errors immediately when already signed in
+- **FIXED**: Settings and the full-tab client check once after returning from webmail; reopening the popup rechecks a browser session awaiting sign-in
+- **FIXED**: Yandex recognises the active account-menu entry with quoted or unquoted classes and does not depend on the profile-link URL
+
 ## 0.0.21
 
 - **ADDED**: regression coverage for audit #6: mailbox identity, provider acknowledgements, concurrent actions, conversation caches, read persistence, empty lists and responsive mail-frame sizing

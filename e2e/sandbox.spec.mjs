@@ -289,6 +289,8 @@ for (const layout of [
       await page.goto(layout.path);
       const row = page.locator('.row[data-id="w1"]');
       await expect(row).toBeVisible();
+      // The opening CHECK replaces rows; measure after it finishes, rather than a detached avatar.
+      await expect(page.getByRole('button', {name: 'Проверить сейчас', exact: true}).first()).toBeEnabled();
       const values = await row.evaluate(element => {
         const avatar = element.querySelector('.avatar'),
           dot = element.querySelector('.unread-dot');
@@ -343,12 +345,7 @@ test.describe('wide audit regressions', () => {
 test.describe('settings regressions', () => {
   test.use({viewport: {width: 1440, height: 900}});
   test.beforeEach(async ({page}) => {
-    await page.addInitScript(() => {
-      window.chrome = {
-        runtime: {getManifest: () => ({version: 'test'})},
-        storage: {onChanged: {addListener() {}}},
-      };
-    });
+    await installOptionsAPI(page);
   });
 
   test('version footer has a compact bottom inset', async ({page}) => {
@@ -374,6 +371,16 @@ test.describe('settings regressions', () => {
   });
 });
 
+/** Provides the browser APIs used by Settings while requests use the sandbox worker. */
+async function installOptionsAPI(page) {
+  await page.addInitScript(() => {
+    window.chrome = {
+      runtime: {getManifest: () => ({version: 'test'})},
+      storage: {onChanged: {addListener() {}}},
+    };
+  });
+}
+
 /** Records webmail navigation while keeping tests offline and on synthetic mailboxes. */
 async function captureWebmail(page) {
   await page.addInitScript(() => {
@@ -391,4 +398,45 @@ test('Yandex sign-in in the popup opens webmail without repeating the error', as
   await notice.getByRole('button', {name: 'Войти'}).click();
   await expect(page.locator('html')).toHaveAttribute('data-opened-webmail', 'https://mail.yandex.ru/');
   await expect(page.locator('.toast.error')).toHaveCount(0);
+});
+
+test.describe('browser sign-in recovery', () => {
+  test.use({viewport: {width: 1440, height: 900}});
+
+  test('Settings sign-in clears a stale error for an already authenticated browser session', async ({page}) => {
+    await installOptionsAPI(page);
+    await captureWebmail(page);
+    await page.goto('options.html?reauth=yandex&session=valid');
+    const account = page.locator('#accounts .account').filter({hasText: 'anton@yandex.ru'});
+    await account.getByRole('button', {name: 'Войти заново'}).click();
+    await expect(account.getByRole('button', {name: 'Войти заново'})).toHaveCount(0);
+    await expect(account.locator('.error')).toHaveCount(0);
+    await expect(page.locator('#status')).toHaveText('Вход выполнен: anton@yandex.ru');
+    await expect(page.locator('html')).not.toHaveAttribute('data-opened-webmail');
+  });
+
+  for (const path of ['options.html', 'app.html']) {
+    test(path + ' removes the error after returning from a completed webmail sign-in', async ({page}) => {
+      await installOptionsAPI(page);
+      await captureWebmail(page);
+      await page.goto(path + '?reauth=yandex&session=after-return');
+      const settings = path === 'options.html';
+      const area = settings
+        ? page.locator('#accounts .account').filter({hasText: 'anton@yandex.ru'})
+        : page.getByRole('alert').filter({hasText: 'anton@yandex.ru'});
+      await area.getByRole('button', {name: settings ? 'Войти заново' : 'Войти', exact: true}).click();
+      await expect(page.locator('html')).toHaveAttribute('data-opened-webmail', 'https://mail.yandex.ru/');
+      if (settings)
+        await expect(page.locator('#status')).toHaveText('Войдите в «Яндекс Почта» в этом браузере и повторите.');
+      await page.evaluate(() => {
+        window.dispatchEvent(new Event('focus'));
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      if (settings) {
+        await expect(area.getByRole('button', {name: 'Войти заново'})).toHaveCount(0);
+        await expect(area.locator('.error')).toHaveCount(0);
+        await expect(page.locator('#status')).toHaveText('Вход выполнен: anton@yandex.ru');
+      } else await expect(area).toHaveCount(0);
+    });
+  }
 });

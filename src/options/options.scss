@@ -85,22 +85,45 @@ main {
 
 // Connected accounts.
 .account {
-  display: flex;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 36px auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px 12px;
   padding: 12px 0;
   border-top: 1px solid var(--border);
   &:first-child {
     border-top: 0;
   }
 }
-// The account colour: a ring around the avatar; a click opens the palette under the address.
-.account .avatar.ringed {
+// The avatar's persistent caret shows the colour picker; its palette occupies a separate row.
+.account-color-toggle {
+  position: relative;
+  padding: 0;
   border: 0;
   cursor: pointer;
+  &[aria-expanded='true'] .icon {
+    transform: rotate(180deg);
+  }
+}
+.account-color-caret {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-solid);
+  color: var(--text);
+  .icon {
+    width: 10px;
+    height: 10px;
+  }
 }
 .account-colors {
-  margin-top: 8px;
+  grid-column: 2 / -1;
 }
 .account-main {
   flex: 1;
@@ -385,7 +408,10 @@ main {
     flex-wrap: wrap;
   }
   .account {
-    flex-wrap: wrap;
+    grid-template-columns: 32px minmax(0, 1fr) 36px;
+    .account-actions {
+      grid-column: 2 / -1;
+    }
   }
   // The buttons move under the text, lined up with it (a 36px tile and a 12px gap).
   .provider {

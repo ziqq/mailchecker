@@ -13,6 +13,7 @@
  * @module sandbox/worker
  */
 import {preferences} from '../shared/preferences';
+import {ACCOUNT_COLORS} from '../shared/inbox';
 import type {MailMessage, Preferences, PublicState, Reply, Request, SearchHit, ThreadMessage} from '../shared/types';
 import {createFixtures, type Fixtures} from './fixtures';
 import {t} from '../shared/i18n';
@@ -22,6 +23,8 @@ const LATENCY = 120;
 
 /** Fixtures and preferences, created on the first request. */
 let data: (Fixtures & {preferences: Preferences}) | null = null;
+/** Browser sign-in started by the fixture user; the return scenario completes it on the next check. */
+let pendingBrowserSignIn = '';
 
 /** Returns the sandbox data, creating it on first use. */
 function current(): Fixtures & {preferences: Preferences} {
@@ -106,11 +109,21 @@ function act(id: string, message: string, action: string): void {
   );
 }
 
-/** Delivers queued incoming mail and marks every mailbox as checked. */
-function check(): void {
+/** Delivers queued incoming mail and checks all mailboxes, or only [accountID] during sign-in. */
+function check(accountID = ''): void {
   const {mailboxes, incoming} = current();
+  const query = new URLSearchParams(location.search);
+  const signedOut = query.get('reauth') || '';
+  const session = query.get('session');
+  if (
+    mailboxes[signedOut] &&
+    (!accountID || accountID === signedOut) &&
+    (session === 'valid' || (session === 'after-return' && pendingBrowserSignIn === signedOut))
+  )
+    mailboxes[signedOut] = {...mailboxes[signedOut], error: '', reauth: false};
   const now = Date.now();
   for (const [id, box] of Object.entries(mailboxes)) {
+    if (accountID && id !== accountID) continue;
     const delivered = (incoming[id] || []).map(item => ({...item, date: now}));
     incoming[id] = [];
     if (delivered.length) update(id, [...delivered, ...box.messages]);
@@ -182,17 +195,27 @@ function answer(message: Request): unknown {
       sandbox.preferences = preferences({...sandbox.preferences, ...message.value});
       return sandbox.preferences;
     }
+    case 'ACCOUNT_COLOR': {
+      const id = account(message.account);
+      if (message.color && !ACCOUNT_COLORS.includes(message.color)) throw new Error(t('error_unknown_color'));
+      current().accounts.find(item => item.id === id)!.color = message.color;
+      return state();
+    }
     case 'SIGN_IN': {
       const {accounts, mailboxes} = current();
       const id = account(message.account);
       const stored = accounts.find(item => item.id === id)!;
       if (stored.browser) {
+        check(id);
         const webmail = {
           gmail: 'https://mail.google.com/mail/u/0/#inbox',
           yandex: 'https://mail.yandex.ru/',
           mailru: 'https://e.mail.ru/inbox/',
         };
-        window.open(webmail[stored.provider as keyof typeof webmail], '_blank', 'noopener');
+        if (mailboxes[id].reauth) {
+          pendingBrowserSignIn = id;
+          window.open(webmail[stored.provider as keyof typeof webmail], '_blank', 'noopener');
+        }
         return state();
       }
       mailboxes[id] = {...mailboxes[id], error: '', reauth: false, checkedAt: Date.now()};
