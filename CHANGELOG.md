@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.26
+
+- **ADDED**: workspace VS Code settings, extension recommendations, npm tasks and launch configurations adapted from the maintainer's projects
+- **FIXED**: background conversation refresh keeps the open message visible instead of replacing it with a skeleton; selecting another message still loads its own body
+
 ## 0.0.25
 
 - **CHANGED**: mailbox colour selection opens from an avatar with a persistent dropdown caret; the extra per-account text buttons are removed

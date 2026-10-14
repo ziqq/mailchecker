@@ -128,6 +128,9 @@ function check(accountID = ''): void {
     incoming[id] = [];
     if (delivered.length) update(id, [...delivered, ...box.messages]);
     if (!mailboxes[id].reauth) mailboxes[id] = {...mailboxes[id], checkedAt: now};
+    // Like the lite Inbox, this scenario assigns fresh dates on every check and refreshes the reader cache.
+    if (id === 'yandex' && query.get('refresh') === 'slow')
+      mailboxes[id] = {...mailboxes[id], messages: mailboxes[id].messages.map(item => ({...item, date: now}))};
   }
 }
 
@@ -236,7 +239,8 @@ function answer(message: Request): unknown {
  * @returns The worker reply envelope.
  */
 export async function handle(message: Request): Promise<Reply> {
-  await new Promise(resolve => setTimeout(resolve, LATENCY));
+  const slowThread = message.type === 'THREAD' && new URLSearchParams(location.search).get('refresh') === 'slow';
+  await new Promise(resolve => setTimeout(resolve, slowThread ? 2000 : LATENCY));
   try {
     return {ok: true, value: structuredClone(answer(message))};
   } catch (error) {

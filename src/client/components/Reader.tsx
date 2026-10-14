@@ -174,8 +174,21 @@ export function Reader() {
       const selection = store.selected();
       return selection ? {...selection, version: store.threadVersion()} : null;
     },
-    selection => store.thread(selection),
+    async selection => ({selection, messages: await store.thread(selection)}),
   );
+  /** Keeps the loaded body during background refreshes, only for the same selected message. */
+  const visibleMessages = createMemo(() => {
+    if (conversation.error) return undefined;
+    const value = conversation.latest;
+    const selection = store.selected();
+    return value &&
+      selection &&
+      value.selection.account === selection.account &&
+      value.selection.id === selection.id &&
+      value.selection.thread === selection.thread
+      ? value.messages
+      : undefined;
+  });
   const entry = () => store.current();
   const key = () => `${store.selected()?.account}/${store.selected()?.thread || store.selected()?.id}`;
   const accountEmail = createMemo(
@@ -284,7 +297,7 @@ export function Reader() {
 
         <div class="reader-body">
           <Switch>
-            <Match when={conversation.loading}>
+            <Match when={conversation.loading && !visibleMessages()}>
               <div class="thread-title">
                 <div class="skeleton line" />
                 <div class="skeleton title" />
@@ -300,7 +313,7 @@ export function Reader() {
                 <p class="muted">{String((conversation.error as Error)?.message || conversation.error)}</p>
               </div>
             </Match>
-            <Match when={conversation()}>
+            <Match when={visibleMessages()}>
               {messages => (
                 <>
                   <div class="thread-title">
