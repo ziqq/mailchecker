@@ -754,5 +754,23 @@
   },
   "welcome_title_2": {
     "message": "De uma vez"
+  },
+  "cache_title": {
+    "message": "Cache de e-mail"
+  },
+  "cache_text": {
+    "message": "As mensagens abertas são salvas neste dispositivo. Limpar o cache mantém as contas e configurações."
+  },
+  "cache_clear": {
+    "message": "Limpar cache"
+  },
+  "cache_cleared": {
+    "message": "Cache de e-mail limpo."
+  },
+  "cache_refreshing": {
+    "message": "Cópia salva. Verificando atualizações…"
+  },
+  "cache_offline": {
+    "message": "Cópia salva. Atualização indisponível."
   }
 }

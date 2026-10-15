@@ -766,5 +766,23 @@
   },
   "welcome_title_2": {
     "message": "W jednym miejscu"
+  },
+  "cache_title": {
+    "message": "Pamięć podręczna poczty"
+  },
+  "cache_text": {
+    "message": "Otwarte wiadomości są zapisywane na tym urządzeniu. Czyszczenie zachowuje konta i ustawienia."
+  },
+  "cache_clear": {
+    "message": "Wyczyść pamięć"
+  },
+  "cache_cleared": {
+    "message": "Pamięć podręczna poczty wyczyszczona."
+  },
+  "cache_refreshing": {
+    "message": "Zapisana kopia. Sprawdzanie aktualizacji…"
+  },
+  "cache_offline": {
+    "message": "Zapisana kopia. Aktualizacja niedostępna."
   }
 }

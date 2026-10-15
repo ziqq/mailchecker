@@ -176,17 +176,26 @@ export function Reader() {
     async selection => ({selection, messages: await store.thread(selection)}),
   );
   /** Keeps the loaded body during background refreshes, only for the same selected message. */
-  const visibleMessages = createMemo(() => {
+  let visibleKey = '';
+  const visibleMessages = createMemo<ThreadMessage[] | undefined>(previous => {
     if (conversation.error) return undefined;
     const value = conversation.latest;
     const selection = store.selected();
-    return value &&
-      selection &&
-      value.selection.account === selection.account &&
-      value.selection.id === selection.id &&
-      value.selection.thread === selection.thread
-      ? value.messages
-      : undefined;
+    const nextKey = selection ? JSON.stringify([selection.account, selection.id, selection.thread]) : '';
+    const unchangedSelection = nextKey === visibleKey;
+    visibleKey = nextKey;
+    if (
+      !value ||
+      !selection ||
+      value.selection.account !== selection.account ||
+      value.selection.id !== selection.id ||
+      value.selection.thread !== selection.thread
+    )
+      return undefined;
+    // Persistent-cache replies are structured clones; equal content must retain its mounted frames.
+    return unchangedSelection && previous && JSON.stringify(previous) === JSON.stringify(value.messages)
+      ? previous
+      : value.messages;
   });
   const entry = () => store.current();
   const key = () => `${store.selected()?.account}/${store.selected()?.thread || store.selected()?.id}`;
@@ -302,6 +311,12 @@ export function Reader() {
         </div>
 
         <div class="reader-body">
+          <Show when={store.threadCache()?.key === key() && visibleMessages()}>
+            <p class="muted" role="status">
+              {t(store.threadCache()?.refreshing ? 'cache_refreshing' : 'cache_offline')}
+              {store.threadCache()?.error ? ` ${store.threadCache()!.error}` : ''}
+            </p>
+          </Show>
           <Switch>
             <Match when={conversation.loading && !visibleMessages()}>
               <div class="thread-title">

@@ -730,5 +730,23 @@
   },
   "welcome_title_2": {
     "message": "一览无余"
+  },
+  "cache_title": {
+    "message": "邮件缓存"
+  },
+  "cache_text": {
+    "message": "已打开的邮件保存在此设备上。清除缓存会保留账户和设置。"
+  },
+  "cache_clear": {
+    "message": "清除缓存"
+  },
+  "cache_cleared": {
+    "message": "邮件缓存已清除。"
+  },
+  "cache_refreshing": {
+    "message": "已保存的副本。正在检查更新…"
+  },
+  "cache_offline": {
+    "message": "已保存的副本。无法更新。"
   }
 }

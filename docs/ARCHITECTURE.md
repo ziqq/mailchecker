@@ -25,7 +25,7 @@ flowchart LR
 
 The popup and the full-tab app run the same SolidJS client; `data-mode` on `<html>` tells them apart. The popup's ⤢ button sends `OPEN_APP`, which focuses an existing `app.html` tab or opens one.
 
-The list title opens a folder selector. Catalogs are requested on its first opening, and message pages only when a folder is selected. Selecting an account returns to its Inbox; All mailboxes defaults to the unified Inbox. Common Sent, Archive, Trash, Spam and Drafts views merge folders by server role, while custom folders remain separate and show their account address. A failed account is reported without dropping successful accounts' results. Pages contain at most 50 messages per account and expose an explicit Load more action. Folder metadata and message pages stay in page memory, never in storage; alarms, notification baselines and the badge continue to use only the Inbox. Manual refresh also reloads the selected folder. Changing accounts or folders discards late page responses.
+The list title opens a folder selector. Catalogs are requested on its first opening, and message pages only when a folder is selected. Selecting an account returns to its Inbox; All mailboxes defaults to the unified Inbox. Common Sent, Archive, Trash, Spam and Drafts views merge folders by server role, while custom folders remain separate and show their account address. A failed account is reported without dropping successful accounts' results. Pages contain at most 50 messages per account and expose an explicit Load more action. Folder catalogs remain in page memory; fetched message metadata and page membership also enter the bounded worker-owned IndexedDB cache; alarms, notification baselines and the badge continue to use only the Inbox. Manual refresh also reloads the selected folder. Changing accounts or folders discards late page responses.
 
 `FOLDERS` and `FOLDER` are client-only worker requests. Catalog IDs, names, roles and pages are bounded in the worker, and provider adapters keep request hosts fixed. `THREAD`, `ACT`, `REPLY` and `OPEN` may carry public message metadata for a folder entry outside the stored Inbox; the worker normalizes it and never allows it to replace a known Inbox record. No credentials are accepted from these pages. Trash browsing does not add permanent deletion. Folder-role metadata comes from Gmail system labels, Graph well-known IDs, JMAP mailbox roles, Yandex lite navigation paths and Mail.ru folder types/archive flags, rather than guessing from translated custom names.
 
@@ -71,21 +71,21 @@ Bodies are untrusted. `shared/sanitize.ts` parses them with `DOMParser`, removes
 
 Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, value}` or `{ok: false, error}`. The broker accepts only this extension's `popup.html`, `app.html` (client) and `options.html` (Settings):
 
-| Type                            | Sender           | Purpose                                                                |
-| ------------------------------- | ---------------- | ---------------------------------------------------------------------- |
-| `STATE`                         | client, Settings | Public state: preferences, accounts without credentials, Inbox lists.  |
-| `CHECK`                         | client, Settings | Check all accounts now.                                                |
-| `THREAD`                        | client           | A conversation with bodies; marks the opened message read. Not stored. |
-| `ACT`                           | client           | `archive`, `trash`, `read`, `unread`, `pin`, `unpin` one message.      |
-| `SEARCH`                        | client           | Search every account; hits merged newest first. Not stored.            |
-| `OPEN`                          | client, Settings | Open webmail at the Inbox or a message.                                |
-| `OPEN_APP`                      | client           | Open or focus the full-tab client.                                     |
-| `SIGN_IN`                       | client, Settings | OAuth sign-in, or open the connected browser-session webmail.          |
-| `PREFERENCES`                   | client, Settings | Save bounded preferences and reschedule checks.                        |
-| `OPTIONS`                       | client           | Open Settings.                                                         |
-| `ADD_ACCOUNT`, `REMOVE_ACCOUNT` | Settings         | Connect or remove a mailbox.                                           |
-| `ACCOUNT_COLOR`                 | Settings         | Set a mailbox colour from `ACCOUNT_COLORS` (empty: by position).       |
-| `REPLY`                         | Client           | Send a plain-text reply; accounts without `reply` open the webmail.    |
+| Type                            | Sender           | Purpose                                                                         |
+| ------------------------------- | ---------------- | ------------------------------------------------------------------------------- |
+| `STATE`                         | client, Settings | Public state: preferences, accounts without credentials, Inbox lists.           |
+| `CHECK`                         | client, Settings | Check all accounts now.                                                         |
+| `THREAD`                        | client           | A conversation with bodies; acknowledges read state and updates the mail cache. |
+| `ACT`                           | client           | `archive`, `trash`, `read`, `unread`, `pin`, `unpin` one message.               |
+| `SEARCH`                        | client           | Server search of API accounts; merged hits also update cached metadata.         |
+| `OPEN`                          | client, Settings | Open webmail at the Inbox or a message.                                         |
+| `OPEN_APP`                      | client           | Open or focus the full-tab client.                                              |
+| `SIGN_IN`                       | client, Settings | OAuth sign-in, or open the connected browser-session webmail.                   |
+| `PREFERENCES`                   | client, Settings | Save bounded preferences and reschedule checks.                                 |
+| `OPTIONS`                       | client           | Open Settings.                                                                  |
+| `ADD_ACCOUNT`, `REMOVE_ACCOUNT` | Settings         | Connect or remove a mailbox.                                                    |
+| `ACCOUNT_COLOR`                 | Settings         | Set a mailbox colour from `ACCOUNT_COLORS` (empty: by position).                |
+| `REPLY`                         | Client           | Send a plain-text reply; accounts without `reply` open the webmail.             |
 
 ## Service worker
 
@@ -112,9 +112,17 @@ Pages send a typed `Request` (`src/shared/types.ts`) and receive `{ok: true, val
 | local   | `preferences`, `accounts`, `mailboxes` | Preferences; accounts with credentials; latest Inbox list (≤ 50) per account.                                                            |
 | session | `notification:<id>`                    | Up to 100 recent notification URLs and their bounded `notification-index`; removed on click/dismissal, oldest-first eviction or restart. |
 
-The chosen next cache/search design is specified in [Search and cache decision](SEARCH_AND_CACHE.md); persistent IndexedDB caching is proposed there and is not implemented by these audit fixes.
+## Кеш IndexedDB: первый этап
 
-Message bodies, attachments metadata, folder catalogs/pages and search results stay in page memory (a 30-conversation cache) and are never written to storage. Catalog requests are deduplicated per account, so changing the selected mailbox does not suppress its load. Counter catalogs expire after 30 seconds and become dirty after relevant Inbox changes or local actions; timestamp-only checks preserve their freshness. Gmail counter reads use multipart batches of at most 50 operations through the same bounded HTTP layer. Individual missing counts remain unknown without hiding folder names. Graph folder catalogs follow same-origin, same-path continuations within the existing 200-folder/request bounds. Parent paths are indexed and computed once before sorting.
+Worker владеет `mailchecker-cache` с хранилищами `messages` и `views`. Учётные данные остаются в `chrome.storage.local`. Метаданные входящих, загруженных страниц папок и поиска сохраняются вместе с принадлежностью представлениям; тела переписок сохраняются после обычного запроса пользователя. Каталоги папок пока остаются в памяти страницы. Предварительного обхода истории нет.
+
+`CACHED_THREAD` доступен только клиенту: проверяет существование ящика и ограниченные ID, возвращает полную сохранённую переписку либо `null`. `THREAD` остаётся сетевым запросом с подтверждением прочтения. Клиент запрашивает их одновременно, показывает сохранённое тело до ответа сети и отмечает его статус. Сетевая ошибка сохраняет копию. Одинаковые тела сохраняют объекты отображения при перепроверке. Запросы тела одной переписки объединяются в worker; подтверждение прочтения выполняется отдельно для выбранного письма.
+
+`CLEAR_CACHE` разрешён только настройкам. Очистка и удаление ящика инвалидируют поколения незавершённых записей. Подтверждённые действия обновляют флаги; перемещения и ответы инвалидируют затронутые представления. Индексы по ящику и `[access, bytes]` позволяют удалять данные и контролировать объём без загрузки всех тел. Ограничения: 50 МиБ оценочного размера, 5000 писем, 1000 представлений, 30 дней без доступа. Ошибка/недоступность IndexedDB оставляет сетевой путь рабочим.
+
+Первый этап использует кеш для повторного открытия тел. Представления папок/поиска записываются, но их показ до сети и пагинация серверного поиска относятся к следующим этапам [плана](SEARCH_AND_CACHE.md).
+
+Pages retain a 30-conversation memory cache above the worker-owned persistent mail cache. Folder catalogs remain in memory. Catalog requests are deduplicated per account, so changing the selected mailbox does not suppress its load. Counter catalogs expire after 30 seconds and become dirty after relevant Inbox changes or local actions; timestamp-only checks preserve their freshness. Gmail counter reads use multipart batches of at most 50 operations through the same bounded HTTP layer. Individual missing counts remain unknown without hiding folder names. Graph folder catalogs follow same-origin, same-path continuations within the existing 200-folder/request bounds. Parent paths are indexed and computed once before sorting.
 
 An in-flight folder page is reconciled with successful mutations made after its request began. Concurrent read/pin actions patch only confirmed fields of the latest records and reconcile the Inbox unread total. Folder refresh reloads counter catalogs and rebinds the active choice; failed counters are marked partial. Conversation invalidation compares per-message content metadata and deletes only affected account/thread keys, leaving unrelated readers and cached bodies intact. Gmail/JMAP archive preserves custom-folder memberships and the current row; Outlook moves the row to Archive. Search actions and pagination are independent of the previously selected folder. Search via browser-session accounts remains a webmail capability: the client identifies those excluded addresses, and an entirely unsupported search does not claim that no matching messages exist. Transient body errors propagate and clear the failed conversation cache entry so reopening can retry.
 

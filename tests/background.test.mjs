@@ -1098,3 +1098,32 @@ test('legacy notification records are pruned and index failure does not block cl
   await new Promise(done => setTimeout(done, 2));
   assert.ok(w.tabs.length);
 });
+
+test('a client cache miss falls back to the provider when IndexedDB is unavailable', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  const account = w.stores.local.accounts[0].id;
+  const selection = {account, message: 'm1', thread: 't-m1'};
+  assert.equal(await w.ok({type: 'CACHED_THREAD', ...selection}, 'popup'), null);
+  const messages = await w.ok({type: 'THREAD', ...selection}, 'popup');
+  assert.ok(messages.some(message => message.id === 'm1' && message.html));
+});
+
+for (const [page, request] of [
+  ['options', {type: 'CACHED_THREAD', account: 'A', message: 'm', thread: 'T'}],
+  ['popup', {type: 'CLEAR_CACHE'}],
+  ['popup', {type: 'CACHED_THREAD', account: 'missing', message: 'm', thread: 'T'}],
+  ['popup', {type: 'CACHED_THREAD', account: 'A', message: '', thread: 'T'}],
+  ['popup', {type: 'CACHED_THREAD', account: 'A', message: 'x'.repeat(513), thread: 'T'}],
+]) {
+  test(`cache broker rejects unauthorized or invalid ${request.type} from ${page} (${request.message?.length || 0})`, async () => {
+    const w = startWorker();
+    assert.equal((await w.send(request, page)).ok, false);
+    assert.equal(w.calls.length, 0);
+  });
+}
+
+test('Settings reports failure instead of claiming a successful clear without IndexedDB', async () => {
+  const w = startWorker();
+  assert.equal((await w.send({type: 'CLEAR_CACHE'})).ok, false);
+});

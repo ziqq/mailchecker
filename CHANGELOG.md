@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.38
+
+- **ADDED**: permanent IndexedDB regressions using the native browser database and an unpacked MV3 extension, covering restart persistence, cache bounds, action/clear races, read acknowledgements, frame retention and storage failures
+
+## 0.0.37
+
+- **ADDED**: bounded worker-owned IndexedDB storage for loaded mail, persistent conversation reopening with background revalidation and a clear-cache control in Settings
+- **CHANGED**: cached content stays visible during network failure; confirmed actions update cached flags, and account removal rejects late cache writes
+
 ## 0.0.36
 
 - **ADDED**: regression coverage for the remaining twelve audit #8 fixes, including action/search races, folder pagination/counters, bounded MIME/HTML/HTTP processing, image consent and notification cleanup

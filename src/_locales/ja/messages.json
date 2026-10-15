@@ -730,5 +730,23 @@
   },
   "welcome_title_2": {
     "message": "ひとつの場所で"
+  },
+  "cache_title": {
+    "message": "メールキャッシュ"
+  },
+  "cache_text": {
+    "message": "開いたメールはこの端末に保存されます。キャッシュを消去してもアカウントと設定は保持されます。"
+  },
+  "cache_clear": {
+    "message": "キャッシュを消去"
+  },
+  "cache_cleared": {
+    "message": "メールキャッシュを消去しました。"
+  },
+  "cache_refreshing": {
+    "message": "保存済みコピー。更新を確認中…"
+  },
+  "cache_offline": {
+    "message": "保存済みコピー。更新できません。"
   }
 }

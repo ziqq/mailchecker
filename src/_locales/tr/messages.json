@@ -742,5 +742,23 @@
   },
   "welcome_title_2": {
     "message": "Tek yerde"
+  },
+  "cache_title": {
+    "message": "Posta önbelleği"
+  },
+  "cache_text": {
+    "message": "Açılan iletiler bu cihazda saklanır. Önbelleği temizlemek hesapları ve ayarları korur."
+  },
+  "cache_clear": {
+    "message": "Önbelleği temizle"
+  },
+  "cache_cleared": {
+    "message": "Posta önbelleği temizlendi."
+  },
+  "cache_refreshing": {
+    "message": "Kaydedilmiş kopya. Güncellemeler denetleniyor…"
+  },
+  "cache_offline": {
+    "message": "Kaydedilmiş kopya. Güncelleme kullanılamıyor."
   }
 }

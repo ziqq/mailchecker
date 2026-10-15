@@ -754,5 +754,23 @@
   },
   "welcome_title_2": {
     "message": "In un colpo solo"
+  },
+  "cache_title": {
+    "message": "Cache della posta"
+  },
+  "cache_text": {
+    "message": "I messaggi aperti vengono salvati su questo dispositivo. Svuotare la cache conserva account e impostazioni."
+  },
+  "cache_clear": {
+    "message": "Svuota cache"
+  },
+  "cache_cleared": {
+    "message": "Cache della posta svuotata."
+  },
+  "cache_refreshing": {
+    "message": "Copia salvata. Ricerca aggiornamenti…"
+  },
+  "cache_offline": {
+    "message": "Copia salvata. Aggiornamento non disponibile."
   }
 }

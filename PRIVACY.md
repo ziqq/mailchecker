@@ -4,11 +4,11 @@ mailchecker has no backend, analytics, advertising or telemetry. Requests go dir
 
 ## Local data
 
-`chrome.storage.local` contains preferences, connected accounts with their access/refresh tokens or JMAP API tokens (mailboxes read through the browser's sign-in store no credentials), and the last check result per account: the Inbox unread count and up to 50 latest Inbox messages (sender, subject, a 300-character preview, date, read/pinned flags, category and webmail link). Opened message bodies, attachment names and search results are kept only in the open page's memory and are never written to storage. This data belongs to the browser profile and is not encrypted by the extension; protect the profile and device accordingly.
+`chrome.storage.local` contains preferences, connected accounts with their access/refresh tokens or JMAP API tokens (mailboxes read through the browser's sign-in store no credentials), and the last check result per account: the Inbox unread count and up to 50 latest Inbox messages (sender, subject, a 300-character preview, date, read/pinned flags, category and webmail link). Worker-owned IndexedDB additionally caches mail actually loaded: message metadata, opened HTML/plain-text bodies, attachment names and view membership for Inbox, folders, conversations and server search. It does not download attachments or remote images automatically. This cache is bounded by an estimated 50 MiB, 5,000 messages, 1,000 views and 30 days without access. Browser quota or eviction can reduce availability. Settings → Mail cache clears it without removing accounts or preferences. This data belongs to the browser profile and is not encrypted by the extension; protect the profile and device accordingly.
 
 Local storage access is set to `TRUSTED_CONTEXTS`. The popup and Settings receive a public state without credentials. Session storage keeps at most 100 recent notification URLs, with a bounded index. Clicking or dismissing a notification removes its URL; older records are evicted, and browser restart clears session storage. Records from older versions are pruned when the index is first loaded.
 
-Removing an account deletes its credentials and check result. It does not revoke provider-side grants; use the Google or Microsoft account security page, or delete the JMAP API token in the mail service. Uninstalling removes all extension data.
+Removing an account deletes its credentials, check result and IndexedDB cache, and invalidates pending cache writes. It does not revoke provider-side grants; use the Google or Microsoft account security page, or delete the JMAP API token in the mail service. Uninstalling removes all extension data.
 
 ## Network requests
 

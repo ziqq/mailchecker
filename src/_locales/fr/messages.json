@@ -754,5 +754,23 @@
   },
   "welcome_title_2": {
     "message": "En un coup d’œil"
+  },
+  "cache_title": {
+    "message": "Cache des messages"
+  },
+  "cache_text": {
+    "message": "Les messages ouverts sont enregistrés sur cet appareil. Vider le cache conserve les comptes et les réglages."
+  },
+  "cache_clear": {
+    "message": "Vider le cache"
+  },
+  "cache_cleared": {
+    "message": "Cache des messages vidé."
+  },
+  "cache_refreshing": {
+    "message": "Copie enregistrée. Recherche de mises à jour…"
+  },
+  "cache_offline": {
+    "message": "Copie enregistrée. Mise à jour indisponible."
   }
 }

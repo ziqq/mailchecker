@@ -12,6 +12,7 @@
  *
  * @module background/index
  */
+import {cachedThread, clearCache} from './cache';
 import {preferences} from '../shared/preferences';
 import type {MailMessage, MessageAction, Preferences, Reply, RequestType} from '../shared/types';
 import {addAccount, publicState, removeAccount, setAccountColor, signIn} from './accounts';
@@ -45,6 +46,7 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'STATE',
     'CHECK',
     'THREAD',
+    'CACHED_THREAD',
     'FOLDERS',
     'FOLDER',
     'REPLY',
@@ -65,6 +67,7 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'ADD_ACCOUNT',
     'REMOVE_ACCOUNT',
     'ACCOUNT_COLOR',
+    'CLEAR_CACHE',
   ]),
 });
 
@@ -114,6 +117,17 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
     case 'ACT':
       await act(account, String(message.message ?? ''), message.action as MessageAction, entry);
       return publicState(await readStore());
+    case 'CLEAR_CACHE':
+      if (!(await clearCache())) throw new Error(t('error_generic'));
+      return true;
+    case 'CACHED_THREAD': {
+      const id = String(message.message ?? '');
+      const thread = String(message.thread ?? '');
+      if (!id || id.length > 512 || thread.length > 512) throw new Error(t('error_bad_message'));
+      if (!((await readStore()).accounts || []).some(item => item.id === account))
+        throw new Error(t('error_account_missing'));
+      return cachedThread(account, thread || id, id);
+    }
     case 'THREAD':
       return thread(account, String(message.message ?? ''), String(message.thread ?? ''), entry);
     case 'FOLDERS':

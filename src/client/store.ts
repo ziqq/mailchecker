@@ -6,7 +6,7 @@
  * Client state shared by the toolbar popup and the full-tab app.
  *
  * Holds the worker's public state, the selection, filters, search and an
- * in-memory conversation cache. Bodies are never written to storage.
+ * in-memory conversation cache backed by the worker's bounded persistent mail cache.
  *
  * @module client/store
  */
@@ -15,6 +15,7 @@ import {request, errorMessage, afterReturn} from '../shared/dom';
 import {counts, merge, order, sections, type Entry, type Filter} from '../shared/inbox';
 import {FOLDER_ROLES, folderName, folderPath} from '../shared/folders';
 import type {
+  CachedThread,
   FolderPage,
   MailFolder,
   MailMessage,
@@ -122,6 +123,12 @@ export const store = createRoot(() => {
   const [retained, setRetained] = createSignal<Entry | null>(null);
   /** Refreshes the displayed conversation when its Inbox contents change or a reply is sent. */
   const [threadVersion, setThreadVersion] = createSignal(0);
+  const [threadCache, setThreadCache] = createSignal<{
+    key: string;
+    fetchedAt: number;
+    refreshing: boolean;
+    error: string;
+  } | null>(null);
   const [expanded, setExpanded] = createSignal<ReadonlySet<string>>(new Set());
   const [query, setQuery] = createSignal('');
   const [results, setResults] = createSignal<Entry[] | null>(null);
@@ -560,6 +567,8 @@ export const store = createRoot(() => {
     } catch (error) {
       fail(error);
     } finally {
+      const cached = threadCache();
+      if (cached?.error && !cached.refreshing) invalidateThreads(new Set([cached.key]));
       setRefreshing(false);
     }
   }
@@ -618,48 +627,11 @@ export const store = createRoot(() => {
     setExpanded(next);
   }
 
-  /**
-   * Loads a conversation, cached for the session.
-   *
-   * @param selection The selected message.
-   */
-  async function thread(selection: Selection): Promise<ThreadMessage[]> {
-    const key = `${selection.account}/${selection.thread || selection.id}`;
+  /** Reconciles read flags only after the provider has acknowledged them. */
+  function confirmRead(selection: Selection, value: ThreadMessage[]): void {
     const matches = (entry: Entry): boolean => entry.account === selection.account && entry.message.id === selection.id;
-    const listed = state()?.mailboxes[selection.account]?.messages.find(item => item.id === selection.id);
-    const hit = results()?.find(matches);
-    const folderEntry = folderEntries().find(matches);
-    const open = retained();
-    if (
-      listed?.unread ||
-      hit?.message.unread ||
-      folderEntry?.message.unread ||
-      (open && matches(open) && open.message.unread)
-    )
-      threads.delete(key);
-    let pending = threads.get(key);
-    const cached = Boolean(pending);
-    if (!pending) {
-      pending = request<ThreadMessage[]>({
-        type: 'THREAD',
-        account: selection.account,
-        message: selection.id,
-        thread: selection.thread,
-        entry: folderEntry?.message || (open && matches(open) ? open.message : undefined),
-      }).catch(error => {
-        if (threads.get(key) === pending) threads.delete(key);
-        throw error;
-      });
-      threads.set(key, pending);
-      if (threads.size > 30) threads.delete(threads.keys().next().value!);
-    }
-    const value = await pending;
-    if (cached && !value.some(item => item.id === selection.id)) {
-      threads.delete(key);
-      return thread(selection);
-    }
     const target = value.find(item => item.id === selection.id);
-    if (target && !target.unread && threads.get(key) === pending)
+    if (target && !target.unread)
       batch(() => {
         rememberFolderChange(selection.account, selection.id, {unread: false});
         updateFolderCounts(selection.account, selection.id, false);
@@ -690,6 +662,91 @@ export const store = createRoot(() => {
           entry && matches(entry) ? {...entry, message: {...entry.message, unread: false}} : entry,
         );
       });
+  }
+
+  /**
+   * Loads a conversation, cached for the session.
+   *
+   * @param selection The selected message.
+   */
+  async function thread(selection: Selection): Promise<ThreadMessage[]> {
+    const key = `${selection.account}/${selection.thread || selection.id}`;
+    const matches = (entry: Entry): boolean => entry.account === selection.account && entry.message.id === selection.id;
+    const listed = state()?.mailboxes[selection.account]?.messages.find(item => item.id === selection.id);
+    const hit = results()?.find(matches);
+    const folderEntry = folderEntries().find(matches);
+    const open = retained();
+    if (
+      listed?.unread ||
+      hit?.message.unread ||
+      folderEntry?.message.unread ||
+      (open && matches(open) && open.message.unread)
+    )
+      threads.delete(key);
+    let fromCache = false;
+    let pending = threads.get(key);
+    const cached = Boolean(pending);
+    if (!pending) {
+      const network = request<ThreadMessage[]>({
+        type: 'THREAD',
+        account: selection.account,
+        message: selection.id,
+        thread: selection.thread,
+        entry: folderEntry?.message || (open && matches(open) ? open.message : undefined),
+      });
+      network.catch(() => {});
+      pending = (async () => {
+        const saved = await request<CachedThread | null>({
+          type: 'CACHED_THREAD',
+          account: selection.account,
+          message: selection.id,
+          thread: selection.thread,
+        }).catch(() => null);
+        if (!saved || !Array.isArray(saved.messages) || !saved.messages.some(item => item.id === selection.id)) {
+          setThreadCache(value => (value?.key === key ? null : value));
+          return network;
+        }
+        fromCache = true;
+        setThreadCache({key, fetchedAt: saved.fetchedAt, refreshing: true, error: ''});
+        network
+          .then(value => {
+            if (threads.get(key) !== pending) return;
+            const stable = value.map((item, index) => {
+              const previous = saved.messages[index];
+              if (
+                previous &&
+                JSON.stringify({...item, unread: false}) === JSON.stringify({...previous, unread: false})
+              ) {
+                // A confirmed read flag alone must not replace the mounted message/frame.
+                previous.unread = item.unread;
+                return previous;
+              }
+              return item;
+            });
+            threads.set(key, Promise.resolve(stable));
+            confirmRead(selection, stable);
+            setThreadCache(value => (value?.key === key ? null : value));
+            if (selected()?.account === selection.account && selected()?.id === selection.id)
+              setThreadVersion(version => version + 1);
+          })
+          .catch(error => {
+            if (threads.get(key) === pending)
+              setThreadCache({key, fetchedAt: saved.fetchedAt, refreshing: false, error: errorMessage(error)});
+          });
+        return saved.messages;
+      })().catch(error => {
+        if (threads.get(key) === pending) threads.delete(key);
+        throw error;
+      });
+      threads.set(key, pending);
+      if (threads.size > 30) threads.delete(threads.keys().next().value!);
+    }
+    const value = await pending;
+    if (cached && !value.some(item => item.id === selection.id)) {
+      threads.delete(key);
+      return thread(selection);
+    }
+    if (!fromCache && threadCache()?.key !== key && threads.get(key) === pending) confirmRead(selection, value);
     return value;
   }
 
@@ -835,6 +892,7 @@ export const store = createRoot(() => {
     selected,
     current,
     threadVersion,
+    threadCache,
     expanded,
     query,
     results,

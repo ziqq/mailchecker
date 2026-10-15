@@ -86,7 +86,7 @@ export function decodeEntities(value: string): string {
   });
 }
 
-/** Maximum stored characters of an HTML body (bodies are never persisted). */
+/** Maximum characters of a normalized untrusted HTML body. */
 const MAX_HTML = 2 * 1024 * 1024;
 
 /** Returns a trimmed single-line string of at most [max] characters. */

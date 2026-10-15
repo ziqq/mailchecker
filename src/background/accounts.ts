@@ -14,6 +14,7 @@
 import {ACCOUNT_COLORS} from '../shared/inbox';
 import {preferences} from '../shared/preferences';
 import type {Account, AccountInput, Credentials, ProviderID, PublicState, Store} from '../shared/types';
+import {clearCache, invalidateCache} from './cache';
 import {AuthError} from './http';
 import * as oauth from './oauth/flow';
 import {gmail} from './providers/gmail';
@@ -124,11 +125,13 @@ export async function setAccountColor(id: string, color: string): Promise<void> 
  */
 export async function removeAccount(id: string): Promise<void> {
   renewals.delete(id);
+  invalidateCache(id);
   await writeStore(({accounts = [], mailboxes = {}}) => {
     const rest = {...mailboxes};
     delete rest[id];
     return {accounts: accounts.filter(account => account.id !== id), mailboxes: rest};
   });
+  await clearCache(id);
 }
 
 /**

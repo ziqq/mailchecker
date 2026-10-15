@@ -754,5 +754,23 @@
   },
   "welcome_title_2": {
     "message": "De un vistazo"
+  },
+  "cache_title": {
+    "message": "Caché de correo"
+  },
+  "cache_text": {
+    "message": "Los mensajes abiertos se guardan en este dispositivo. Al borrar la caché se conservan las cuentas y los ajustes."
+  },
+  "cache_clear": {
+    "message": "Borrar caché"
+  },
+  "cache_cleared": {
+    "message": "Caché de correo borrada."
+  },
+  "cache_refreshing": {
+    "message": "Copia guardada. Buscando actualizaciones…"
+  },
+  "cache_offline": {
+    "message": "Copia guardada. Actualización no disponible."
   }
 }

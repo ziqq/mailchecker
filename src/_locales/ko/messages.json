@@ -730,5 +730,23 @@
   },
   "welcome_title_2": {
     "message": "한곳에서"
+  },
+  "cache_title": {
+    "message": "메일 캐시"
+  },
+  "cache_text": {
+    "message": "열어 본 메일은 이 기기에 저장됩니다. 캐시를 지워도 계정과 설정은 유지됩니다."
+  },
+  "cache_clear": {
+    "message": "캐시 지우기"
+  },
+  "cache_cleared": {
+    "message": "메일 캐시를 지웠습니다."
+  },
+  "cache_refreshing": {
+    "message": "저장된 사본. 업데이트 확인 중…"
+  },
+  "cache_offline": {
+    "message": "저장된 사본. 업데이트할 수 없습니다."
   }
 }

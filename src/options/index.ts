@@ -541,6 +541,19 @@ byID('theme').addEventListener('click', () => {
   if (state) save({theme: themes[(themes.indexOf(state.preferences.theme) + 1) % themes.length]});
 });
 
+byID<HTMLButtonElement>('clear-cache').addEventListener('click', async event => {
+  const button = event.currentTarget as HTMLButtonElement;
+  button.disabled = true;
+  try {
+    await request({type: 'CLEAR_CACHE'});
+    status(t('cache_cleared'));
+  } catch (error) {
+    status(errorMessage(error), true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
 localize();
 byID('theme').append(icon('theme'));
 byID('version').textContent = `v${chrome.runtime.getManifest().version}`;

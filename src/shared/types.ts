@@ -146,6 +146,12 @@ export interface ThreadMessage {
   attachments: Attachment[];
 }
 
+/** Persisted conversation returned before its network revalidation. */
+export interface CachedThread {
+  messages: ThreadMessage[];
+  fetchedAt: number;
+}
+
 /** Message actions available in lists and the reader. */
 export type MessageAction = 'archive' | 'trash' | 'read' | 'unread' | 'pin' | 'unpin';
 
@@ -202,6 +208,8 @@ export type Request =
   | {type: 'OPEN'; account: string; message?: string; entry?: MailMessage}
   | {type: 'FOLDERS'; account: string}
   | {type: 'FOLDER'; account: string; folder: string; cursor?: string}
+  | {type: 'CACHED_THREAD'; account: string; message: string; thread: string}
+  | {type: 'CLEAR_CACHE'}
   | {type: 'THREAD'; account: string; message: string; thread: string; entry?: MailMessage}
   | {type: 'REPLY'; account: string; message: string; text: string; entry?: MailMessage}
   | {type: 'ACT'; account: string; message: string; action: MessageAction; entry?: MailMessage}

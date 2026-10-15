@@ -236,6 +236,10 @@ function search(query: string): SearchHit[] {
 /** Answers one request. */
 function answer(message: Request): unknown {
   switch (message.type) {
+    case 'CACHED_THREAD':
+      return null;
+    case 'CLEAR_CACHE':
+      return true;
     case 'STATE':
       return state();
     case 'CHECK':

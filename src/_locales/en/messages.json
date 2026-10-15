@@ -742,5 +742,23 @@
   },
   "welcome_title_2": {
     "message": "At once"
+  },
+  "cache_title": {
+    "message": "Mail cache"
+  },
+  "cache_text": {
+    "message": "Previously opened mail is saved on this device. Clearing the cache keeps accounts and settings."
+  },
+  "cache_clear": {
+    "message": "Clear cache"
+  },
+  "cache_cleared": {
+    "message": "Mail cache cleared."
+  },
+  "cache_refreshing": {
+    "message": "Saved copy. Checking for updates…"
+  },
+  "cache_offline": {
+    "message": "Saved copy. Updates are unavailable."
   }
 }

@@ -9,11 +9,11 @@
  * messages (read and unread) and the Inbox unread count. Notifications are
  * shown only for unread messages that were not listed by the previous
  * successful check, so the first check after connecting is silent.
- * Conversation bodies and search results are returned to the page and
- * never stored.
+ * Loaded mail is cached in bounded worker-owned IndexedDB; credentials stay in chrome.storage.
  *
  * @module background/mailbox
  */
+import {cacheAction, cacheTicket, cacheView, invalidateCache} from './cache';
 import {senderName} from '../shared/format';
 import {accents, preferences} from '../shared/preferences';
 import type {
@@ -96,6 +96,7 @@ export function checkAll(): Promise<void> {
 
 /** Checks one account and records the result or error. */
 export async function checkAccount(id: string): Promise<void> {
+  const ticket = cacheTicket(id);
   const changes = revision(id);
   const version = changes.version;
   const before = await readStore();
@@ -139,6 +140,7 @@ export async function checkAccount(id: string): Promise<void> {
     }
     return {mailboxes: {...mailboxes, [id]: result}};
   });
+  if (account && !result.error) await cacheView(ticket, 'inbox', '', result.messages);
   if (account && previous?.notified && !result.error && settings.notifications) {
     const known = new Set(previous.messages.map(item => item.id));
     const fresh = result.messages.filter(
@@ -256,17 +258,20 @@ export async function folders(accountID: string): Promise<MailFolder[]> {
   });
 }
 
-/** Loads one selected folder page on demand; folder metadata and bodies are never persisted. */
+/** Loads one selected folder page on demand and caches its normalized metadata. */
 export async function folder(accountID: string, id: string, cursor = ''): Promise<FolderPage> {
   if (!id || id.length > 512 || cursor.length > 4096) throw new Error(t('error_bad_message'));
+  const ticket = cacheTicket(accountID);
   const limit = 50;
   return withAccount(accountID, async (module, account) => {
     if (!module.folder) throw new Error(t('folder_unsupported'));
     const value = await module.folder(account, id, limit, cursor);
-    return {
+    const page = {
       messages: value.messages.slice(0, limit).map(item => normalize({...item, folder: id})),
       next: String(value.next || '').slice(0, 4096),
     };
+    await cacheView(ticket, 'folder', JSON.stringify([id, cursor]), page.messages, page.next);
+    return page;
   });
 }
 
@@ -288,6 +293,7 @@ export async function act(
 ): Promise<void> {
   if (!ACTIONS.includes(action)) throw new Error(t('error_unknown_action'));
   if (!messageID || messageID.length > 512) throw new Error(t('error_bad_message'));
+  invalidateCache(accountID);
   const changes = revision(accountID);
   changes.version++;
   changes.actions++;
@@ -297,6 +303,7 @@ export async function act(
     await withAccount(accountID, (module, account) => module.act(account, item, action));
     await updateMessage(accountID, messageID, action);
   } finally {
+    invalidateCache(accountID);
     changes.actions--;
     changes.version++;
   }
@@ -324,8 +331,12 @@ async function updateMessage(accountID: string, messageID: string, action: Messa
     }
     return {mailboxes: {...current, [accountID]: {...box, messages, unread: Math.max(0, unread)}}};
   });
+  await cacheAction(accountID, messageID, action);
   await updateBadge();
 }
+
+/** Provider body requests shared across simultaneously opened popup/tab clients. */
+const pendingThreads = new Map<string, Promise<ThreadMessage[]>>();
 
 /**
  * Loads a conversation with bodies; opening it marks unread messages as read.
@@ -343,9 +354,31 @@ export async function thread(
   if (!messageID || messageID.length > 512 || threadID.length > 512) throw new Error(t('error_bad_message'));
   const {mailboxes = {}} = await readStore();
   const item = lookup(mailboxes[accountID], messageID, threadID, entry);
-  const messages = await withAccount(accountID, (module, account) =>
-    module.thread(account, {...item, thread: item.thread || threadID}),
-  );
+  const ticket = cacheTicket(accountID);
+  const key = JSON.stringify([
+    accountID,
+    item.thread || threadID || messageID,
+    messageID,
+    ticket.epoch,
+    ticket.version,
+  ]);
+  let pending = pendingThreads.get(key);
+  if (!pending) {
+    pending = withAccount(accountID, (module, account) =>
+      module.thread(account, {...item, thread: item.thread || threadID}),
+    )
+      .then(async messages => {
+        if (messages.some(message => message.id === messageID))
+          await cacheView(ticket, 'thread', item.thread || threadID || messageID, messages);
+        return messages;
+      })
+      .finally(() => {
+        if (pendingThreads.get(key) === pending) pendingThreads.delete(key);
+      });
+    pendingThreads.set(key, pending);
+  }
+  // Callers reconcile their own selected unread message, without mutating another caller's snapshot.
+  const messages = (await pending).map(message => ({...message}));
   const target = messages.find(message => message.id === messageID);
   if (item.unread || target?.unread) {
     try {
@@ -375,6 +408,8 @@ export async function reply(accountID: string, messageID: string, text: string, 
     if (!module.reply) throw new Error(t('error_reply_webmail'));
     return module.reply(account, item, text);
   });
+  invalidateCache(accountID);
+  await cacheAction(accountID, messageID);
 }
 
 /**
@@ -391,9 +426,13 @@ export async function search(query: string): Promise<SearchHit[]> {
   const eligible = accounts.filter(account => !account.settings.browser);
   const results = await Promise.allSettled(
     eligible.map(account =>
-      withAccount(account.id, (module, current) => module.search(current, text, 20)).then(messages =>
-        messages.map(message => ({account: account.id, message})),
-      ),
+      withAccount(account.id, (module, current) => {
+        const ticket = cacheTicket(account.id);
+        return module.search(current, text, 20).then(async messages => {
+          await cacheView(ticket, 'search', text, messages);
+          return messages.map(message => ({account: account.id, message}));
+        });
+      }),
     ),
   );
   if (results.length && results.every(result => result.status === 'rejected')) {

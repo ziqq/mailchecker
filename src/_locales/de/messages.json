@@ -742,5 +742,23 @@
   },
   "welcome_title_2": {
     "message": "Auf einen Blick"
+  },
+  "cache_title": {
+    "message": "E-Mail-Cache"
+  },
+  "cache_text": {
+    "message": "Geöffnete E-Mails werden auf diesem Gerät gespeichert. Konten und Einstellungen bleiben beim Leeren erhalten."
+  },
+  "cache_clear": {
+    "message": "Cache leeren"
+  },
+  "cache_cleared": {
+    "message": "E-Mail-Cache geleert."
+  },
+  "cache_refreshing": {
+    "message": "Gespeicherte Kopie. Aktualisierungen werden geprüft…"
+  },
+  "cache_offline": {
+    "message": "Gespeicherte Kopie. Aktualisierung nicht verfügbar."
   }
 }
