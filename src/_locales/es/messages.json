@@ -663,7 +663,7 @@
     "message": "«$1»"
   },
   "search_webmail_only": {
-    "message": "La extensión aún no permite buscar en buzones conectados mediante el navegador: $1. Usa la búsqueda del correo web."
+    "message": "La extensión aún no permite buscar en estos buzones: $1. Usa la búsqueda del correo web."
   },
   "search_webmail_title": {
     "message": "Buscar en el correo web"
@@ -772,5 +772,8 @@
   },
   "cache_offline": {
     "message": "Copia guardada. Actualización no disponible."
+  },
+  "search_limit": {
+    "message": "$1: se alcanzó el límite de búsqueda del servidor. Precisa la consulta."
   }
 }

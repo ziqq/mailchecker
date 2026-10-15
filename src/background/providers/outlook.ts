@@ -7,7 +7,15 @@
  *
  * @module background/providers/outlook
  */
-import type {Credentials, FolderPage, FolderRole, MailFolder, MailMessage, MessageAction} from '../../shared/types';
+import type {
+  Account,
+  Credentials,
+  FolderPage,
+  FolderRole,
+  MailFolder,
+  MailMessage,
+  MessageAction,
+} from '../../shared/types';
 import {AuthError, HTTPError, requestJSON, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
 import {addresses, categorize, count, message, threadMessage, type Provider} from './message';
@@ -174,6 +182,43 @@ async function folders(credentials: Credentials): Promise<MailFolder[]> {
   return result;
 }
 
+/** Searches one Graph page and validates continuations against the original query and 1,000-hit ceiling. */
+async function searchPage(account: Account, query: string, limit: number, cursor: string) {
+  const search = `"${query.replace(/"/g, '')}"`;
+  let path = '/messages';
+  let offset = 0;
+  if (cursor) {
+    const value = JSON.parse(cursor) as {query?: unknown; url?: unknown; offset?: unknown};
+    if (
+      value.query !== query ||
+      !Number.isInteger(value.offset) ||
+      Number(value.offset) < 1 ||
+      Number(value.offset) >= 1000
+    )
+      throw new Error(t('error_bad_message'));
+    path = continuation(value.url, '/messages');
+    if (!path) throw new Error(t('error_bad_message'));
+    offset = Number(value.offset);
+  }
+  const url = new URL(API + path);
+  url.searchParams.set('$search', search);
+  url.searchParams.set('$top', String(Math.min(limit, 1000 - offset)));
+  url.searchParams.set('$select', LIST_FIELDS);
+  const value = await call<{value?: GraphMessage[]; '@odata.nextLink'?: unknown}>(
+    account.credentials,
+    '/messages' + url.search,
+  );
+  const messages = (Array.isArray(value?.value) ? value.value : [])
+    .slice(0, Math.min(limit, 1000 - offset))
+    .map(listMessage);
+  const count = offset + messages.length;
+  const nextPath = continuation(value?.['@odata.nextLink'], '/messages');
+  const next = nextPath && count < 1000 ? JSON.stringify({query, url: API + nextPath, offset: count}) : '';
+  if (next && (!messages.length || next === cursor || nextPath === path))
+    throw new Error(t('error_unexpected_reply', 'Microsoft Graph'));
+  return {messages, next, limited: count >= 1000 || undefined};
+}
+
 /** Outlook / Microsoft 365 provider. */
 export const outlook: Provider = {
   label: 'Outlook / Microsoft 365',
@@ -273,15 +318,8 @@ export const outlook: Provider = {
     else await call(account.credentials, path, {method: 'PATCH', json: PATCHES[action]});
   },
 
-  async search(account, query, limit) {
-    const params = new URLSearchParams({
-      $search: `"${query.replace(/"/g, '')}"`,
-      $top: String(limit),
-      $select: LIST_FIELDS,
-    });
-    const list = await call<{value?: GraphMessage[]}>(account.credentials, `/messages?${params}`);
-    return (Array.isArray(list?.value) ? list.value : []).slice(0, limit).map(listMessage);
-  },
+  search: async (account, query, limit) => (await searchPage(account, query, limit, '')).messages,
+  searchPage,
 
   webURL: (_account, item) => item?.link || 'https://outlook.office.com/mail/inbox',
 

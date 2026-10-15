@@ -1127,3 +1127,107 @@ test('Settings reports failure instead of claiming a successful clear without In
   const w = startWorker();
   assert.equal((await w.send({type: 'CLEAR_CACHE'})).ok, false);
 });
+
+test('paged search preserves partial successes and retries the failed mailbox cursor independently', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  await w.ok({
+    type: 'ADD_ACCOUNT',
+    provider: 'jmap',
+    input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+  });
+  const [gmail, jmap] = w.stores.local.accounts;
+  const original = w.context.fetch;
+  let failed = true;
+  const pages = [];
+  w.context.fetch = async (input, init) => {
+    const url = new URL(input);
+    if (url.host === 'api.fastmail.com' && failed) throw Error('temporary JMAP');
+    if (url.host === 'gmail.googleapis.com' && url.pathname.endsWith('/messages')) {
+      pages.push(url.searchParams.get('pageToken') || '');
+      return json({
+        messages: [{id: url.searchParams.has('pageToken') ? 'last' : 'first'}],
+        ...(url.searchParams.has('pageToken') ? {} : {nextPageToken: 'opaque+next'}),
+      });
+    }
+    return original(input, init);
+  };
+  const first = await w.ok({type: 'SEARCH', query: 'needle', pages: []}, 'popup');
+  assert.equal(first.hits.length, 1);
+  assert.equal(first.pages.find(page => page.account === gmail.id).cursor, 'opaque+next');
+  assert.match(first.pages.find(page => page.account === jmap.id).error, /JMAP/);
+  failed = false;
+  const retry = await w.ok({type: 'SEARCH', query: 'needle', pages: [{account: jmap.id, cursor: ''}]}, 'app');
+  assert.equal(retry.pages.length, 1);
+  assert.equal(retry.hits[0].account, jmap.id);
+  const next = await w.ok(
+    {type: 'SEARCH', query: 'needle', pages: [{account: gmail.id, cursor: 'opaque+next'}]},
+    'app',
+  );
+  assert.equal(next.hits[0].message.id, 'last');
+  assert.equal(next.pages[0].cursor, '');
+  assert.deepEqual(pages, ['', 'opaque+next']);
+  assert.equal(JSON.stringify(next).includes('google-token'), false);
+});
+
+test('paged search rejects invalid account targets and oversized cursors before provider requests', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  const account = w.stores.local.accounts[0].id;
+  const before = w.calls.length;
+  for (const pages of [
+    null,
+    {},
+    [{account: 'missing', cursor: ''}],
+    [
+      {account, cursor: ''},
+      {account, cursor: ''},
+    ],
+    [{account, cursor: 1}],
+    [{account, cursor: 'x'.repeat(4097)}],
+    Array.from({length: 21}, () => ({account, cursor: ''})),
+  ]) {
+    const reply = await w.send({type: 'SEARCH', query: 'needle', pages}, 'popup');
+    assert.equal(reply.ok, false, JSON.stringify(pages));
+  }
+  assert.equal((await w.send({type: 'SEARCH', query: 'needle', pages: []}, 'options')).ok, false);
+  assert.equal((await w.send({type: 'SEARCH', query: 'needle', pages: []}, 'foreign')).ok, false);
+  assert.equal(w.calls.length, before);
+});
+
+test('paged search rejects repeated and oversized provider continuations without exposing credentials', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  const account = w.stores.local.accounts[0].id;
+  const original = w.context.fetch;
+  for (const nextPageToken of ['same', 'x'.repeat(4097)]) {
+    w.context.fetch = async (input, init) =>
+      new URL(input).pathname.endsWith('/messages') ? json({messages: [], nextPageToken}) : original(input, init);
+    const reply = await w.ok({type: 'SEARCH', query: 'needle', pages: [{account, cursor: 'same'}]}, 'popup');
+    assert.equal(reply.hits.length, 0);
+    assert.equal(reply.pages[0].cursor, 'same');
+    assert.ok(reply.pages[0].error);
+    assert.equal(JSON.stringify(reply).includes('google-token'), false);
+  }
+});
+
+test('browser Gmail is explicitly unsupported while Yandex and Mail.ru advertise server search', async () => {
+  const w = startWorker();
+  await w.ok({type: 'STATE'}, 'popup');
+  w.stores.local.accounts = ['gmail', 'yandex', 'mailru'].map(provider => ({
+    id: provider,
+    provider,
+    email: 'a@example.test',
+    settings: {browser: true},
+    credentials: {},
+  }));
+  const state = await w.ok({type: 'STATE'}, 'popup');
+  assert.equal(state.accounts.find(account => account.id === 'gmail').search, false);
+  assert.equal(state.accounts.find(account => account.id === 'yandex').search, true);
+  assert.equal(state.accounts.find(account => account.id === 'mailru').search, true);
+  const before = w.calls.length;
+  const reply = await w.ok({type: 'SEARCH', query: 'needle', pages: [{account: 'gmail', cursor: ''}]}, 'popup');
+  assert.equal(reply.pages[0].unsupported, true);
+  assert.equal(reply.hits.length, 0);
+  assert.equal(w.calls.length, before);
+});

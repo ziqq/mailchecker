@@ -4,7 +4,7 @@ OAuth code is prepared; live sign-in is not verified. `src/background/oauth/conf
 
 ## Extension ID and redirect URIs
 
-`src/manifest.json` contains a fixed public `key`, so every unpacked install and the Chrome Web Store item share the ID `fbojnpjcjilajbfjfhipjkldidjmmolo`. Register these exact redirect URIs:
+`src/manifest.json` contains a fixed public `key`, which gives unpacked installs the ID `fbojnpjcjilajbfjfhipjkldidjmmolo`. Before configuring the first store release, compare this with the ID assigned in the Chrome Web Store dashboard and register redirect URIs for the actual installed ID. The current unpacked redirect URIs are:
 
 ```text
 https://fbojnpjcjilajbfjfhipjkldidjmmolo.chromiumapp.org/google
@@ -20,7 +20,7 @@ The matching private key is not in the repository. Keep `keys/extension-private-
 3. Credentials → OAuth client ID → **Web application** → Authorized redirect URI: the `/google` URI above.
 4. Put the client ID in `oauthConfig.google`.
 
-`gmail.modify` is a restricted scope: publishing to all users requires Google verification and a security assessment. Testing mode is enough for personal and team use.
+`gmail.modify` is a restricted scope and public access requires Google OAuth verification. Google additionally requires a security assessment when restricted-scope data is stored on or transmitted through servers; the current extension has no developer-operated server. Confirm the applicable requirements in the OAuth verification process rather than assuming store approval grants API approval. Testing mode is limited to the configured test users. See the [current Gmail scope requirements](https://developers.google.com/workspace/gmail/api/auth/scopes).
 
 ## Microsoft
 

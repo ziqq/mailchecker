@@ -663,7 +663,7 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "A extensão ainda não oferece busca nas caixas conectadas pelo navegador: $1. Use a busca no webmail."
+    "message": "A extensão ainda não oferece pesquisa nestas caixas: $1. Use a pesquisa do webmail."
   },
   "search_webmail_title": {
     "message": "Pesquisar no webmail"
@@ -772,5 +772,8 @@
   },
   "cache_offline": {
     "message": "Cópia salva. Atualização indisponível."
+  },
+  "search_limit": {
+    "message": "$1: o limite de pesquisa do servidor foi atingido. Refine a consulta."
   }
 }

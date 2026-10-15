@@ -645,7 +645,7 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "此扩展暂不支持搜索通过浏览器连接的邮箱：$1。请使用网页版邮箱搜索。"
+    "message": "扩展程序尚不支持搜索这些邮箱：$1。请在网页版邮箱中搜索。"
   },
   "search_webmail_title": {
     "message": "在网页版邮箱中搜索"
@@ -748,5 +748,8 @@
   },
   "cache_offline": {
     "message": "已保存的副本。无法更新。"
+  },
+  "search_limit": {
+    "message": "$1：已达到服务器搜索上限，请缩小搜索范围。"
   }
 }

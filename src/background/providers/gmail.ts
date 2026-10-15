@@ -314,6 +314,8 @@ export const gmail: Provider = {
 
   search: (account, query, limit) => list(account.credentials, query, limit),
 
+  searchPage: (account, query, limit, cursor) => listPage(account.credentials, query, limit, '', cursor),
+
   // A plain-text RFC 5322 message in the original thread, with `In-Reply-To` and `References`.
   async reply(account, item, text) {
     const original = await call<GmailMessage>(

@@ -71,6 +71,7 @@ export function publicState(store: Store): PublicState {
       email: account.email,
       browser: account.settings?.browser === true,
       color: account.settings?.color || '',
+      search: typeof adapter(account).searchPage === 'function',
       reply: typeof adapter(account).reply === 'function',
     })),
     mailboxes: store.mailboxes || {},

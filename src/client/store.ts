@@ -23,6 +23,8 @@ import type {
   Preferences,
   PublicState,
   SearchHit,
+  SearchPage,
+  SearchAccountPage,
   ThreadMessage,
 } from '../shared/types';
 import {t} from '../shared/i18n';
@@ -134,6 +136,8 @@ export const store = createRoot(() => {
   const [results, setResults] = createSignal<Entry[] | null>(null);
   const [searching, setSearching] = createSignal(false);
   const [searchError, setSearchError] = createSignal('');
+  const [searchPages, setSearchPages] = createSignal<SearchAccountPage[]>([]);
+  let searchChanges: Map<string, Partial<Pick<MailMessage, 'unread' | 'pinned'>> | null> | null = null;
   /** Identifies the latest search even when query text repeats. */
   let searchGeneration = 0;
   const [refreshing, setRefreshing] = createSignal(false);
@@ -277,6 +281,7 @@ export const store = createRoot(() => {
   function setAccount(id: string): void {
     folderGeneration++;
     searchGeneration++;
+    searchChanges = null;
     folderChanges = null;
     batch(() => {
       changeAccount(id);
@@ -286,6 +291,7 @@ export const store = createRoot(() => {
       setFolderLoading(false);
       setFolderErrors([]);
       setResults(null);
+      setSearchPages([]);
       setQuery('');
       setSearching(false);
       setSearchError('');
@@ -409,6 +415,7 @@ export const store = createRoot(() => {
   async function chooseFolder(value: FolderChoice | null): Promise<void> {
     folderGeneration++;
     searchGeneration++;
+    searchChanges = null;
     folderChanges = null;
     batch(() => {
       if (value) changeAccount(value.account);
@@ -418,6 +425,7 @@ export const store = createRoot(() => {
       setFolderErrors([]);
       setFolderLoading(false);
       setResults(null);
+      setSearchPages([]);
       setQuery('');
       setSearching(false);
       setSearchError('');
@@ -427,16 +435,18 @@ export const store = createRoot(() => {
     if (folder()) await loadFolder();
   }
 
-  /** Overlays successful actions on a folder response that may still describe the old server state. */
-  function rememberFolderChange(
+  /** Overlays successful actions on in-flight list responses that may describe the old server state. */
+  function rememberListChange(
     account: string,
     id: string,
     change: Partial<Pick<MailMessage, 'unread' | 'pinned'>> | null,
   ): void {
-    if (!folderChanges) return;
     const key = `${account}/${id}`;
-    const previous = folderChanges.get(key);
-    folderChanges.set(key, previous === null || change === null ? null : {...previous, ...change});
+    for (const changes of [folderChanges, searchChanges]) {
+      if (!changes) continue;
+      const previous = changes.get(key);
+      changes.set(key, previous === null || change === null ? null : {...previous, ...change});
+    }
   }
 
   /** Keeps known folder totals consistent with successful local reads and moves until the next catalog refresh. */
@@ -633,7 +643,7 @@ export const store = createRoot(() => {
     const target = value.find(item => item.id === selection.id);
     if (target && !target.unread)
       batch(() => {
-        rememberFolderChange(selection.account, selection.id, {unread: false});
+        rememberListChange(selection.account, selection.id, {unread: false});
         updateFolderCounts(selection.account, selection.id, false);
         dirtyCatalogs.add(selection.account);
         const currentState = state();
@@ -815,7 +825,7 @@ export const store = createRoot(() => {
           action === 'read' ? false : action === 'unread' ? true : undefined,
           leaving,
         );
-        rememberFolderChange(entry.account, entry.message.id, leaving ? null : change);
+        rememberListChange(entry.account, entry.message.id, leaving ? null : change);
         setFolderEntries(entries =>
           leaving ? entries.filter(item => !matches(item)) : entries.map(item => (matches(item) ? update(item) : item)),
         );
@@ -835,20 +845,55 @@ export const store = createRoot(() => {
     }
   }
 
-  /** Runs a search across all accounts; an empty query returns to the Inbox. */
+  /** Applies one search response without losing successful pages from other accounts. */
+  function acceptSearch(value: SearchPage | SearchHit[], append: boolean): void {
+    const hits = Array.isArray(value) ? value : value.hits;
+    const pages = Array.isArray(value) ? [] : value.pages;
+    const next = new Map((append ? results() || [] : []).map(entry => [`${entry.account}/${entry.message.id}`, entry]));
+    for (const hit of hits) {
+      const key = `${hit.account}/${hit.message.id}`;
+      if (!append || !next.has(key)) next.set(key, hit);
+    }
+    for (const [key, change] of searchChanges || []) {
+      const entry = next.get(key);
+      if (change === null) next.delete(key);
+      else if (entry) next.set(key, {...entry, message: {...entry.message, ...change}});
+    }
+    const statuses = new Map((append ? searchPages() : []).map(page => [page.account, page]));
+    for (const page of pages) statuses.set(page.account, page);
+    const supported = [...statuses.values()].filter(page => !page.unsupported);
+    batch(() => {
+      setResults([...next.values()].sort((a, b) => b.message.date - a.message.date));
+      setSearchPages([...statuses.values()]);
+      setSearchError(
+        !next.size && supported.length && supported.every(page => page.error)
+          ? supported
+              .map(
+                page => `${state()?.accounts.find(account => account.id === page.account)?.email || ''}: ${page.error}`,
+              )
+              .join(' · ')
+          : '',
+      );
+    });
+  }
+
+  /** Runs a server search across all accounts; an empty query returns to the Inbox. */
   async function search(text: string): Promise<void> {
     const generation = ++searchGeneration;
     setQuery(text);
     setSearchError('');
+    setSearchPages([]);
+    searchChanges = null;
     if (!text.trim()) {
       setResults(null);
       setSearching(false);
       return;
     }
     setSearching(true);
+    searchChanges = new Map();
     try {
-      const hits = await request<SearchHit[]>({type: 'SEARCH', query: text});
-      if (generation === searchGeneration) setResults(hits.map(hit => ({account: hit.account, message: hit.message})));
+      const value = await request<SearchPage | SearchHit[]>({type: 'SEARCH', query: text, pages: []});
+      if (generation === searchGeneration) acceptSearch(value, false);
     } catch (error) {
       if (generation === searchGeneration)
         batch(() => {
@@ -856,7 +901,44 @@ export const store = createRoot(() => {
           setSearchError(errorMessage(error));
         });
     } finally {
-      if (generation === searchGeneration) setSearching(false);
+      if (generation === searchGeneration) {
+        setSearching(false);
+        searchChanges = null;
+      }
+    }
+  }
+
+  /** Loads the next successful account pages, or retries only the failed accounts. */
+  async function searchMore(retry = false): Promise<void> {
+    if (searching()) return;
+    const pages = searchPages().filter(page => !page.unsupported && (retry ? page.error : !page.error && page.cursor));
+    if (!pages.length) return;
+    const generation = searchGeneration;
+    setSearching(true);
+    searchChanges = new Map();
+    try {
+      const value = await request<SearchPage>({
+        type: 'SEARCH',
+        query: query(),
+        pages: pages.map(({account, cursor}) => ({account, cursor})),
+      });
+      if (generation === searchGeneration) acceptSearch(value, true);
+    } catch (error) {
+      if (generation === searchGeneration) {
+        const failed = new Set(pages.map(page => page.account));
+        acceptSearch(
+          {
+            hits: [],
+            pages: searchPages().map(page => (failed.has(page.account) ? {...page, error: errorMessage(error)} : page)),
+          },
+          true,
+        );
+      }
+    } finally {
+      if (generation === searchGeneration) {
+        setSearching(false);
+        searchChanges = null;
+      }
     }
   }
 
@@ -898,6 +980,7 @@ export const store = createRoot(() => {
     results,
     searching,
     searchError,
+    searchPages,
     refreshing,
     busy,
     toast,
@@ -921,6 +1004,7 @@ export const store = createRoot(() => {
     act,
     canAct,
     search,
+    searchMore,
     savePreferences,
     fail,
   };

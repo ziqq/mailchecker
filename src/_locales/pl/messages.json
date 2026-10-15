@@ -672,7 +672,7 @@
     "message": "„$1”"
   },
   "search_webmail_only": {
-    "message": "Rozszerzenie nie obsługuje jeszcze wyszukiwania w skrzynkach połączonych przez przeglądarkę: $1. Użyj wyszukiwania w poczcie internetowej."
+    "message": "Rozszerzenie nie obsługuje jeszcze wyszukiwania w tych skrzynkach: $1. Użyj wyszukiwania w poczcie internetowej."
   },
   "search_webmail_title": {
     "message": "Szukaj w poczcie internetowej"
@@ -784,5 +784,8 @@
   },
   "cache_offline": {
     "message": "Zapisana kopia. Aktualizacja niedostępna."
+  },
+  "search_limit": {
+    "message": "$1: osiągnięto limit wyszukiwania na serwerze. Doprecyzuj zapytanie."
   }
 }

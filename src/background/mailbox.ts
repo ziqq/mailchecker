@@ -24,6 +24,8 @@ import type {
   Mailbox,
   MessageAction,
   SearchHit,
+  SearchPage,
+  SearchAccountPage,
   ThreadMessage,
 } from '../shared/types';
 import {FOLDER_ROLES, orderFolders} from '../shared/folders';
@@ -424,24 +426,64 @@ export async function search(query: string): Promise<SearchHit[]> {
   if (!text) return [];
   const {accounts = []} = await readStore();
   const eligible = accounts.filter(account => !account.settings.browser);
-  const results = await Promise.allSettled(
-    eligible.map(account =>
-      withAccount(account.id, (module, current) => {
-        const ticket = cacheTicket(account.id);
-        return module.search(current, text, 20).then(async messages => {
-          await cacheView(ticket, 'search', text, messages);
-          return messages.map(message => ({account: account.id, message}));
-        });
-      }),
-    ),
+  if (!eligible.length) return [];
+  const result = await searchPage(
+    text,
+    eligible.map(account => ({account: account.id, cursor: ''})),
   );
-  if (results.length && results.every(result => result.status === 'rejected')) {
-    const failure = results.find(result => result.status === 'rejected')!;
-    throw failure.reason;
-  }
-  return results
-    .flatMap(result => (result.status === 'fulfilled' ? result.value : []))
-    .sort((a, b) => b.message.date - a.message.date);
+  if (result.pages.every(page => page.error)) throw new Error(result.pages[0].error);
+  return result.hits;
+}
+
+/** Searches requested accounts independently, retaining retries and opaque per-account cursors. */
+export async function searchPage(query: string, input: unknown): Promise<SearchPage> {
+  const text = query.trim().slice(0, 200);
+  if (!Array.isArray(input) || input.length > 20) throw new Error(t('error_bad_message'));
+  const {accounts = []} = await readStore();
+  const seen = new Set<string>();
+  const cursors = input.map(value => {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      typeof value.account !== 'string' ||
+      typeof value.cursor !== 'string' ||
+      value.account.length > 512 ||
+      value.cursor.length > 4096 ||
+      seen.has(value.account) ||
+      !accounts.some(account => account.id === value.account)
+    )
+      throw new Error(t('error_bad_message'));
+    seen.add(value.account);
+    return {account: value.account, cursor: value.cursor};
+  });
+  if (!text) return {hits: [], pages: []};
+  const requested = cursors.length ? cursors : accounts.map(account => ({account: account.id, cursor: ''}));
+  const pages = await Promise.all(
+    requested.map(async ({account: id, cursor}) => {
+      const account = accounts.find(account => account.id === id)!;
+      const ticket = cacheTicket(id);
+      if (!adapter(account).searchPage)
+        return {hits: [], page: {account: id, cursor: '', error: '', unsupported: true}};
+      try {
+        const value = await withAccount(id, (module, current) => module.searchPage!(current, text, 20, cursor));
+        const messages = value.messages.slice(0, 20).map(item => normalize(item));
+        const next = String(value.next || '');
+        if (next.length > 4096 || (next && next === cursor))
+          throw new Error(t('error_unexpected_reply', adapter(account).label));
+        await cacheView(ticket, 'search', JSON.stringify([text, cursor]), messages, next);
+        return {
+          hits: messages.map(message => ({account: id, message})),
+          page: {account: id, cursor: next, error: '', limited: value.limited},
+        };
+      } catch (error) {
+        return {hits: [], page: {account: id, cursor, error: (error as Error)?.message || t('error_generic')}};
+      }
+    }),
+  );
+  return {
+    hits: pages.flatMap(page => page.hits).sort((a, b) => b.message.date - a.message.date),
+    pages: pages.map(page => page.page as SearchAccountPage),
+  };
 }
 
 /** Opens the webmail Inbox or a listed message in a new tab. */

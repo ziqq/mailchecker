@@ -663,7 +663,7 @@
     "message": "« $1 »"
   },
   "search_webmail_only": {
-    "message": "La recherche dans cette extension ne prend pas encore en charge les boîtes connectées via le navigateur : $1. Utilisez la recherche du webmail."
+    "message": "La recherche dans ces boîtes n’est pas encore prise en charge : $1. Utilisez la recherche du webmail."
   },
   "search_webmail_title": {
     "message": "Rechercher dans le webmail"
@@ -772,5 +772,8 @@
   },
   "cache_offline": {
     "message": "Copie enregistrée. Mise à jour indisponible."
+  },
+  "search_limit": {
+    "message": "$1 : limite de recherche du serveur atteinte. Précisez la requête."
   }
 }

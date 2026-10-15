@@ -671,3 +671,172 @@ test('a failed search retains an explicit error and can be retried successfully'
   assert.equal(w.store.searchError(), '');
   assert.equal(w.store.results()[0].message.id, 'found');
 });
+
+test('search pagination deduplicates within an account, retains cross-account IDs and retries only failures', async () => {
+  const w = start();
+  await w.store.load();
+  const seen = [];
+  const transport = w.context.transport;
+  w.context.transport = async req => {
+    if (req.type !== 'SEARCH') return transport(req);
+    seen.push(structuredClone(req));
+    if (seen.length === 1)
+      return {
+        hits: [{account: 'A', message: message('same', 2)}],
+        pages: [
+          {account: 'A', cursor: 'opaque-A', error: ''},
+          {account: 'B', cursor: '', error: 'temporary'},
+          {account: 'C', cursor: '', error: '', unsupported: true},
+        ],
+      };
+    if (seen.length === 2)
+      return {
+        hits: [{account: 'B', message: message('same', 3)}],
+        pages: [{account: 'B', cursor: 'opaque-B', error: ''}],
+      };
+    return {
+      hits: [
+        {account: 'A', message: message('same', 1)},
+        {account: 'A', message: message('last', 4)},
+      ],
+      pages: [
+        {account: 'A', cursor: '', error: ''},
+        {account: 'B', cursor: '', error: '', limited: true},
+      ],
+    };
+  };
+  await w.store.search('needle');
+  assert.equal(w.store.searchError(), '');
+  await w.store.searchMore(true);
+  assert.equal(JSON.stringify(seen[1].pages), JSON.stringify([{account: 'B', cursor: ''}]));
+  const original = w.store.results().find(hit => hit.account === 'A');
+  await w.store.searchMore();
+  assert.equal(
+    JSON.stringify(seen[2].pages),
+    JSON.stringify([
+      {account: 'A', cursor: 'opaque-A'},
+      {account: 'B', cursor: 'opaque-B'},
+    ]),
+  );
+  assert.equal(
+    w.store
+      .results()
+      .map(hit => `${hit.account}/${hit.message.id}`)
+      .join(),
+    'A/last,B/same,A/same',
+  );
+  assert.equal(
+    w.store.results().find(hit => hit.account === 'A' && hit.message.id === 'same'),
+    original,
+  );
+  assert.equal(w.store.searchPages().find(page => page.account === 'B').limited, true);
+  await w.store.searchMore();
+  await w.store.searchMore(true);
+  assert.equal(seen.length, 3);
+});
+
+test('failed continuation retains successful rows and retries the same cursor', async () => {
+  const w = start();
+  await w.store.load();
+  w.server.search = {
+    hits: [{account: 'A', message: message('first')}],
+    pages: [{account: 'A', cursor: 'next', error: ''}],
+  };
+  await w.store.search('needle');
+  const transport = w.context.transport;
+  w.context.transport = req =>
+    req.type === 'SEARCH' ? Promise.reject(runInContext('new Error("page unavailable")', w.context)) : transport(req);
+  await w.store.searchMore();
+  assert.equal(w.store.results()[0].message.id, 'first');
+  assert.equal(w.store.searchPages()[0].cursor, 'next');
+  assert.match(w.store.searchPages()[0].error, /page unavailable/);
+  w.context.transport = transport;
+  w.server.search = {
+    hits: [{account: 'A', message: message('last', 2)}],
+    pages: [{account: 'A', cursor: '', error: ''}],
+  };
+  await w.store.searchMore(true);
+  const req = w.server.calls.filter(req => req.type === 'SEARCH').at(-1);
+  assert.equal(req.pages[0].cursor, 'next');
+  assert.equal(w.store.results().length, 2);
+  assert.equal(w.store.searchPages()[0].error, '');
+});
+
+for (const transition of ['query', 'clear', 'account', 'folder']) {
+  test(`a late search continuation cannot overwrite a ${transition} transition`, async () => {
+    const w = start();
+    await w.store.load();
+    w.server.search = {
+      hits: [{account: 'A', message: message('first')}],
+      pages: [{account: 'A', cursor: 'next', error: ''}],
+    };
+    await w.store.search('old');
+    let resolve;
+    const transport = w.context.transport;
+    w.context.transport = req =>
+      req.type === 'SEARCH'
+        ? new Promise(done => {
+            resolve = done;
+          })
+        : transport(req);
+    const pending = w.store.searchMore();
+    await w.store.searchMore();
+    w.context.transport = transport;
+    w.server.search = {hits: [{account: 'A', message: message('new')}], pages: [{account: 'A', cursor: '', error: ''}]};
+    if (transition === 'query') await w.store.search('new');
+    if (transition === 'clear') await w.store.search('');
+    if (transition === 'account') w.store.setAccount('A');
+    if (transition === 'folder') await w.store.chooseFolder({account: 'A', folder: w.server.folders[0]});
+    const before = w.store.results();
+    resolve({hits: [{account: 'A', message: message('stale')}], pages: [{account: 'A', cursor: 'stale', error: ''}]});
+    await pending;
+    assert.equal(w.store.results(), before);
+    assert.equal(w.store.searching(), false);
+  });
+}
+
+for (const action of ['read', 'unread', 'pin', 'unpin', 'trash', 'archive']) {
+  test(`an in-flight search page cannot undo a confirmed ${action}`, async () => {
+    const w = start();
+    await w.store.load();
+    const item = {...message('found'), unread: action === 'read', pinned: action === 'unpin'};
+    w.server.search = {hits: [{account: 'A', message: item}], pages: [{account: 'A', cursor: 'next', error: ''}]};
+    await w.store.search('needle');
+    let resolve;
+    const transport = w.context.transport;
+    w.context.transport = req =>
+      req.type === 'SEARCH'
+        ? new Promise(done => {
+            resolve = done;
+          })
+        : transport(req);
+    const pending = w.store.searchMore();
+    await w.store.act(w.store.results()[0], action);
+    resolve({hits: [{account: 'A', message: item}], pages: [{account: 'A', cursor: '', error: ''}]});
+    await pending;
+    if (action === 'trash') assert.equal(w.store.results().length, 0);
+    else if (action === 'archive') assert.equal(w.store.results()[0].message.id, 'found');
+    else {
+      const field = action === 'read' || action === 'unread' ? 'unread' : 'pinned';
+      assert.equal(w.store.results()[0].message[field], action === 'unread' || action === 'pin');
+    }
+  });
+}
+
+test('all paged failures name the mailbox, while an unsupported account is not treated as an empty success', async () => {
+  const w = start();
+  await w.store.load();
+  w.server.search = {
+    hits: [],
+    pages: [
+      {account: 'A', cursor: '', error: 'offline'},
+      {account: 'B', cursor: '', error: '', unsupported: true},
+    ],
+  };
+  await w.store.search('needle');
+  assert.match(w.store.searchError(), /a@example\.test: offline/);
+  w.server.search = {hits: [], pages: [{account: 'A', cursor: '', error: ''}]};
+  await w.store.searchMore(true);
+  assert.equal(w.store.searchError(), '');
+  assert.equal(w.store.results().length, 0);
+});

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.40
+
+- **ADDED**: provider, worker, store and responsive-browser regression tests for server search pagination, partial failures, retries, cursor isolation and action/query races
+- **ADDED**: first Chrome Web Store release preparation with listing drafts, permission/data disclosures and submission requirements
+
+## 0.0.39
+
+- **ADDED**: on-demand server search pages for Gmail API, Microsoft Graph, JMAP, Yandex lite and Mail.ru, with independent mailbox cursors and an explicit Load more control
+- **FIXED**: partial search failures identify the affected mailbox and retry its page without losing successful results; stale pages and confirmed read/pin/move actions cannot overwrite the current search
+
 ## 0.0.38
 
 - **ADDED**: permanent IndexedDB regressions using the native browser database and an unpacked MV3 extension, covering restart persistence, cache bounds, action/clear races, read acknowledgements, frame retention and storage failures

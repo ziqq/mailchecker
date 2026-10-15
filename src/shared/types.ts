@@ -95,6 +95,30 @@ export interface FolderPage {
   next: string;
 }
 
+/** A provider page can stop at a documented service ceiling rather than a complete result set. */
+export interface SearchMessagePage extends FolderPage {
+  limited?: boolean;
+}
+
+/** A continuation belongs to one account and is opaque to the client. */
+export interface SearchCursor {
+  account: string;
+  cursor: string;
+}
+
+/** Success, retry position or unsupported status for one searched account. */
+export interface SearchAccountPage extends SearchCursor {
+  error: string;
+  unsupported?: boolean;
+  limited?: boolean;
+}
+
+/** A bounded global page; successful accounts survive another account's failure. */
+export interface SearchPage {
+  hits: SearchHit[];
+  pages: SearchAccountPage[];
+}
+
 /** A bounded Inbox message record for lists. */
 export interface MailMessage {
   id: string;
@@ -183,6 +207,8 @@ export interface PublicAccount {
   browser: boolean;
   /** The chosen colour, or empty for the colour by position. */
   color: string;
+  /** The worker has a server-search adapter for this connection. */
+  search?: boolean;
   /** Replies are written in the extension; otherwise they open in the webmail. */
   reply: boolean;
 }
@@ -213,7 +239,7 @@ export type Request =
   | {type: 'THREAD'; account: string; message: string; thread: string; entry?: MailMessage}
   | {type: 'REPLY'; account: string; message: string; text: string; entry?: MailMessage}
   | {type: 'ACT'; account: string; message: string; action: MessageAction; entry?: MailMessage}
-  | {type: 'SEARCH'; query: string}
+  | {type: 'SEARCH'; query: string; pages?: SearchCursor[]}
   | {type: 'SIGN_IN'; account: string}
   | {type: 'PREFERENCES'; value: Partial<Preferences>}
   | {type: 'ADD_ACCOUNT'; provider: ProviderID; input?: AccountInput; browser?: boolean}

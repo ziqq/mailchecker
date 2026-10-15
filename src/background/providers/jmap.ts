@@ -166,7 +166,10 @@ async function queryPage(
   ]);
   const list: JMAPEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
   const messages = list.slice(0, limit).map(listMessage);
-  return {messages, next: messages.length === limit ? String(position + messages.length) : ''};
+  const size = Array.isArray(replies.query?.ids) ? Math.min(replies.query.ids.length, limit) : messages.length;
+  const total = replies.query?.total;
+  const more = size > 0 && (Number.isSafeInteger(total) && total >= 0 ? position + size < total : size === limit);
+  return {messages, next: more ? String(position + size) : ''};
 }
 
 /** Queries the first bounded page for Inbox checks and search. */
@@ -320,6 +323,11 @@ export const jmap: Provider = {
   },
 
   search: (account, text, limit) => query(account, {text}, limit),
+
+  async searchPage(account, text, limit, cursor) {
+    if (cursor && !/^\d{1,7}$/.test(cursor)) throw new Error(t('error_bad_message'));
+    return queryPage(account, {text}, limit, Number(cursor || 0));
+  },
 
   webURL: account => account.settings.webURL || new URL(sessionURL(account)).origin,
 

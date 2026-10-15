@@ -548,7 +548,7 @@ for (const layout of [
       await expect(notice).toContainText('В расширении пока нет поиска');
       await expect(notice).toContainText('anton@yandex.ru');
       await expect(notice).toContainText('anton@mail.ru');
-      await expect(page.getByText('Ничего не найдено.', {exact: true})).toHaveCount(0);
+      await expect(page.getByRole('heading', {name: 'Ничего не нашлось.', exact: true})).toHaveCount(0);
       await expectNoHorizontalScroll(page);
     });
   });
@@ -647,6 +647,52 @@ for (const [name, path, width, height] of [
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(
         0,
       );
+    });
+  });
+}
+
+for (const layout of [
+  ...LAYOUTS,
+  {name: 'mini popup', path: 'popup.html?popup=mini', viewport: {width: 400, height: 600}},
+]) {
+  test.describe(`paged search ${layout.name}`, () => {
+    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+
+    test('keeps successful accounts, retries a failure and loads every unique server result', async ({page}) => {
+      const errors = watchErrors(page);
+      const separator = layout.path.includes('?') ? '&' : '?';
+      await page.goto(`${layout.path}${separator}search=paged&searchError=work`);
+      await expect(page.locator('.row[data-id="g1"]')).toBeVisible();
+      const search = page.getByRole('searchbox');
+      await search.fill('Server pagination');
+      await search.press('Enter');
+      await expect(page.locator('.row')).toHaveCount(80);
+      const failure = page.getByRole('alert');
+      await expect(failure).toContainText('a.ustinoff@company.onmicrosoft.com');
+      await expect(page.getByRole('heading', {name: 'Ничего не нашлось.', exact: true})).toHaveCount(0);
+      await failure.getByRole('button').click();
+      await expect(page.locator('.row')).toHaveCount(100);
+      await expect(failure).toHaveCount(0);
+      const more = page.locator('button.folder-more');
+      await more.click();
+      await expect(page.locator('.row')).toHaveCount(200);
+      await more.click();
+      await expect(page.locator('.row')).toHaveCount(225);
+      await expect(more).toHaveCount(0);
+      const ids = await page.locator('.row').evaluateAll(rows => rows.map(row => row.dataset.id));
+      expect(new Set(ids).size).toBe(225);
+      for (const account of ['gmail', 'work', 'fastmail', 'yandex', 'mailru'])
+        expect(ids.filter(id => id.startsWith(`search-${account}-`))).toHaveLength(45);
+      await expectNoHorizontalScroll(page);
+      await search.fill('no-such-server-message');
+      await search.press('Enter');
+      await expect(page.locator('.row')).toHaveCount(0);
+      await expect(page.getByRole('heading', {name: 'Ничего не нашлось.', exact: true})).toBeVisible();
+      await expect(more).toHaveCount(0);
+      await search.fill('');
+      await search.press('Enter');
+      await expect(page.locator('.row[data-id="g1"]')).toBeVisible();
+      expect(errors).toEqual([]);
     });
   });
 }

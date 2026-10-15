@@ -142,14 +142,16 @@ export function parseFolderPage(reply: Reply | null, folder: string, offset: num
     const item = children.find(item => item.id === thread.expand) || children[children.length - 1] || thread;
     const id = String(item.id || thread.id || '');
     if (!id) return [];
+    const source = folder || String(item.folder ?? item.fid ?? '');
+    if (!/^\d{1,12}$/.test(source)) throw new Error(t('error_unexpected_reply', t('service_mailru')));
     const from = sender((item.correspondents as {from?: Sender[]} | undefined)?.from?.[0] ?? item.from);
     const seconds = Number(item.date);
     const flags = item.flags as {unread?: unknown; flagged?: unknown; attach?: unknown} | undefined;
     return [
       message({
         id,
-        thread: String(thread.id || `0:${id}:${folder}`),
-        folder,
+        thread: String(thread.id || `0:${id}:${source}`),
+        folder: source,
         from,
         subject: item.subject ?? thread.subject,
         snippet: item.snippet ?? thread.snippet,
@@ -157,7 +159,7 @@ export function parseFolderPage(reply: Reply | null, folder: string, offset: num
         unread: flags?.unread ?? Number(thread.length_unread) > 0,
         pinned: flags?.flagged,
         attachments: flags?.attach,
-        link: link(String(thread.id || id), folder),
+        link: link(String(thread.id || id), source),
         category: categorize({from}),
       }),
     ];
@@ -165,6 +167,27 @@ export function parseFolderPage(reply: Reply | null, folder: string, offset: num
   const total = Number(body.threads_total);
   const more = messages.length === limit && (!Number.isFinite(total) || offset + messages.length < total);
   return {messages, next: more ? String(offset + messages.length) : ''};
+}
+
+/** Parses the webmail search's flat message records and authoritative `found.count`. */
+export function parseSearchPage(reply: Reply | null, offset: number, limit: number): FolderPage {
+  if (Number(reply?.status) === 403) throw new AuthError(t('error_sign_in_mailru'));
+  const body = reply?.body as {messages?: Record<string, unknown>[]; found?: {count?: unknown}} | undefined;
+  const total = Number(body?.found?.count);
+  if (Number(reply?.status) !== 200 || !Array.isArray(body?.messages) || !Number.isSafeInteger(total) || total < 0)
+    throw new Error(t('error_unexpected_reply', t('service_mailru')));
+  const rows = body.messages.slice(0, limit);
+  if (rows.some(item => typeof item?.id !== 'string' || !item.id || item.id.length > 512))
+    throw new Error(t('error_unexpected_reply', t('service_mailru')));
+  const threads = rows.map(item => ({
+    id: item.thread_id || `0:${String(item.id || '')}:${String(item.folder ?? item.fid ?? '')}`,
+    expand: item.id,
+    messages: [item],
+  }));
+  const {messages} = parseFolderPage({status: 200, body: {threads}}, '', offset, limit);
+  if (messages.length !== rows.length || (!rows.length && offset < total))
+    throw new Error(t('error_unexpected_reply', t('service_mailru')));
+  return {messages, next: offset + rows.length < total ? String(offset + rows.length) : ''};
 }
 
 /** Reads the same folder-list endpoint as Mail.ru's web client, using the signed-in account's token. */
@@ -258,6 +281,33 @@ export const mailru = sessionProvider({
     if (!/^\d{1,12}$/.test(id) || (cursor && !/^\d{1,7}$/.test(cursor))) throw new Error(t('error_bad_message'));
     const offset = Number(cursor || 0);
     return parseFolderPage(await folderPage(account.email, id, limit, offset), id, offset, limit);
+  },
+  async searchPage(account, query, limit, cursor) {
+    let offset = 0;
+    if (cursor) {
+      const value = JSON.parse(cursor) as {query?: unknown; offset?: unknown};
+      if (
+        value.query !== query ||
+        !Number.isSafeInteger(value.offset) ||
+        Number(value.offset) < 1 ||
+        Number(value.offset) > 9_999_999
+      )
+        throw new Error(t('error_bad_message'));
+      offset = Number(value.offset);
+    }
+    const params = new URLSearchParams({
+      query,
+      offset: String(offset),
+      limit: String(limit),
+      with_threads: 'false',
+      token: await token(account.email),
+    });
+    const value = parseSearchPage(
+      await call(`${API}/messages/search?${mailbox(account.email)}&${params}`, OPTIONS),
+      offset,
+      limit,
+    );
+    return {...value, next: value.next ? JSON.stringify({query, offset: Number(value.next)}) : ''};
   },
   webURL: (_account: Account, item?: MailMessage | null) => item?.link || 'https://e.mail.ru/inbox/',
   async body(account, item) {

@@ -663,7 +663,7 @@
     "message": "«$1»"
   },
   "search_webmail_only": {
-    "message": "La ricerca nell’estensione non supporta ancora le caselle collegate tramite il browser: $1. Usa la ricerca nella webmail."
+    "message": "La ricerca in queste caselle non è ancora supportata: $1. Usa la ricerca della webmail."
   },
   "search_webmail_title": {
     "message": "Cerca nella webmail"
@@ -772,5 +772,8 @@
   },
   "cache_offline": {
     "message": "Copia salvata. Aggiornamento non disponibile."
+  },
+  "search_limit": {
+    "message": "$1: raggiunto il limite di ricerca del server. Affina la ricerca."
   }
 }

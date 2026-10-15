@@ -27,6 +27,7 @@ import {
   openNotification,
   reply,
   search,
+  searchPage,
   thread,
   updateBadge,
 } from './mailbox';
@@ -138,7 +139,9 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       await reply(account, String(message.message ?? ''), String(message.text ?? ''), entry);
       return true;
     case 'SEARCH':
-      return search(String(message.query ?? ''));
+      return message.pages === undefined
+        ? search(String(message.query ?? ''))
+        : searchPage(String(message.query ?? ''), message.pages);
     case 'OPEN_APP':
       await openApp();
       return true;

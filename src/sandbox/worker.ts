@@ -14,7 +14,16 @@
  */
 import {preferences} from '../shared/preferences';
 import {ACCOUNT_COLORS} from '../shared/inbox';
-import type {MailMessage, Preferences, PublicState, Reply, Request, SearchHit, ThreadMessage} from '../shared/types';
+import type {
+  MailMessage,
+  Preferences,
+  PublicState,
+  Reply,
+  Request,
+  SearchHit,
+  SearchPage,
+  ThreadMessage,
+} from '../shared/types';
 import {createFixtures, type Fixtures} from './fixtures';
 import {t} from '../shared/i18n';
 
@@ -25,6 +34,8 @@ const LATENCY = 120;
 let data: (Fixtures & {preferences: Preferences}) | null = null;
 /** Browser sign-in started by the fixture user; the return scenario completes it on the next check. */
 let pendingBrowserSignIn = '';
+/** One simulated per-account search failure before a successful retry. */
+const failedSearches = new Set<string>();
 
 /** Returns the sandbox data, creating it on first use. */
 function current(): Fixtures & {preferences: Preferences} {
@@ -63,6 +74,29 @@ function current(): Fixtures & {preferences: Preferences} {
       <div class="image-set">Image set</div>
       <div style="background-image:url('${image.replace('http', '\\68 ttp')}?escaped')">Escaped URL</div>
       <div style="background-image:url('data:image/png;base64,iVBORw0KGgo=')">Embedded image</div>`;
+    }
+    if (query.get('search') === 'paged') {
+      data.accounts = data.accounts.map(account => ({...account, search: account.provider !== 'icloud'}));
+      for (const account of data.accounts) {
+        data.archive[account.id] ||= [];
+        const base = data.mailboxes[account.id].messages[0];
+        data.archive[account.id].push(
+          ...Array.from({length: 45}, (_, index) => ({
+            ...base,
+            from: base?.from || account.email,
+            category: base?.category || 'people',
+            link: base?.link || '',
+            pinned: false,
+            attachments: false,
+            id: `search-${account.id}-${index}`,
+            thread: `search-${account.id}-${index}`,
+            subject: `Server pagination ${index + 1}`,
+            snippet: 'Loaded on demand',
+            date: Date.now() - index * 60_000,
+            unread: false,
+          })),
+        );
+      }
     }
     if (query.get('search') === 'webmail') data.accounts = data.accounts.filter(account => account.browser);
   }
@@ -211,11 +245,11 @@ function thread(id: string, message: string, key: string): ThreadMessage[] {
 }
 
 /** Searches Inbox and archived mail of every account by sender, subject and snippet. */
-function search(query: string): SearchHit[] {
+function search(query: string, sessions = false): SearchHit[] {
   const {accounts, mailboxes, archive, folderMessages} = current();
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   return accounts
-    .filter(account => !account.browser)
+    .filter(account => sessions || !account.browser)
     .flatMap(({id}) =>
       [
         ...new Map(
@@ -231,6 +265,36 @@ function search(query: string): SearchHit[] {
       return words.every(word => haystack.includes(word));
     })
     .sort((a, b) => b.message.date - a.message.date);
+}
+
+/** Simulates independent server cursors and one retryable mailbox failure for previewing search. */
+function searchPage(query: string, pages: {account: string; cursor: string}[]): SearchPage {
+  const accounts = current().accounts;
+  const targets = pages.length ? pages : accounts.map(account => ({account: account.id, cursor: ''}));
+  const hits = search(query, new URLSearchParams(location.search).get('search') === 'paged');
+  const value: SearchPage = {hits: [], pages: []};
+  for (const target of targets) {
+    const account = accounts.find(account => account.id === target.account)!;
+    if (account.search === false || (account.search === undefined && account.browser)) {
+      value.pages.push({...target, cursor: '', error: '', unsupported: true});
+      continue;
+    }
+    if (new URLSearchParams(location.search).get('searchError') === account.id && !failedSearches.has(account.id)) {
+      failedSearches.add(account.id);
+      value.pages.push({...target, error: t('error_unreachable', t('service_server'))});
+      continue;
+    }
+    const offset = Number(target.cursor || 0);
+    const all = hits.filter(hit => hit.account === target.account);
+    const messages = all.slice(offset, offset + 20);
+    value.hits.push(...messages);
+    value.pages.push({
+      account: target.account,
+      cursor: offset + messages.length < all.length ? String(offset + messages.length) : '',
+      error: '',
+    });
+  }
+  return value;
 }
 
 /** Answers one request. */
@@ -282,7 +346,7 @@ function answer(message: Request): unknown {
     case 'SEARCH':
       if (new URLSearchParams(location.search).get('search') === 'error')
         throw new Error(t('error_unreachable', t('service_server')));
-      return search(message.query);
+      return message.pages ? searchPage(message.query, message.pages) : search(message.query);
     case 'REPLY':
       if (!message.text.trim()) throw new Error('Напишите ответ.');
       return true;

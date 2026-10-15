@@ -20,6 +20,7 @@ import type {
   ThreadMessage,
   MailFolder,
   FolderPage,
+  SearchMessagePage,
 } from '../../shared/types';
 import {t} from '../../shared/i18n';
 
@@ -56,6 +57,8 @@ export interface Provider {
   act(account: Account, message: MailMessage, action: MessageAction): Promise<void>;
   /** Searches all mail of the account, newest first. */
   search(account: Account, query: string, limit: number): Promise<MailMessage[]>;
+  /** One bounded page of server search, with its provider continuation. */
+  searchPage?(account: Account, query: string, limit: number, cursor: string): Promise<SearchMessagePage>;
   /** Sends a plain-text reply to a listed message; without it replies open in the webmail. */
   reply?(account: Account, message: MailMessage, text: string): Promise<void>;
   /** The webmail page for the Inbox or a message. */

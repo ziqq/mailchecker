@@ -654,7 +654,7 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "Search is not yet supported in this extension for mailboxes connected through the browser: $1. Use search in webmail."
+    "message": "Search is not yet supported in this extension for these mailboxes: $1. Use search in webmail."
   },
   "search_webmail_title": {
     "message": "Search in webmail"
@@ -760,5 +760,8 @@
   },
   "cache_offline": {
     "message": "Saved copy. Updates are unavailable."
+  },
+  "search_limit": {
+    "message": "$1: the server search limit has been reached. Refine your query."
   }
 }

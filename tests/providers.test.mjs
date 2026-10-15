@@ -306,16 +306,11 @@ test('a session body failure propagates and the next attempt obtains the complet
   assert.equal(attempts, 2);
 });
 
-for (const [entry, name] of [
-  ['gmailweb', 'gmailWeb'],
-  ['yandex', 'yandex'],
-  ['mailru', 'mailru'],
-]) {
-  test(`${entry} browser-session search explicitly rejects unsupported queries without an HTTP request`, async () => {
-    const module = await load('src/background/providers/' + entry + '.ts');
-    await assert.rejects(module[name].search(account, 'needle', 20), /.+/);
-  });
-}
+test('browser-session Gmail explicitly rejects search without HTTP or a page bridge', async () => {
+  const {gmailWeb} = await load('src/background/providers/gmailweb.ts');
+  assert.equal(gmailWeb.searchPage, undefined);
+  await assert.rejects(gmailWeb.search(account, 'needle', 20), /.+/);
+});
 
 test('Gmail API search sends the query and configured limit independently of folder browsing', async () => {
   const {gmail} = await load('src/background/providers/gmail.ts', async input => {
@@ -683,3 +678,278 @@ test('HTTP failures release slots for queued successful requests', async () => {
   );
   assert.equal(replies.filter(reply => reply.status === 'fulfilled').length, 21);
 });
+
+/** Builds an owned lite search page with optional continuation and no fabricated timestamps. */
+function yandexSearchPage(ids, next = '', owner = 'my-address') {
+  return (
+    `<div class="b-head-user"><li class="b-dropdown__visible"><a aria-label="${owner}">${owner}</a></li></div>` +
+    yandexPage.replace(/<div class="b-messages">[\s\S]*/, '<div class="b-messages">') +
+    ids
+      .map(
+        id =>
+          `<div class="b-messages__message"><input name="ids" value="${id}"><a href="/lite/message/${id}"><span class="b-message__subject__text">${id}</span></a></div>`,
+      )
+      .join('') +
+    '</div>' +
+    (next ? `<div class="b-pager"><a class="b-pager__next" href="${next.replaceAll('&', '&amp;')}">Next</a></div>` : '')
+  );
+}
+
+test('Gmail search consumes opaque tokens, bounds metadata reads and terminates on the final page', async () => {
+  const calls = [];
+  const query = 'from:sender@example.test проект + &';
+  const cursor = 'opaque+/= next';
+  const {gmail} = await load('src/background/providers/gmail.ts', async (input, init) => {
+    const url = new URL(input);
+    calls.push(url);
+    assert.equal(init.credentials, 'omit');
+    assert.equal(init.redirect, 'error');
+    assert.equal(init.headers.Authorization, 'Bearer test');
+    if (url.pathname.endsWith('/messages')) {
+      assert.equal(url.searchParams.get('q'), query);
+      assert.equal(url.searchParams.get('maxResults'), '2');
+      assert.equal(url.searchParams.has('labelIds'), false);
+      assert.equal(url.searchParams.has('includeSpamTrash'), false);
+      if (url.searchParams.has('pageToken')) {
+        assert.equal(url.searchParams.get('pageToken'), cursor);
+        return json({messages: [{id: 'last'}]});
+      }
+      return json({messages: [{id: 'first'}, {id: 'second'}, {id: 'excess'}], nextPageToken: cursor});
+    }
+    const id = decodeURIComponent(url.pathname.split('/').pop());
+    assert.equal(url.searchParams.get('format'), 'metadata');
+    return json({id, threadId: 'T-' + id, internalDate: '1700000000000', labelIds: [], payload: {headers: []}});
+  });
+  const first = await gmail.searchPage(account, query, 2, '');
+  assert.equal(first.messages.map(item => item.id).join(), 'first,second');
+  assert.equal(first.next, cursor);
+  const last = await gmail.searchPage(account, query, 2, first.next);
+  assert.equal(last.messages[0].id, 'last');
+  assert.equal(last.next, '');
+  assert.equal(calls.length, 5);
+  assert.equal(
+    calls.some(url => url.pathname.endsWith('/excess')),
+    false,
+  );
+});
+
+test('Graph search preserves opaque continuations, original query and the 1,000-result ceiling', async () => {
+  const calls = [];
+  const query = 'subject:проект';
+  const {outlook} = await load('src/background/providers/outlook.ts', async input => {
+    const url = new URL(input);
+    calls.push(url);
+    assert.equal(url.searchParams.get('$search'), '"' + query + '"');
+    const final = url.searchParams.get('$skiptoken') === 'ceiling';
+    assert.equal(url.searchParams.get('$top'), final ? '1' : '2');
+    return json({
+      value: final ? [{id: 'limit'}] : [{id: url.searchParams.has('$skiptoken') ? 'second' : 'first'}],
+      ...(url.searchParams.has('$skiptoken') && !final
+        ? {}
+        : {'@odata.nextLink': 'https://graph.microsoft.com/v1.0/me/messages?$skiptoken=a%2Bb%2F%3D'}),
+    });
+  });
+  const first = await outlook.searchPage(account, query, 2, '');
+  const last = await outlook.searchPage(account, query, 2, first.next);
+  assert.equal(calls[1].searchParams.get('$skiptoken'), 'a+b/=');
+  assert.equal(last.messages[0].id, 'second');
+  assert.equal(last.next, '');
+  const ceiling = await outlook.searchPage(
+    account,
+    query,
+    2,
+    JSON.stringify({query, offset: 999, url: 'https://graph.microsoft.com/v1.0/me/messages?$skiptoken=ceiling'}),
+  );
+  assert.equal(ceiling.messages.length, 1);
+  assert.equal(ceiling.next, '');
+  assert.equal(ceiling.limited, true);
+});
+
+for (const url of [
+  'https://foreign.example.test/steal',
+  'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages',
+  'https://graph.microsoft.com/v1.0/me/messages#secret',
+]) {
+  test(`Graph search refuses an unsafe continuation before HTTP: ${url}`, async () => {
+    const {outlook} = await load('src/background/providers/outlook.ts');
+    await assert.rejects(outlook.searchPage(account, 'needle', 20, JSON.stringify({query: 'needle', offset: 20, url})));
+  });
+}
+
+test('Graph search rejects query reuse and repeated server continuations', async () => {
+  const url = 'https://graph.microsoft.com/v1.0/me/messages?$skiptoken=same';
+  const {outlook} = await load('src/background/providers/outlook.ts', async () =>
+    json({value: [{id: 'one'}], '@odata.nextLink': url}),
+  );
+  await assert.rejects(outlook.searchPage(account, 'new', 20, JSON.stringify({query: 'old', offset: 1, url})));
+  await assert.rejects(outlook.searchPage(account, 'needle', 20, JSON.stringify({query: 'needle', offset: 1, url})));
+});
+
+test('JMAP search advances by query IDs when a message disappears and respects a server page cap', async () => {
+  const positions = [];
+  const {jmap} = await load('src/background/providers/jmap.ts', async (input, init) => {
+    if (new URL(input).pathname === '/session')
+      return json({apiUrl: '/api', primaryAccounts: {'urn:ietf:params:jmap:mail': 'mail'}});
+    const query = JSON.parse(init.body).methodCalls.find(([name]) => name === 'Email/query')[1];
+    assert.deepEqual(query.filter, {text: 'needle'});
+    assert.equal(query.limit, 20);
+    positions.push(query.position);
+    return json({
+      methodResponses: [
+        ['Email/query', {ids: query.position ? ['last'] : ['first', 'deleted'], total: 3}, 'query'],
+        ['Email/get', {list: [{id: query.position ? 'last' : 'first'}]}, 'emails'],
+      ],
+    });
+  });
+  const a = {...account, settings: {sessionURL: 'https://mail.example.test/session'}};
+  const first = await jmap.searchPage(a, 'needle', 20, '');
+  assert.equal(first.messages.length, 1);
+  assert.equal(first.next, '2');
+  const last = await jmap.searchPage(a, 'needle', 20, first.next);
+  assert.equal(last.messages[0].id, 'last');
+  assert.equal(last.next, '');
+  assert.deepEqual(positions, [0, 2]);
+  await assert.rejects(jmap.searchPage(a, 'needle', 20, '-1'));
+});
+
+test('Yandex search consumes every row before the next server page and keeps stable order', async () => {
+  const calls = [];
+  const query = 'проект & +';
+  const next = '/lite/search/page_number=2?' + new URLSearchParams({request: query});
+  const {yandex} = await load('src/background/providers/yandex.ts', async (input, init) => {
+    const url = new URL(input);
+    calls.push(url);
+    assert.equal(init.credentials, 'include');
+    assert.equal(url.searchParams.get('request'), query);
+    return new Response(
+      url.pathname.endsWith('=2') ? yandexSearchPage(['three']) : yandexSearchPage(['one', 'two'], next),
+    );
+  });
+  const a = {...account, email: 'my.address@ya.ru'};
+  const first = await yandex.searchPage(a, query, 1, '');
+  const second = await yandex.searchPage(a, query, 1, first.next);
+  const third = await yandex.searchPage(a, query, 1, second.next);
+  assert.equal([first, second, third].flatMap(page => page.messages.map(item => item.id)).join(), 'one,two,three');
+  assert.equal(third.next, '');
+  assert.equal(calls[0].pathname, calls[1].pathname);
+  assert.notEqual(calls[1].pathname, calls[2].pathname);
+  assert.ok(first.messages[0].date > second.messages[0].date && second.messages[0].date > third.messages[0].date);
+});
+
+for (const mode of ['empty', 'wrong-owner', 'signed-out', 'unsafe-next', 'repeated-next']) {
+  test(`Yandex search distinguishes empty results from invalid pages: ${mode}`, async () => {
+    const {yandex} = await load(
+      'src/background/providers/yandex.ts',
+      async () =>
+        new Response(
+          mode === 'signed-out'
+            ? '<input type="password">'
+            : yandexSearchPage(
+                mode === 'empty' ? [] : ['one'],
+                mode === 'unsafe-next'
+                  ? 'https://foreign.example.test/?request=needle'
+                  : mode === 'repeated-next'
+                    ? '/lite/search?request=needle'
+                    : '',
+                mode === 'wrong-owner' ? 'other' : 'my-address',
+              ),
+        ),
+    );
+    const result = yandex.searchPage({...account, email: 'my.address@yandex.ru'}, 'needle', 20, '');
+    if (mode === 'empty') assert.equal((await result).messages.length, 0);
+    else await assert.rejects(result);
+  });
+}
+
+test('Yandex search rejects a cursor for another query before HTTP', async () => {
+  const {yandex} = await load('src/background/providers/yandex.ts');
+  await assert.rejects(
+    yandex.searchPage(
+      account,
+      'new',
+      20,
+      JSON.stringify({url: 'https://mail.yandex.ru/lite/search?request=old', offset: 0, position: 20}),
+    ),
+  );
+});
+
+test('Mail.ru search uses per-address tokens, advances offsets and retains source folder/thread', async () => {
+  const calls = [];
+  const {mailru} = await load('src/background/providers/mailru.ts', async (input, init) => {
+    const url = new URL(input);
+    calls.push(url);
+    assert.equal(init.credentials, 'include');
+    const email = url.searchParams.get('email');
+    assert.equal(url.searchParams.get('x-email'), email);
+    if (url.pathname.endsWith('/tokens')) return json({status: 200, body: {token: 'token-' + email}});
+    assert.equal(url.pathname, '/api/v1/messages/search');
+    assert.equal(url.searchParams.get('token'), 'token-' + email);
+    assert.equal(url.searchParams.get('query'), 'проект + &');
+    assert.equal(url.searchParams.get('with_threads'), 'false');
+    assert.equal(url.searchParams.get('limit'), '1');
+    const offset = Number(url.searchParams.get('offset'));
+    return json({
+      status: 200,
+      body: {
+        found: {count: 2},
+        messages: [{id: 'm' + offset, folder: '7', thread_id: 'T' + offset, date: 1700000000, flags: {unread: false}}],
+      },
+    });
+  });
+  const first = await mailru.searchPage(account, 'проект + &', 1, '');
+  const last = await mailru.searchPage(account, 'проект + &', 1, first.next);
+  assert.equal(last.messages[0].id, 'm1');
+  assert.equal(last.messages[0].folder, '7');
+  assert.equal(last.messages[0].thread, 'T1');
+  assert.equal(last.next, '');
+  await mailru.searchPage({...account, email: 'second@example.test'}, 'проект + &', 1, '');
+  assert.deepEqual(
+    calls.filter(url => url.pathname.endsWith('/tokens')).map(url => url.searchParams.get('email')),
+    [account.email, account.email, 'second@example.test'],
+  );
+  const before = calls.length;
+  await assert.rejects(mailru.searchPage(account, 'other', 1, first.next));
+  assert.equal(calls.length, before);
+});
+
+for (const reply of [
+  {status: 403},
+  {status: 200, body: {messages: [], found: {count: 1}}},
+  {status: 200, body: {messages: [{id: '', folder: '7'}], found: {count: 1}}},
+  {status: 200, body: {messages: [{id: 'one', folder: 'outside'}], found: {count: 1}}},
+  {status: 200, body: {messages: [], found: {count: -1}}},
+  {status: 200, body: {}},
+]) {
+  test(`Mail.ru search rejects authentication or malformed results: ${JSON.stringify(reply)}`, async () => {
+    const {parseSearchPage} = await load('src/background/providers/mailru.ts');
+    assert.throws(() => parseSearchPage(reply, 0, 20));
+  });
+}
+
+test('Mail.ru empty search is an explicit successful final page', async () => {
+  const {parseSearchPage} = await load('src/background/providers/mailru.ts');
+  const result = parseSearchPage({status: 200, body: {messages: [], found: {count: 0}}}, 0, 20);
+  assert.equal(result.messages.length, 0);
+  assert.equal(result.next, '');
+});
+
+for (const [entry, name] of [
+  ['gmail', 'gmail'],
+  ['outlook', 'outlook'],
+  ['jmap', 'jmap'],
+  ['yandex', 'yandex'],
+  ['mailru', 'mailru'],
+]) {
+  test(`${entry} search propagates expired authentication instead of returning an empty page`, async () => {
+    const module = await load('src/background/providers/' + entry + '.ts', async () => json({}, 401));
+    await assert.rejects(
+      module[name].searchPage(
+        {...account, settings: {sessionURL: 'https://mail.example.test/session'}},
+        'needle',
+        20,
+        '',
+      ),
+      error => error.reauth === true,
+    );
+  });
+}

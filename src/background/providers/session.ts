@@ -22,6 +22,7 @@ import type {
   MailFolder,
   MailMessage,
   MessageAction,
+  SearchMessagePage,
 } from '../../shared/types';
 import {AuthError} from '../http';
 import {decodeEntities, threadMessage, type Connection, type Provider} from './message';
@@ -43,6 +44,8 @@ export interface SessionAdapter {
   folders?(account: Account): Promise<MailFolder[]>;
   /** One page of messages in a selected folder. */
   folder?(account: Account, id: string, limit: number, cursor: string): Promise<FolderPage>;
+  /** One page of server search results in the verified browser mailbox. */
+  searchPage?(account: Account, query: string, limit: number, cursor: string): Promise<SearchMessagePage>;
   /** The webmail page for the Inbox or a message. */
   webURL(account: Account, message?: MailMessage | null): string;
   /** The full text of a listed message, when the webmail gives it. */
@@ -190,9 +193,11 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
       if (!adapter.act || !adapter.actions?.includes(action)) throw new Error(IN_WEBMAIL(adapter.label));
       await adapter.act(account, item, action);
     },
-    async search() {
-      throw new Error(IN_WEBMAIL(adapter.label));
+    async search(account, query, limit) {
+      if (!adapter.searchPage) throw new Error(IN_WEBMAIL(adapter.label));
+      return (await adapter.searchPage(account, query, limit, '')).messages;
     },
+    searchPage: adapter.searchPage,
     reply: adapter.reply && ((account, item, text) => adapter.reply!(account, item, text)),
     webURL: (account, message) => adapter.webURL(account, message),
   };

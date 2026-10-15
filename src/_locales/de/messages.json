@@ -654,7 +654,7 @@
     "message": "„$1“"
   },
   "search_webmail_only": {
-    "message": "Die Erweiterung unterstützt noch keine Suche für über den Browser verbundene Postfächer: $1. Nutzen Sie die Suche im Webmail."
+    "message": "Die Suche wird für diese Postfächer in der Erweiterung noch nicht unterstützt: $1. Verwenden Sie die Webmail-Suche."
   },
   "search_webmail_title": {
     "message": "In Webmail suchen"
@@ -760,5 +760,8 @@
   },
   "cache_offline": {
     "message": "Gespeicherte Kopie. Aktualisierung nicht verfügbar."
+  },
+  "search_limit": {
+    "message": "$1: Das Limit der Serversuche wurde erreicht. Verfeinern Sie die Suche."
   }
 }

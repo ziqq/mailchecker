@@ -177,12 +177,40 @@ function canonicalAddress(address: string): string {
 
 /** Reads a trusted lite folder path and verifies its owner before exposing messages or forms. */
 async function page(email: string, folder = 'inbox', cursor = ''): Promise<string> {
-  const html = await requestText(`${ORIGIN}/lite/${folder}${cursor ? `/page_number=${cursor}` : ''}`, OPTIONS);
+  return verifiedPage(email, `${ORIGIN}/lite/${folder}${cursor ? `/page_number=${cursor}` : ''}`);
+}
+
+/** Reads an owned lite list page, including server search results. */
+async function verifiedPage(email: string, url: string): Promise<string> {
+  const html = await requestText(url, OPTIONS);
   parseInbox(html);
   const owner = parseOwner(html);
   // Preserve the connected spelling in errors when a documented alias resolves to the same mailbox.
   verifyMailbox(email, owner && canonicalAddress(email) === canonicalAddress(owner) ? email : owner);
   return html;
+}
+
+/** Returns the lite client's actual next-page link, never an inferred page number. */
+function nextPageLink(html: string): string {
+  const [pager] = elements(html, 'div', /class=["'][^"']*b-pager/, 0, 1);
+  const [anchor] = pager ? elements(pager, 'a', classTag('b-pager__next'), 0, 1) : [];
+  return anchor ? /href=["']([^"']+)["']/.exec(anchor)?.[1]?.replace(/&amp;/g, '&') || '' : '';
+}
+
+/** Rejects a continuation that changes the lite search endpoint or query. */
+function searchURL(value: string, query: string): string {
+  const url = new URL(value, ORIGIN);
+  if (
+    url.origin !== ORIGIN ||
+    !/^\/lite\/search(?:\/page_number=\d{1,7})?$/.test(url.pathname) ||
+    url.searchParams.get('request') !== query ||
+    url.username ||
+    url.password ||
+    url.hash ||
+    url.href.length > 3000
+  )
+    throw new Error(t('error_bad_message'));
+  return url.href;
 }
 
 /**
@@ -265,9 +293,7 @@ export const yandex = sessionProvider({
     const serverPage = parts[1];
     const html = await page(account.email, id, Number(serverPage) ? serverPage : '');
     const value = parseInbox(html, Number(serverPage) * 200);
-    const [pager] = elements(html, 'div', /class=["'][^"']*b-pager/, 0, 1);
-    const [nextAnchor] = pager ? elements(pager, 'a', classTag('b-pager__next'), 0, 1) : [];
-    const nextLink = nextAnchor && /href=["']([^"']+)["']/.exec(nextAnchor)?.[1];
+    const nextLink = nextPageLink(html);
     let next = '';
     if (nextLink) {
       const url = new URL(nextLink.replace(/&amp;/g, '&'), ORIGIN);
@@ -277,6 +303,40 @@ export const yandex = sessionProvider({
     const messages = value.messages.slice(offset, offset + limit).map(item => ({...item, folder: id}));
     // Finish the current server page before exposing its next-page link.
     if (offset + messages.length < value.messages.length) next = `${serverPage}:${offset + messages.length}`;
+    return {messages, next};
+  },
+  async searchPage(account, query, limit, cursor) {
+    let url = `${ORIGIN}/lite/search?${new URLSearchParams({request: query})}`;
+    let offset = 0;
+    let position = 0;
+    if (cursor) {
+      const value = JSON.parse(cursor) as {url: string; offset: number; position: number};
+      if (
+        typeof value.url !== 'string' ||
+        !Number.isSafeInteger(value.offset) ||
+        value.offset < 0 ||
+        value.offset >= 200 ||
+        !Number.isSafeInteger(value.position) ||
+        value.position < value.offset ||
+        value.position > 2_000_000_000
+      )
+        throw new Error(t('error_bad_message'));
+      url = searchURL(value.url, query);
+      offset = value.offset;
+      position = value.position;
+    }
+    const html = await verifiedPage(account.email, url);
+    const value = parseInbox(html, position - offset);
+    const messages = value.messages.slice(offset, offset + limit);
+    const end = offset + messages.length;
+    const link = nextPageLink(html);
+    let next = '';
+    if (end < value.messages.length) next = JSON.stringify({url, offset: end, position: position + messages.length});
+    else if (link) {
+      const target = searchURL(link, query);
+      if (!messages.length || target === url) throw new Error(t('error_unexpected_page', t('service_yandex')));
+      next = JSON.stringify({url: target, offset: 0, position: position + messages.length});
+    }
     return {messages, next};
   },
   webURL: (_account: Account, item?: MailMessage | null) => item?.link || `${ORIGIN}/`,

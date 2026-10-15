@@ -654,7 +654,7 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "Uzantı, tarayıcı üzerinden bağlanan posta kutularında aramayı henüz desteklemiyor: $1. Web postasında arama yapın."
+    "message": "Bu uzantı şu posta kutularında aramayı henüz desteklemiyor: $1. Web postasındaki aramayı kullanın."
   },
   "search_webmail_title": {
     "message": "Web postasında ara"
@@ -760,5 +760,8 @@
   },
   "cache_offline": {
     "message": "Kaydedilmiş kopya. Güncelleme kullanılamıyor."
+  },
+  "search_limit": {
+    "message": "$1: sunucu arama sınırına ulaşıldı. Sorgunuzu daraltın."
   }
 }

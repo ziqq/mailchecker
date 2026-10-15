@@ -251,7 +251,8 @@ function SearchField() {
 export function MessageList() {
   const accounts = () => store.state()?.accounts || [];
   const total = () => store.unread().all;
-  const searchUnavailable = () => accounts().filter(account => account.browser);
+  const searchUnavailable = () =>
+    accounts().filter(account => account.search === false || (account.search === undefined && account.browser));
   const webmailSearchOnly = () => accounts().length > 0 && searchUnavailable().length === accounts().length;
   return (
     <section class="list-pane" aria-label={t('label_messages')}>
@@ -312,7 +313,9 @@ export function MessageList() {
               type="button"
               class="btn small"
               disabled={store.searching()}
-              onClick={() => store.search(store.query())}
+              onClick={() =>
+                store.searchPages().some(page => page.error) ? store.searchMore(true) : store.search(store.query())
+              }
             >
               {t('action_check_now')}
             </button>
@@ -328,10 +331,35 @@ export function MessageList() {
             )}
           </p>
         </Show>
-        <Show when={!store.folder()}>
+        <For each={store.searchError() ? [] : store.searchPages().filter(page => page.error)}>
+          {page => (
+            <div class="notice" role="alert">
+              {icon('alert')}
+              <span>
+                <b>{accounts().find(account => account.id === page.account)?.email}</b> · {page.error}
+              </span>
+              <button
+                type="button"
+                class="btn small"
+                disabled={store.searching()}
+                onClick={() => store.searchMore(true)}
+              >
+                {t('action_check_now')}
+              </button>
+            </div>
+          )}
+        </For>
+        <For each={store.searchPages().filter(page => page.limited)}>
+          {page => (
+            <p class="folder-status" role="status">
+              {t('search_limit', accounts().find(account => account.id === page.account)?.email || '')}
+            </p>
+          )}
+        </For>
+        <Show when={!store.folder() && !store.results()}>
           <Notices />
         </Show>
-        <For each={store.folderErrors()}>
+        <For each={store.results() ? [] : store.folderErrors()}>
           {item => (
             <div class="notice" role="alert">
               {icon('alert')}
@@ -353,7 +381,7 @@ export function MessageList() {
           )}
         </For>
         <Switch>
-          <Match when={!store.state() || (store.folderLoading() && !store.folderEntries().length)}>
+          <Match when={!store.state() || (!store.results() && store.folderLoading() && !store.folderEntries().length)}>
             <div class="skeletons" aria-hidden="true">
               <For each={[1, 2, 3, 4, 5]}>{() => <div class="skeleton" />}</For>
             </div>
@@ -377,6 +405,9 @@ export function MessageList() {
             <span />
           </Match>
           <Match when={store.searchError()}>
+            <span />
+          </Match>
+          <Match when={store.results() && !store.results()!.length && store.searchPages().some(page => page.error)}>
             <span />
           </Match>
           <Match when={!store.list().some(section => section.items.length)}>
@@ -411,6 +442,14 @@ export function MessageList() {
             </For>
           </Match>
         </Switch>
+        <Show when={store.results() && store.searchPages().some(page => !page.error && page.cursor)}>
+          <button type="button" class="btn folder-more" disabled={store.searching()} onClick={() => store.searchMore()}>
+            <Show when={store.searching()} fallback={t('folder_more')}>
+              <span class="spinner" />
+              {t('folder_loading')}
+            </Show>
+          </button>
+        </Show>
         <Show when={!store.results() && store.folderNext().length}>
           <button
             type="button"
