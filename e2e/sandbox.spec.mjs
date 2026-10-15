@@ -598,3 +598,55 @@ test.describe('wide folder audit regressions', () => {
     await expect(reader.getByRole('button', {name: 'Удалить', exact: true})).toBeEnabled();
   });
 });
+
+for (const [name, path, width, height] of [
+  ['popup', 'popup.html', 780, 600],
+  ['mini', 'popup.html?popup=mini', 400, 600],
+  ['wide', 'app.html', 1440, 900],
+  ['phone', 'app.html', 390, 844],
+]) {
+  test.describe(name, () => {
+    test.use({viewport: {width, height}});
+    test('data src with a remote srcset exposes consent and keeps its script-free frame', async ({page}) => {
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      const separator = path.includes('?') ? '&' : '?';
+      await page.goto(path + separator + 'mail=srcset&theme=dark');
+      await page.locator('.row[data-id="g5"]').click();
+      await expect(page.getByText('Заблокировано: 1 картинка', {exact: true})).toBeVisible();
+      const frame = page.locator('iframe.mail-frame').last();
+      const before = await frame.evaluate(e => ({
+        srcset: e.contentDocument?.querySelector('img')?.getAttribute('srcset') || '',
+        sandbox: e.getAttribute('sandbox'),
+        csp: e.contentDocument.querySelector('meta[http-equiv="Content-Security-Policy"]').content,
+      }));
+      expect(before.srcset).toBe('');
+      expect(before.sandbox).not.toContain('allow-scripts');
+      expect(before.csp).toContain('img-src data:;');
+      await page.getByRole('button', {name: 'Показать', exact: true}).click();
+      await expect
+        .poll(() => frame.evaluate(e => e.contentDocument?.querySelector('img')?.getAttribute('srcset') || ''))
+        .toContain('?candidate');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(
+        0,
+      );
+      expect(errors).toEqual([]);
+    });
+    test('a failed search exposes retry rather than a false empty result', async ({page}) => {
+      const separator = path.includes('?') ? '&' : '?';
+      await page.goto(path + separator + 'search=error');
+      await page.getByRole('searchbox').fill('needle');
+      await page.getByRole('searchbox').press('Enter');
+      const alert = page.locator('.list-body > .notice[role="alert"]').filter({hasText: 'недоступен'});
+      await expect(alert).toBeVisible();
+      await expect(alert.getByRole('button')).toBeEnabled();
+      await expect(page.getByText('Ничего не найдено', {exact: false})).toHaveCount(0);
+      await page.getByRole('searchbox').fill('');
+      await page.getByRole('searchbox').press('Enter');
+      await expect(alert).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(
+        0,
+      );
+    });
+  });
+}

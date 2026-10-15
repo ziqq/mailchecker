@@ -67,37 +67,59 @@ export interface SessionAdapter {
  */
 export function elements(html: string, tag: string, open: RegExp, from = 0, limit = 200): string[] {
   const found: string[] = [];
-  const start = `<${tag}`;
-  const close = `</${tag}`;
-  let position = Math.max(0, from);
-  while (found.length < limit) {
-    const begin = html.indexOf(start, position);
-    if (begin < 0) break;
-    const end = html.indexOf('>', begin);
-    if (end < 0) break;
-    if (!open.test(html.slice(begin, end + 1))) {
-      position = end + 1;
+  const lower = html.toLowerCase();
+  const name = tag.toLowerCase();
+  let position = 0;
+  let begin = -1;
+  let depth = 0;
+  while (found.length < limit && position < html.length) {
+    const start = html.indexOf('<', position);
+    if (start < 0) break;
+    if (html.startsWith('<!--', start)) {
+      const end = html.indexOf('-->', start + 4);
+      if (end < 0) break;
+      position = end + 3;
       continue;
     }
-    let depth = 1;
-    let cursor = end + 1;
-    let nextOpen = html.indexOf(start, cursor);
-    let nextClose = html.indexOf(close, cursor);
-    while (depth > 0) {
-      if (nextClose < 0) break;
-      if (nextOpen >= 0 && nextOpen < nextClose) {
-        depth++;
-        cursor = nextOpen + start.length;
-        nextOpen = html.indexOf(start, cursor);
-      } else {
-        depth--;
-        cursor = nextClose + close.length + 1;
-        if (depth > 0) nextClose = html.indexOf(close, cursor);
-      }
+    const token = /^<(\/?)([a-z][\w:-]*)(?=[\s/>])/i.exec(html.slice(start, start + 100));
+    if (!token && !/^<[!?]/.test(html.slice(start, start + 2))) {
+      position = start + 1;
+      continue;
     }
-    found.push(html.slice(begin, cursor));
-    if (depth > 0) break;
-    position = cursor;
+    let end = start + 1;
+    let quote = '';
+    for (; end < html.length; end++) {
+      const char = html[end];
+      if (quote) {
+        if (char === quote) quote = '';
+      } else if (char === '"' || char === "'") quote = char;
+      else if (char === '>') break;
+    }
+    if (end === html.length) break;
+    position = end + 1;
+    const current = token?.[2].toLowerCase();
+    const closing = Boolean(token?.[1]);
+    if (!closing && current && ['script', 'style', 'textarea', 'title'].includes(current)) {
+      let close = lower.indexOf(`</${current}`, position);
+      while (close >= 0 && !/[\s>]/.test(html[close + current.length + 2] || ''))
+        close = lower.indexOf(`</${current}`, close + current.length + 2);
+      if (close < 0) break;
+      position = close;
+      continue;
+    }
+    if (current !== name) continue;
+    if (closing) {
+      if (depth && --depth === 0) {
+        found.push(html.slice(begin, position));
+        begin = -1;
+      }
+    } else if (depth) depth++;
+    else if (start >= Math.max(0, from)) {
+      open.lastIndex = 0;
+      if (!open.test(html.slice(start, position))) continue;
+      begin = start;
+      depth = 1;
+    }
   }
   return found;
 }

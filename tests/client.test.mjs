@@ -130,7 +130,7 @@ function start() {
     },
   });
   runInContext(bundled, context);
-  return {store: context.client, data, server, document, window};
+  return {store: context.client, data, server, document, window, context};
 }
 
 test('timestamp-only state clones keep list identity while changed flags remain visible', async () => {
@@ -491,4 +491,183 @@ test('a transient body error is retried on reopening, then the full body is cach
   assert.equal((await w.store.thread(selection))[0].text, 'Complete body');
   assert.equal((await w.store.thread(selection))[0].text, 'Complete body');
   assert.equal(attempts, 2);
+});
+
+test('search generations own results, errors and loading across A-B-A and clearing', async () => {
+  const w = start();
+  await w.store.load();
+  const requests = [];
+  const original = w.context.transport;
+  w.context.transport = req =>
+    req.type === 'SEARCH' ? new Promise((resolve, reject) => requests.push({resolve, reject})) : original(req);
+  const first = w.store.search('A');
+  const second = w.store.search('B');
+  const third = w.store.search('A');
+  requests[0].reject(Error('stale error'));
+  await first;
+  assert.equal(w.store.searching(), true);
+  assert.equal(w.store.searchError(), '');
+  requests[2].resolve([{account: 'A', message: {...w.data.mailboxes.A.messages[0], id: 'new-A'}}]);
+  await third;
+  requests[1].resolve([{account: 'A', message: {...w.data.mailboxes.A.messages[0], id: 'old-B'}}]);
+  await second;
+  assert.equal(w.store.results()[0].message.id, 'new-A');
+  const fourth = w.store.search('C');
+  await w.store.search('');
+  requests[3].resolve([]);
+  await fourth;
+  assert.equal(w.store.results(), null);
+  assert.equal(w.store.searching(), false);
+});
+
+test('folder refresh rebinds selected counters and failed catalogs mark them partial', async () => {
+  const w = start();
+  w.server.folders = [{id: 'projects', name: 'Projects', unread: 1, total: 1}];
+  await w.store.load();
+  await w.store.loadFolders();
+  await w.store.chooseFolder({account: 'A', folder: w.server.folders[0]});
+  w.server.folders = [{...w.server.folders[0], unread: 0}];
+  w.server.page.messages[0].unread = false;
+  await w.store.refresh();
+  assert.equal(w.store.unread().all, 0);
+  w.server.catalogRequest = () => Promise.reject(Error('catalog failed'));
+  await w.store.refresh();
+  assert.equal(w.store.unreadPartial(), true);
+});
+
+test('only the changed conversation invalidates its cached body and reader generation', async () => {
+  const w = start();
+  w.data.accounts.push({...w.data.accounts[0], id: 'B'});
+  w.data.mailboxes.B = structuredClone(w.data.mailboxes.A);
+  await w.store.load();
+  w.store.select(w.store.entries().find(e => e.account === 'A'));
+  const selected = {account: 'A', id: 'm1', thread: 'T'};
+  await w.store.thread(selected);
+  const version = w.store.threadVersion();
+  w.data.mailboxes.B.messages.push({...w.data.mailboxes.B.messages[0], id: 'unrelated-new'});
+  await w.store.load();
+  await w.store.thread(selected);
+  assert.equal(w.server.calls.filter(c => c.type === 'THREAD').length, 1);
+  assert.equal(w.store.threadVersion(), version);
+  w.data.mailboxes.A.messages.push({...w.data.mailboxes.A.messages[0], id: 'other-thread', thread: 'U'});
+  await w.store.load();
+  await w.store.thread(selected);
+  assert.equal(w.server.calls.filter(c => c.type === 'THREAD').length, 1);
+  w.data.mailboxes.A.messages.push({...w.data.mailboxes.A.messages[0], id: 'same-thread', thread: 'T'});
+  await w.store.load();
+  await w.store.thread(selected);
+  assert.equal(w.server.calls.filter(c => c.type === 'THREAD').length, 2);
+  assert.equal(w.store.threadVersion(), version + 1);
+});
+
+test('stale pin acknowledgement preserves a newer read flag and unread totals', async () => {
+  const w = start();
+  w.data.mailboxes.A.unread = 1;
+  w.data.mailboxes.A.messages[0].unread = true;
+  w.server.page.messages[0].unread = true;
+  await w.store.load();
+  await w.store.chooseFolder({account: 'A', folder: {id: 'projects', name: 'Projects', unread: 1}});
+  const entry = w.store.entries()[0];
+  w.store.select(entry);
+  const old = w.context.transport,
+    pending = {};
+  w.context.transport = req => (req.type === 'ACT' ? new Promise(done => (pending[req.action] = done)) : old(req));
+  const read = w.store.act(entry, 'read'),
+    pin = w.store.act(entry, 'pin');
+  const readState = structuredClone(w.data);
+  readState.mailboxes.A.unread = 0;
+  readState.mailboxes.A.messages[0].unread = false;
+  const stalePinState = structuredClone(w.data);
+  stalePinState.mailboxes.A.messages[0].pinned = true;
+  pending.read(readState);
+  await read;
+  pending.pin(stalePinState);
+  await pin;
+  const box = w.store.state().mailboxes.A;
+  assert.equal(box.unread, 0);
+  assert.equal(box.messages[0].unread, false);
+  assert.equal(box.messages[0].pinned, true);
+  assert.equal(w.store.unread().all, 0);
+});
+
+test('late success from the first A cannot replace the second A search', async () => {
+  const w = start();
+  await w.store.load();
+  let release,
+    calls = 0;
+  const original = w.context.transport;
+  w.context.transport = req =>
+    req.type === 'SEARCH'
+      ? ++calls === 1
+        ? new Promise(done => (release = done))
+        : Promise.resolve([{account: 'A', message: {...w.data.mailboxes.A.messages[0], id: 'new-' + req.query}}])
+      : original(req);
+  const first = w.store.search('A');
+  await w.store.search('B');
+  await w.store.search('A');
+  release([{account: 'A', message: {...w.data.mailboxes.A.messages[0], id: 'old-A'}}]);
+  await first;
+  assert.equal(w.store.results()[0].message.id, 'new-A');
+});
+
+test('unified system-folder refresh aggregates the newest per-account counts', async () => {
+  const w = start();
+  w.data.accounts.push({...w.data.accounts[0], id: 'B'});
+  w.data.mailboxes.B = structuredClone(w.data.mailboxes.A);
+  let unread = {A: 1, B: 2};
+  w.server.catalogRequest = req =>
+    Promise.resolve([{id: 'trash-' + req.account, name: 'Trash', role: 'trash', unread: unread[req.account]}]);
+  await w.store.load();
+  await w.store.loadFolders();
+  await w.store.chooseFolder(w.store.folderChoices().find(c => c.account === 'all' && c.folder.role === 'trash'));
+  assert.equal(w.store.unread().all, 3);
+  unread = {A: 0, B: 0};
+  await w.store.refresh();
+  assert.equal(w.store.unread().all, 0);
+});
+
+for (const order of [
+  ['read', 'pin'],
+  ['pin', 'read'],
+]) {
+  test(`concurrent read/pin preserve both flags when acknowledgements arrive ${order.join('-')}`, async () => {
+    const w = start();
+    w.data.mailboxes.A.messages[0].unread = true;
+    w.server.page.messages[0].unread = true;
+    await w.store.load();
+    await w.store.chooseFolder({account: 'A', folder: {id: 'projects', name: 'Projects'}});
+    const entry = w.store.entries()[0];
+    w.store.select(entry);
+    const transport = w.context.transport;
+    const pending = {};
+    w.context.transport = request =>
+      request.type === 'ACT' ? new Promise(done => (pending[request.action] = done)) : transport(request);
+    const jobs = {read: w.store.act(entry, 'read'), pin: w.store.act(entry, 'pin')};
+    for (const action of order) {
+      if (action === 'pin') w.data.mailboxes.A.messages[0].pinned = true;
+      else w.data.mailboxes.A.messages[0].unread = false;
+      pending[action](structuredClone(w.data));
+      await jobs[action];
+    }
+    for (const current of [w.store.entries()[0], w.store.current()]) {
+      assert.equal(current.message.unread, false);
+      assert.equal(current.message.pinned, true);
+    }
+  });
+}
+
+test('a failed search retains an explicit error and can be retried successfully', async () => {
+  const w = start();
+  await w.store.load();
+  const transport = w.context.transport;
+  w.context.transport = request =>
+    request.type === 'SEARCH' ? Promise.reject(Error('Search failed')) : transport(request);
+  await w.store.search('needle');
+  assert.ok(w.store.searchError());
+  assert.equal(w.store.searching(), false);
+  w.context.transport = transport;
+  w.server.search = [{account: 'A', message: message('found')}];
+  await w.store.search('needle');
+  assert.equal(w.store.searchError(), '');
+  assert.equal(w.store.results()[0].message.id, 'found');
 });

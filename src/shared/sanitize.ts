@@ -325,19 +325,19 @@ export function sanitizeEmail(html: string, allowRemote: boolean, dark = false):
         element.removeAttribute(attribute.name);
     }
     if (tag === 'img') {
-      const source = element.getAttribute('src') || '';
-      if (/^https?:/i.test(source)) {
-        if (!allowRemote) {
-          if (isTracker(element)) trackers += 1;
-          else blocked += 1;
-          element.removeAttribute('src');
-          element.removeAttribute('srcset');
-          element.setAttribute('data-blocked', '');
-          element.setAttribute('alt', element.getAttribute('alt') || '');
-        }
-      } else if (!/^data:image\//i.test(source)) {
-        element.removeAttribute('src');
+      const source = (element.getAttribute('src') || '').trim();
+      const remoteSource = /^https?:/i.test(source);
+      const remoteSet = /(?:^|[\s,])(?:https?:|\/\/)/i.test(element.getAttribute('srcset') || '');
+      if (!allowRemote && (remoteSource || remoteSet)) {
+        if (isTracker(element)) trackers += 1;
+        else blocked += 1;
+        if (remoteSource) element.removeAttribute('src');
         element.removeAttribute('srcset');
+        element.setAttribute('data-blocked', '');
+        element.setAttribute('alt', element.getAttribute('alt') || '');
+      } else if (!remoteSource && !/^data:image\//i.test(source)) {
+        element.removeAttribute('src');
+        if (!allowRemote || !remoteSet) element.removeAttribute('srcset');
       }
     }
     for (const name of URL_ATTRIBUTES) {

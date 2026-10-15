@@ -45,12 +45,6 @@ export interface FolderChoice {
 /** Conversation cache entries by `account/thread`. */
 const threads = new Map<string, Promise<ThreadMessage[]>>();
 
-/** Inbox metadata that can change conversation contents, excluding flags and check timestamps. */
-const contents = (value: PublicState): string =>
-  entryContents(
-    Object.entries(value.mailboxes).flatMap(([account, box]) => box.messages.map(message => ({account, message}))),
-  );
-
 /** Message metadata shared by Inbox and folder refreshes, excluding read and pin flags. */
 const entryContents = (entries: Entry[]): string =>
   JSON.stringify(
@@ -64,6 +58,23 @@ const entryContents = (entries: Entry[]): string =>
       snippet,
     ]),
   );
+
+/** Conversation identities whose list metadata changed, including removed or moved messages. */
+function changedThreads(previous: Entry[], next: Entry[]): Set<string> {
+  const old = new Map(previous.map(entry => [`${entry.account}/${entry.message.id}`, entry]));
+  const changed = new Set<string>();
+  for (const entry of next) {
+    const key = `${entry.account}/${entry.message.id}`;
+    const before = old.get(key);
+    if (!before || entryContents([before]) !== entryContents([entry])) {
+      changed.add(`${entry.account}/${entry.message.thread || entry.message.id}`);
+      if (before) changed.add(`${before.account}/${before.message.thread || before.message.id}`);
+    }
+    old.delete(key);
+  }
+  for (const entry of old.values()) changed.add(`${entry.account}/${entry.message.thread || entry.message.id}`);
+  return changed;
+}
 
 /** Compares flat list records so transport clones and check timestamps keep the existing list mounted. */
 function sameEntries(previous: Entry[], next: Entry[]): boolean {
@@ -115,6 +126,9 @@ export const store = createRoot(() => {
   const [query, setQuery] = createSignal('');
   const [results, setResults] = createSignal<Entry[] | null>(null);
   const [searching, setSearching] = createSignal(false);
+  const [searchError, setSearchError] = createSignal('');
+  /** Identifies the latest search even when query text repeats. */
+  let searchGeneration = 0;
   const [refreshing, setRefreshing] = createSignal(false);
   const [toast, setToast] = createSignal<{text: string; error: boolean} | null>(null);
   /** The reply editor is open for the selected message. */
@@ -201,6 +215,7 @@ export const store = createRoot(() => {
   const folderChoices = createMemo<FolderChoice[]>(() => {
     const id = account();
     const value = catalog();
+    const failed = new Set(catalogErrors().map(error => error.account));
     if (id !== 'all') return (value[id] || []).map(folder => ({account: id, folder}));
     const connected = state()?.accounts || [];
     const roles = FOLDER_ROLES.filter(role =>
@@ -209,7 +224,7 @@ export const store = createRoot(() => {
     return [
       ...roles.map(role => {
         const folders = connected.flatMap(item => (value[item.id] || []).filter(folder => folder.role === role));
-        const complete = connected.every(item => value[item.id]);
+        const complete = connected.every(item => value[item.id] && !failed.has(item.id));
         const counted = folders.filter(folder => folder.total != null);
         const partial = !complete || counted.length !== folders.length;
         const approximate = counted.some(folder => folder.approximate);
@@ -254,6 +269,7 @@ export const store = createRoot(() => {
   /** Switches the mailbox and returns to its Inbox without fetching other folders. */
   function setAccount(id: string): void {
     folderGeneration++;
+    searchGeneration++;
     folderChanges = null;
     batch(() => {
       changeAccount(id);
@@ -264,6 +280,8 @@ export const store = createRoot(() => {
       setFolderErrors([]);
       setResults(null);
       setQuery('');
+      setSearching(false);
+      setSearchError('');
       select(null);
     });
   }
@@ -289,12 +307,16 @@ export const store = createRoot(() => {
             setCatalog(value => ({...value, [item.id]: folders}));
             catalogCheckedAt.set(item.id, Date.now());
             setCatalogErrors(errors => errors.filter(error => error.account !== item.id));
+            reconcileFolder();
           } catch (error) {
             dirtyCatalogs.add(item.id);
             setCatalogErrors(errors => [
               ...errors.filter(error => error.account !== item.id),
               {account: item.id, error: errorMessage(error)},
             ]);
+            const choice = folder();
+            if (choice && (choice.account === 'all' || choice.account === item.id))
+              setFolder({...choice, folder: {...choice.folder, unread: undefined, partial: true}});
           } finally {
             catalogRequests.delete(item.id);
             setPendingCatalogs(new Set(catalogRequests.keys()));
@@ -305,6 +327,14 @@ export const store = createRoot(() => {
         return pending;
       }),
     );
+  }
+
+  /** Rebinds the active folder to freshly loaded server counters, including common roles. */
+  function reconcileFolder(): void {
+    const choice = folder();
+    if (!choice) return;
+    const latest = folderChoices().find(item => item.account === choice.account && item.folder.id === choice.folder.id);
+    if (latest) setFolder(latest);
   }
 
   /** Loads the selected folder or the next pages, retaining successful accounts when another fails. */
@@ -360,7 +390,7 @@ export const store = createRoot(() => {
       }
       folderChanges = null;
       const entries = [...unique.values()].sort((a, b) => b.message.date - a.message.date);
-      if (!more && selected() && entryContents(folderEntries()) !== entryContents(entries)) invalidateThreads();
+      if (!more) invalidateThreads(changedThreads(folderEntries(), entries));
       setFolderEntries(entries);
       setFolderNext(next);
       setFolderErrors(errors);
@@ -371,6 +401,7 @@ export const store = createRoot(() => {
   /** Opens a folder from the selector; null keeps the account's existing Inbox view. */
   async function chooseFolder(value: FolderChoice | null): Promise<void> {
     folderGeneration++;
+    searchGeneration++;
     folderChanges = null;
     batch(() => {
       if (value) changeAccount(value.account);
@@ -381,6 +412,8 @@ export const store = createRoot(() => {
       setFolderLoading(false);
       setResults(null);
       setQuery('');
+      setSearching(false);
+      setSearchError('');
       setFilter('all');
       select(null);
     });
@@ -429,7 +462,14 @@ export const store = createRoot(() => {
   function updateState(value: PublicState): void {
     batch(() => {
       const before = state();
-      if (before && contents(before) !== contents(value)) invalidateThreads();
+      if (before) {
+        /** Flattens only bounded Inbox metadata for per-conversation invalidation. */
+        const entries = (state: PublicState): Entry[] =>
+          Object.entries(state.mailboxes).flatMap(([account, box]) =>
+            box.messages.map(message => ({account, message})),
+          );
+        invalidateThreads(changedThreads(entries(before), entries(value)));
+      }
       for (const item of value.accounts) {
         const previous = before?.mailboxes[item.id];
         const next = value.mailboxes[item.id];
@@ -445,10 +485,12 @@ export const store = createRoot(() => {
     });
   }
 
-  /** Drops cached and in-flight conversation references and refreshes the open reader. */
-  function invalidateThreads(): void {
-    threads.clear();
-    setThreadVersion(value => value + 1);
+  /** Drops only affected conversations and refreshes the reader only when its own key changed. */
+  function invalidateThreads(keys: ReadonlySet<string>): void {
+    for (const key of keys) threads.delete(key);
+    const selection = selected();
+    if (selection && keys.has(`${selection.account}/${selection.thread || selection.id}`))
+      setThreadVersion(value => value + 1);
   }
 
   /** Shows a transient message; errors are red. */
@@ -507,7 +549,14 @@ export const store = createRoot(() => {
     try {
       updateState(await request<PublicState>({type: 'CHECK'}));
       if (results()) await search(query());
-      else if (folder()) await loadFolder();
+      else if (folder()) {
+        const choice = folder()!;
+        for (const item of state()?.accounts || [])
+          if (choice.account === 'all' || choice.account === item.id) dirtyCatalogs.add(item.id);
+        setFolder({...choice, folder: {...choice.folder, unread: undefined, partial: true}});
+        await loadFolders();
+        await loadFolder();
+      }
     } catch (error) {
       fail(error);
     } finally {
@@ -533,7 +582,7 @@ export const store = createRoot(() => {
         text,
         entry: entry.message,
       });
-      invalidateThreads();
+      invalidateThreads(new Set([`${entry.account}/${entry.message.thread || entry.message.id}`]));
       setReplying(false);
       notify(t('reply_sent'));
       return true;
@@ -668,7 +717,7 @@ export const store = createRoot(() => {
     }
     if (moving) setBusy(t(action === 'trash' ? 'busy_deleting' : 'busy_archiving'));
     try {
-      const value = await request<PublicState>({
+      let value = await request<PublicState>({
         type: 'ACT',
         account: entry.account,
         message: entry.message.id,
@@ -676,14 +725,31 @@ export const store = createRoot(() => {
         entry: entry.message,
       });
       batch(() => {
-        const updated = {
-          ...entry,
-          message: {
-            ...entry.message,
-            unread: action === 'unread' ? true : action === 'read' ? false : entry.message.unread,
-            pinned: action === 'pin' ? true : action === 'unpin' ? false : entry.message.pinned,
-          },
-        };
+        const change: Partial<Pick<MailMessage, 'unread' | 'pinned'>> =
+          action === 'read' || action === 'unread'
+            ? {unread: action === 'unread'}
+            : action === 'pin' || action === 'unpin'
+              ? {pinned: action === 'pin'}
+              : {};
+        /** Changes only the confirmed fields of the latest entry, preserving concurrent actions. */
+        const update = (item: Entry): Entry => ({...item, message: {...item.message, ...change}});
+        const latest = state()?.mailboxes[entry.account]?.messages.find(item => item.id === entry.message.id);
+        const box = value.mailboxes[entry.account];
+        const returned = box?.messages.find(item => item.id === entry.message.id);
+        if (!moving && latest && box && returned) {
+          const updated = {...returned, unread: latest.unread, pinned: latest.pinned, ...change};
+          value = {
+            ...value,
+            mailboxes: {
+              ...value.mailboxes,
+              [entry.account]: {
+                ...box,
+                unread: Math.max(0, box.unread + Number(updated.unread) - Number(returned.unread)),
+                messages: box.messages.map(item => (item.id === latest.id ? updated : item)),
+              },
+            },
+          };
+        }
         updateState(value);
         dirtyCatalogs.add(entry.account);
         updateFolderCounts(
@@ -692,25 +758,17 @@ export const store = createRoot(() => {
           action === 'read' ? false : action === 'unread' ? true : undefined,
           leaving,
         );
-        rememberFolderChange(
-          entry.account,
-          entry.message.id,
-          leaving
-            ? null
-            : action === 'read' || action === 'unread'
-              ? {unread: updated.message.unread}
-              : {pinned: updated.message.pinned},
-        );
+        rememberFolderChange(entry.account, entry.message.id, leaving ? null : change);
         setFolderEntries(entries =>
-          leaving ? entries.filter(item => !matches(item)) : entries.map(item => (matches(item) ? updated : item)),
+          leaving ? entries.filter(item => !matches(item)) : entries.map(item => (matches(item) ? update(item) : item)),
         );
         if (action === 'unread') threads.delete(`${entry.account}/${entry.message.thread || entry.message.id}`);
         const hits = results();
         if (hits)
-          setResults(leaving ? hits.filter(hit => !matches(hit)) : hits.map(hit => (matches(hit) ? updated : hit)));
+          setResults(leaving ? hits.filter(hit => !matches(hit)) : hits.map(hit => (matches(hit) ? update(hit) : hit)));
         if (isSelected()) {
           if (leaving) select(next);
-          else setRetained(updated);
+          else setRetained(item => update(item && matches(item) ? item : entry));
         }
       });
     } catch (error) {
@@ -722,19 +780,26 @@ export const store = createRoot(() => {
 
   /** Runs a search across all accounts; an empty query returns to the Inbox. */
   async function search(text: string): Promise<void> {
+    const generation = ++searchGeneration;
     setQuery(text);
+    setSearchError('');
     if (!text.trim()) {
       setResults(null);
+      setSearching(false);
       return;
     }
     setSearching(true);
     try {
       const hits = await request<SearchHit[]>({type: 'SEARCH', query: text});
-      if (query() === text) setResults(hits.map(hit => ({account: hit.account, message: hit.message})));
+      if (generation === searchGeneration) setResults(hits.map(hit => ({account: hit.account, message: hit.message})));
     } catch (error) {
-      fail(error);
+      if (generation === searchGeneration)
+        batch(() => {
+          setResults([]);
+          setSearchError(errorMessage(error));
+        });
     } finally {
-      setSearching(false);
+      if (generation === searchGeneration) setSearching(false);
     }
   }
 
@@ -774,6 +839,7 @@ export const store = createRoot(() => {
     query,
     results,
     searching,
+    searchError,
     refreshing,
     busy,
     toast,

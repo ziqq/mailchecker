@@ -77,3 +77,20 @@ test('deep HTML blocks retain complete boundaries within the parsing budget', as
   }`);
   assert.equal(result, true);
 });
+
+test('HTML scanner respects quoted tokens, comments, raw text and exact tag names', async () => {
+  const result = await bounded(`({elements}) => {
+ for(const inner of ['<div title="<div">body</div>','<div title="</div>">body</div>','<!-- <div> -->body','<script>"<div>"</script>body','<diversion>body</diversion>']) {
+  const matches=elements('<div class="target">'+inner+'</div><div class="target">second</div>','div',/target/);if(matches.length !== 2 || !matches[1].includes('second')) return false;
+ };return true;}`);
+  assert.equal(result, true);
+});
+
+test('raw-text closing tags require an exact name boundary', async () => {
+  assert.equal(
+    await bounded(
+      `({elements}) => { const blocks=elements('<div class="target"><script>"</scripted><div>"</script>text</div><div class="target">second</div>','div',/target/);return blocks.length===2;}`,
+    ),
+    true,
+  );
+});

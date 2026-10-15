@@ -19,6 +19,7 @@ import {
   act,
   checkAccount,
   checkAll,
+  closeNotification,
   folder,
   folders,
   open,
@@ -28,7 +29,7 @@ import {
   thread,
   updateBadge,
 } from './mailbox';
-import {hasNotifications, openApp} from './platform';
+import {hasNotifications, onNotificationClosed, openApp} from './platform';
 import {readStore, writeStore} from './storage';
 import {t} from '../shared/i18n';
 
@@ -209,3 +210,6 @@ if (hasNotifications())
   chrome.notifications.onClicked.addListener(id => {
     openNotification(id).catch(() => {});
   });
+onNotificationClosed(id => {
+  closeNotification(id).catch(() => {});
+});

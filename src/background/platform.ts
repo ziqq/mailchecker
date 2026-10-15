@@ -32,6 +32,11 @@ export const supportsIdentity = (): boolean => hasIdentity() || target === 'chro
 /** Whether system notifications are available to the extension. */
 export const hasNotifications = (): boolean => typeof chrome.notifications?.create === 'function';
 
+/** Registers dismissal cleanup where the optional notification-closed event exists. */
+export function onNotificationClosed(listener: (id: string) => void): void {
+  chrome.notifications?.onClosed?.addListener(listener);
+}
+
 /**
  * Returns the value of a cookie, or an empty string without the optional
  * `cookies` permission (granted in Settings when Gmail is connected through

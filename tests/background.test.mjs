@@ -100,7 +100,7 @@ function startWorker({identity = true} = {}) {
 
   const area = name => ({
     async get(keys) {
-      const list = typeof keys === 'string' ? [keys] : keys;
+      const list = keys == null ? Object.keys(stores[name]) : typeof keys === 'string' ? [keys] : keys;
       return structuredClone(Object.fromEntries(list.filter(k => k in stores[name]).map(k => [k, stores[name][k]])));
     },
     async set(value) {
@@ -244,6 +244,7 @@ function startWorker({identity = true} = {}) {
       setTitle: async () => {},
     },
     notifications: {
+      onClosed: event(),
       create: async (id, options) => notifications.push(options),
       clear: async () => {},
       onClicked: event(),
@@ -981,4 +982,119 @@ test('unknown-date Yandex mail notifies only for unseen IDs after the initial ba
   assert.equal(w.notifications.length, 1);
   await w.ok({type: 'CHECK'}, 'popup');
   assert.equal(w.notifications.length, 1);
+});
+
+test('Gmail quota 403 keeps cached mail and does not retry credentials or request sign-in', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  const id = w.stores.local.accounts[0].id;
+  let requests = 0;
+  w.context.fetch = async () => {
+    requests++;
+    return json({error: {errors: [{reason: 'userRateLimitExceeded'}]}}, 403);
+  };
+  await w.ok({type: 'CHECK'}, 'popup');
+  const box = w.stores.local.mailboxes[id];
+  assert.equal(box.reauth, false);
+  assert.match(box.error, /403/);
+  assert.equal(box.messages.length, 2);
+  assert.equal(requests, 2);
+});
+
+for (const mode of ['refused', 'moved', 'missing-trash', 'wrong-owner', 'unexpected-trash']) {
+  test(`Yandex delete reconciles only a verified move: ${mode}`, async () => {
+    const w = startWorker();
+    let posted = false;
+    const page = (present = true, owner = 'my-address') => {
+      const html = yandexHTML(owner);
+      return present
+        ? html
+        : html.slice(0, html.indexOf('<div class="b-messages">')) + '<div class="b-messages"></div>';
+    };
+    w.context.fetch = async (input, init = {}) => {
+      if (init.method === 'POST') {
+        posted = true;
+        return new Response('<html>Action response</html>');
+      }
+      if (new URL(input).pathname === '/lite/trash')
+        return new Response(
+          mode === 'unexpected-trash'
+            ? '<html>Unrelated</html>'
+            : page(mode !== 'missing-trash', mode === 'wrong-owner' ? 'another' : 'my-address'),
+        );
+      return new Response(page(!posted || mode === 'refused'));
+    };
+    await w.ok({type: 'ADD_ACCOUNT', provider: 'yandex', browser: true, input: {email: 'my.address@yandex.ru'}});
+    const id = w.stores.local.accounts[0].id;
+    const reply = await w.send({type: 'ACT', account: id, message: '171', action: 'trash'}, 'popup');
+    assert.equal(reply.ok, mode === 'moved');
+    assert.equal(w.stores.local.mailboxes[id].messages.length, mode === 'moved' ? 0 : 1);
+  });
+}
+
+test('all failed API searches fail explicitly while successful accounts survive', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  const original = w.context.fetch;
+  w.context.fetch = async () => {
+    throw Error('failed transport');
+  };
+  const failed = await w.send({type: 'SEARCH', query: 'needle'}, 'popup');
+  assert.equal(failed.ok, false);
+  w.context.fetch = original;
+  await w.ok({
+    type: 'ADD_ACCOUNT',
+    provider: 'jmap',
+    input: {sessionURL: 'https://api.fastmail.com/jmap/session', token: 'jmap-token'},
+  });
+  w.context.fetch = async (input, init) =>
+    new URL(input).host === 'gmail.googleapis.com' ? Promise.reject(Error('failed Gmail')) : original(input, init);
+  const partial = await w.ok({type: 'SEARCH', query: 'needle'}, 'popup');
+  assert.ok(partial.some(hit => hit.message.id === 'e1'));
+});
+
+test('notification URLs are bounded and cleared on dismissal and click', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  for (let i = 0; i < 115; i++) {
+    w.server.gmail = ['new-' + i];
+    await new Promise(done => setTimeout(done, 2));
+    await w.ok({type: 'CHECK'}, 'popup');
+  }
+  const keys = Object.keys(w.stores.session).filter(k => k.startsWith('notification:'));
+  assert.equal(keys.length, 100);
+  assert.equal(w.stores.session['notification-index'].length, 100);
+  const id = w.stores.session['notification-index'].at(-1);
+  w.chrome.notifications.onClosed.fire(id, true);
+  await new Promise(done => setTimeout(done, 2));
+  assert.equal(w.stores.session['notification:' + id], undefined);
+  assert.equal(w.stores.session['notification-index'].length, 99);
+  const click = w.stores.session['notification-index'].at(-1);
+  w.chrome.notifications.onClicked.fire(click);
+  await new Promise(done => setTimeout(done, 2));
+  assert.equal(w.stores.session['notification:' + click], undefined);
+  assert.ok(w.tabs.length);
+  const q = startWorker();
+  await q.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  q.chrome.storage.session.set = async () => {
+    throw Error('quota exceeded');
+  };
+  q.server.gmail = ['new'];
+  await q.ok({type: 'CHECK'}, 'popup');
+});
+
+test('legacy notification records are pruned and index failure does not block click navigation', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  for (let i = 0; i < 150; i++) w.stores.session['notification:legacy' + i] = 'https://mail.example.test/' + i;
+  w.server.gmail = ['new'];
+  await w.ok({type: 'CHECK'}, 'popup');
+  assert.equal(Object.keys(w.stores.session).filter(k => k.startsWith('notification:')).length, 100);
+  const id = w.stores.session['notification-index'].at(-1);
+  w.chrome.storage.session.set = async () => {
+    throw Error('quota');
+  };
+  w.chrome.notifications.onClicked.fire(id);
+  await new Promise(done => setTimeout(done, 2));
+  assert.ok(w.tabs.length);
 });

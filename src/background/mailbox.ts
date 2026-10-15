@@ -39,6 +39,34 @@ let running: Promise<void> | null = null;
 /** Messages older than this are not announced even if newly listed. */
 const NOTIFY_WINDOW = 24 * 60 * 60 * 1000;
 
+/** At most 100 actionable notification URLs survive in session storage. */
+const NOTIFICATION_LIMIT = 100;
+const NOTIFICATION_INDEX = 'notification-index';
+let notificationWrites: Promise<unknown> = Promise.resolve();
+
+/** Serializes notification URL/index changes across checks, clicks and dismissals. */
+function notificationTask(callback: () => Promise<void>): Promise<void> {
+  const result = notificationWrites.then(callback);
+  notificationWrites = result.catch(() => {});
+  return result;
+}
+
+/** Reads the bounded index, migrating and pruning URL records left by older versions once. */
+async function notificationIDs(): Promise<string[]> {
+  const value = (await chrome.storage.session.get(NOTIFICATION_INDEX))[NOTIFICATION_INDEX];
+  if (!Array.isArray(value)) {
+    const stored = await chrome.storage.session.get(null).catch(() => ({}));
+    const legacy = Object.keys(stored).filter(key => key.startsWith('notification:'));
+    const keep = legacy.slice(-NOTIFICATION_LIMIT).map(key => key.slice('notification:'.length));
+    for (const key of legacy.slice(0, -NOTIFICATION_LIMIT)) await chrome.storage.session.remove(key);
+    await chrome.storage.session.set({[NOTIFICATION_INDEX]: keep});
+    return keep;
+  }
+  return [...new Set(value.filter((id): id is string => typeof id === 'string' && id.length <= 1024))].slice(
+    -NOTIFICATION_LIMIT,
+  );
+}
+
 /** Allowed message actions. */
 const ACTIONS: readonly MessageAction[] = ['archive', 'trash', 'read', 'unread', 'pin', 'unpin'];
 
@@ -151,17 +179,39 @@ async function notify(account: Account, messages: MailMessage[]): Promise<void> 
   const single = messages.length === 1;
   const id = `${account.id}:${Date.now()}`;
   const url = adapter(account).webURL(account, single ? messages[0] : null);
-  await chrome.storage.session.set({[`notification:${id}`]: url});
-  await chrome.notifications.create(id, {
-    type: single ? 'basic' : 'list',
-    iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-    title: single ? senderName(messages[0].from) : t('notification_new', messages.length),
-    message: single ? messages[0].subject : account.email,
-    contextMessage: account.email,
-    ...(single
-      ? {}
-      : {items: messages.slice(0, 5).map(item => ({title: senderName(item.from), message: item.subject}))}),
-    priority: 1,
+  await notificationTask(async () => {
+    const ids = (await notificationIDs()).filter(existing => existing !== id);
+    while (ids.length >= NOTIFICATION_LIMIT) {
+      const old = ids.shift()!;
+      await chrome.storage.session.remove(`notification:${old}`);
+      await chrome.notifications.clear(old).catch(() => {});
+    }
+    try {
+      await chrome.storage.session.set({[`notification:${id}`]: url, [NOTIFICATION_INDEX]: [...ids, id]});
+      await chrome.notifications.create(id, {
+        type: single ? 'basic' : 'list',
+        iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+        title: single ? senderName(messages[0].from) : t('notification_new', messages.length),
+        message: single ? messages[0].subject : account.email,
+        contextMessage: account.email,
+        ...(single
+          ? {}
+          : {items: messages.slice(0, 5).map(item => ({title: senderName(item.from), message: item.subject}))}),
+        priority: 1,
+      });
+    } catch {
+      await chrome.storage.session.remove(`notification:${id}`).catch(() => {});
+      await chrome.storage.session.set({[NOTIFICATION_INDEX]: ids}).catch(() => {});
+    }
+  }).catch(() => {});
+}
+
+/** Removes the URL and index entry of a clicked or dismissed notification. */
+export function closeNotification(id: string): Promise<void> {
+  return notificationTask(async () => {
+    await chrome.storage.session.remove(`notification:${id}`);
+    const ids = await notificationIDs();
+    await chrome.storage.session.set({[NOTIFICATION_INDEX]: ids.filter(existing => existing !== id)});
   });
 }
 
@@ -169,7 +219,7 @@ async function notify(account: Account, messages: MailMessage[]): Promise<void> 
 export async function openNotification(id: string): Promise<void> {
   const key = `notification:${id}`;
   const {[key]: url} = await chrome.storage.session.get(key);
-  await chrome.storage.session.remove(key);
+  await closeNotification(id).catch(() => {});
   if (typeof url === 'string' && url.startsWith('https://')) await chrome.tabs.create({url});
   await chrome.notifications.clear(id);
 }
@@ -338,13 +388,18 @@ export async function search(query: string): Promise<SearchHit[]> {
   const text = query.trim().slice(0, 200);
   if (!text) return [];
   const {accounts = []} = await readStore();
+  const eligible = accounts.filter(account => !account.settings.browser);
   const results = await Promise.allSettled(
-    accounts.map(account =>
+    eligible.map(account =>
       withAccount(account.id, (module, current) => module.search(current, text, 20)).then(messages =>
         messages.map(message => ({account: account.id, message})),
       ),
     ),
   );
+  if (results.length && results.every(result => result.status === 'rejected')) {
+    const failure = results.find(result => result.status === 'rejected')!;
+    throw failure.reason;
+  }
   return results
     .flatMap(result => (result.status === 'fulfilled' ? result.value : []))
     .sort((a, b) => b.message.date - a.message.date);

@@ -202,13 +202,36 @@ async function remove(account: Account, item: MailMessage): Promise<void> {
   if (item.folder === 'trash') throw new Error(t('error_in_webmail', t('service_yandex')));
   const [field, value] = item.thread.split('=');
   if (!value || (field !== 'ids' && field !== 'tids')) throw new Error(t('error_delete_in_webmail'));
-  const ckey = /name="_ckey" value="([^"]+)"/.exec(await page(account.email))?.[1];
+  const source = item.folder || 'inbox';
+  if (!FOLDER_PATH.test(source)) throw new Error(t('error_bad_message'));
+  const ckey = /name="_ckey" value="([^"]+)"/.exec(await page(account.email, source))?.[1];
   if (!ckey) throw new Error(t('error_unexpected_page', t('service_yandex')));
   await requestText(`${ORIGIN}/lite/messages-action.xml`, {
     ...OPTIONS,
     method: 'POST',
-    form: {delete: 'Удалить', request: '', _ckey: ckey, _handlers: 'do-messages', retpath: '/inbox', [field]: value},
+    form: {
+      delete: 'Удалить',
+      request: '',
+      _ckey: ckey,
+      _handlers: 'do-messages',
+      retpath: `/${source}`,
+      [field]: value,
+    },
   });
+  /** Matches the provider selection, ignoring a thread's changing message count. */
+  const matches = (entry: MailMessage): boolean => {
+    const [movedField, movedValue] = entry.thread.split('=');
+    return (
+      movedField === field &&
+      (field === 'tids' ? movedValue?.split(':')[0] === value.split(':')[0] : movedValue === value)
+    );
+  };
+  // The undocumented action response can be HTTP 200 even when refused. Verify the move on owned folder pages.
+  if (
+    parseInbox(await page(account.email, source)).messages.some(matches) ||
+    !parseInbox(await page(account.email, 'trash')).messages.some(matches)
+  )
+    throw new Error(t('error_delete_in_webmail'));
 }
 
 /** Opens a verified single-message page, which marks that message read in the lite webmail. */
@@ -236,9 +259,12 @@ export const yandex = sessionProvider({
     return parseFolders(await page(account.email));
   },
   async folder(account, id, limit, cursor) {
-    if (!FOLDER_PATH.test(id) || (cursor && !/^\d{1,7}$/.test(cursor))) throw new Error(t('error_bad_message'));
-    const html = await page(account.email, id, cursor);
-    const value = parseInbox(html, Number(cursor || 0) * 200);
+    const parts = /^(\d{1,7})(?::(\d{1,3}))?$/.exec(cursor || '0');
+    const offset = Number(parts?.[2] || 0);
+    if (!FOLDER_PATH.test(id) || !parts || offset >= 200) throw new Error(t('error_bad_message'));
+    const serverPage = parts[1];
+    const html = await page(account.email, id, Number(serverPage) ? serverPage : '');
+    const value = parseInbox(html, Number(serverPage) * 200);
     const [pager] = elements(html, 'div', /class=["'][^"']*b-pager/, 0, 1);
     const [nextAnchor] = pager ? elements(pager, 'a', classTag('b-pager__next'), 0, 1) : [];
     const nextLink = nextAnchor && /href=["']([^"']+)["']/.exec(nextAnchor)?.[1];
@@ -248,8 +274,10 @@ export const yandex = sessionProvider({
       const match = /^\/page_number=(\d{1,7})$/.exec(url.pathname.slice(`/lite/${id}`.length));
       if (url.origin === ORIGIN && url.pathname.startsWith(`/lite/${id}/`) && match) next = match[1];
     }
-    // Lite pages have their own page size; never discard the rest of a server page.
-    return {messages: value.messages.slice(0, limit).map(item => ({...item, folder: id})), next};
+    const messages = value.messages.slice(offset, offset + limit).map(item => ({...item, folder: id}));
+    // Finish the current server page before exposing its next-page link.
+    if (offset + messages.length < value.messages.length) next = `${serverPage}:${offset + messages.length}`;
+    return {messages, next};
   },
   webURL: (_account: Account, item?: MailMessage | null) => item?.link || `${ORIGIN}/`,
   // Opening a message page marks the message read, as in the lite web interface.

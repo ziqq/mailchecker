@@ -47,6 +47,18 @@ const LIST_FIELDS =
 const call = <T>(credentials: Credentials, path: string, options: RequestOptions = {}) =>
   requestJSON<T>(API + path, {...options, token: credentials.token, service: 'Microsoft Graph'});
 
+/** Returns a server continuation restricted to the requested Graph collection. */
+function continuation(link: unknown, path: string): string {
+  if (link == null) return '';
+  if (typeof link !== 'string' || !link || link.length > 4096)
+    throw new Error(t('error_unexpected_reply', 'Microsoft Graph'));
+  const url = new URL(link);
+  const expected = new URL(API + path);
+  if (url.origin !== expected.origin || url.pathname !== expected.pathname || url.username || url.password || url.hash)
+    throw new Error(t('error_unexpected_reply', 'Microsoft Graph'));
+  return path + url.search;
+}
+
 /** Returns the mailbox address authenticated by [credentials]. */
 async function address(credentials: Credentials): Promise<string> {
   const me = await call<{mail?: unknown; userPrincipalName?: unknown}>(credentials, '?$select=mail,userPrincipalName');
@@ -92,11 +104,7 @@ async function listFolder(credentials: Credentials, id: string, limit: number, c
   query.set('$orderby', 'receivedDateTime desc');
   const path = `/mailFolders/${encodeURIComponent(id)}/messages`;
   const value = await call<{value?: GraphMessage[]; '@odata.nextLink'?: string}>(credentials, `${path}?${query}`);
-  let next = '';
-  if (value?.['@odata.nextLink']) {
-    const url = new URL(value['@odata.nextLink']);
-    if (url.origin === new URL(API).origin && url.pathname === new URL(API + path).pathname) next = url.search.slice(1);
-  }
+  const next = continuation(value?.['@odata.nextLink'], path).slice(path.length + 1);
   return {messages: (Array.isArray(value?.value) ? value.value : []).slice(0, limit).map(listMessage), next};
 }
 
@@ -160,15 +168,7 @@ async function folders(credentials: Credentials): Promise<MailFolder[]> {
         });
         if (item.childFolderCount) pending.push(item.id);
       }
-      next = '';
-      const link = value?.['@odata.nextLink'];
-      if (typeof link === 'string' && link.length <= 4096) {
-        const url = new URL(link);
-        const expected = new URL(API + path);
-        if (url.origin !== expected.origin || url.pathname !== expected.pathname)
-          throw new Error(t('error_unexpected_reply', 'Microsoft Graph'));
-        next = path + url.search;
-      }
+      next = continuation(value?.['@odata.nextLink'], path);
     }
   }
   return result;
@@ -209,13 +209,31 @@ export const outlook: Provider = {
   async thread(account, item) {
     const query = new URLSearchParams({
       $filter: `conversationId eq '${(item.thread || '').replace(/'/g, "''")}'`,
-      $select: 'id,subject,from,toRecipients,ccRecipients,receivedDateTime,body,isRead,hasAttachments',
+      $select: 'id,conversationId,subject,from,toRecipients,ccRecipients,receivedDateTime,body,isRead,hasAttachments',
       $top: '50',
     });
-    const list = item.thread
-      ? await call<{value?: GraphMessage[]}>(account.credentials, `/messages?${query}`)
-      : {value: [await call<GraphMessage>(account.credentials, `/messages/${encodeURIComponent(item.id)}`)]};
-    const entries = (Array.isArray(list?.value) ? list.value : []).sort(
+    const messages = new Map<string, GraphMessage>();
+    let next = item.thread ? `/messages?${query}` : '';
+    const visited = new Set<string>();
+    while (next) {
+      if (visited.has(next) || visited.size >= 4) throw new Error(t('error_too_large'));
+      visited.add(next);
+      const list = await call<{value?: GraphMessage[]; '@odata.nextLink'?: string}>(account.credentials, next);
+      const entries = Array.isArray(list?.value) ? list.value : [];
+      if (entries.length > 50) throw new Error(t('error_too_large'));
+      for (const entry of entries) {
+        if (typeof entry?.id !== 'string' || !entry.id) throw new Error(t('error_unexpected_reply', 'Microsoft Graph'));
+        messages.set(entry.id, entry);
+      }
+      next = continuation(list?.['@odata.nextLink'], '/messages');
+    }
+    if (!messages.has(item.id)) {
+      const selected = await call<GraphMessage>(account.credentials, `/messages/${encodeURIComponent(item.id)}`);
+      if (selected?.id !== item.id || (item.thread && selected.conversationId !== item.thread))
+        throw new Error(t('error_unexpected_reply', 'Microsoft Graph'));
+      messages.set(item.id, selected);
+    }
+    const entries = [...messages.values()].sort(
       (a, b) => Date.parse(a.receivedDateTime || '') - Date.parse(b.receivedDateTime || ''),
     );
     return Promise.all(

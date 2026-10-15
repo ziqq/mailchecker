@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.0.36
+
+- **ADDED**: regression coverage for the remaining twelve audit #8 fixes, including action/search races, folder pagination/counters, bounded MIME/HTML/HTTP processing, image consent and notification cleanup
+- **CHANGED**: the accepted cache and server-search plan is documented in Russian
+
+## 0.0.35
+
+- **ADDED**: audit #8 regression tests for Gmail quota/authentication, verified Yandex deletion, JMAP submission acknowledgements and complete Outlook conversations
+- **CHANGED**: documented the chosen loaded-mail cache and server-search direction, with a proposed bounded worker-owned IndexedDB cache and provider-specific search rollout
+- **FIXED**: concurrent read/pin actions preserve each other; stale search generations cannot overwrite results or loading/error state, and complete API-search failure exposes retry
+- **FIXED**: Yandex folder cursors retain rows within server pages; Gmail prioritizes system folders before the catalog limit; selected folder counters refresh with the catalog
+- **FIXED**: conversation caches invalidate only affected threads; MIME traversal has explicit depth/work bounds and HTML block scanning respects quoted attributes and tag boundaries
+- **FIXED**: worker-wide HTTP concurrency is limited to eight; remote srcset candidates expose image consent; notification URLs are bounded and cleaned up after dismissal/click without breaking checks on notification failure
+
+## 0.0.34
+
+- **FIXED**: explicit Gmail API quota and permission failures no longer renew credentials or request sign-in, including individual batch replies
+- **FIXED**: Yandex deletion updates local state only after verified source and Trash pages confirm the move
+- **FIXED**: JMAP replies require draft and submission creation acknowledgements before reporting success
+- **FIXED**: Outlook conversations follow validated continuations within four pages and refuse incomplete results at the limit; the selected message is checked explicitly
+
 ## 0.0.33
 
 - **ADDED**: audit #7 regression coverage for the remaining eleven fixes: folder memberships, concurrent catalogs, search isolation, server counts, stable Yandex ordering, Graph continuations, Gmail batches, bounded folder sorting, body retries and CSS-only image permissions

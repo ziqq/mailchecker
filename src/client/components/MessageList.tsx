@@ -304,6 +304,20 @@ export function MessageList() {
       </header>
 
       <div class="list-body">
+        <Show when={store.searchError()}>
+          <div class="notice" role="alert">
+            {icon('alert')}
+            <span>{store.searchError()}</span>
+            <button
+              type="button"
+              class="btn small"
+              disabled={store.searching()}
+              onClick={() => store.search(store.query())}
+            >
+              {t('action_check_now')}
+            </button>
+          </div>
+        </Show>
         <Show when={store.results() && searchUnavailable().length}>
           <p class="folder-status" role="status">
             {t(
@@ -360,6 +374,9 @@ export function MessageList() {
             </div>
           </Match>
           <Match when={store.folder() && store.folderErrors().length && !store.folderEntries().length}>
+            <span />
+          </Match>
+          <Match when={store.searchError()}>
             <span />
           </Match>
           <Match when={!store.list().some(section => section.items.length)}>

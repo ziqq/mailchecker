@@ -49,6 +49,9 @@ function current(): Fixtures & {preferences: Preferences} {
     if (query.get('mail') === 'background')
       data.threads['gmail/g5'][0].html =
         `<div style="background-image:url('${location.origin}/icons/icon128.png');background-repeat:no-repeat;min-height:160px">CSS background image</div>`;
+    if (query.get('mail') === 'srcset')
+      data.threads['gmail/g5'][0].html =
+        `<img width="64" height="64" alt="Image candidate" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jVZkAAAAASUVORK5CYII=" srcset="${location.origin}/icons/icon128.png?candidate 2x">`;
     if (query.get('mail') === 'css-images') {
       const image = `${location.origin}/icons/icon128.png`;
       data.threads['gmail/g5'][0].html = `<style>
@@ -273,6 +276,8 @@ function answer(message: Request): unknown {
     case 'THREAD':
       return thread(message.account, message.message, message.thread);
     case 'SEARCH':
+      if (new URLSearchParams(location.search).get('search') === 'error')
+        throw new Error(t('error_unreachable', t('service_server')));
       return search(message.query);
     case 'REPLY':
       if (!message.text.trim()) throw new Error('Напишите ответ.');

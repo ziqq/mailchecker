@@ -8,7 +8,7 @@
  * @module background/providers/gmail
  */
 import type {Account, Credentials, FolderPage, MailFolder, MailMessage, MessageAction} from '../../shared/types';
-import {AuthError, requestJSON, requestText, type RequestOptions} from '../http';
+import {AuthError, isAuthFailure, requestJSON, requestText, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
 import {
   bareAddress,
@@ -55,9 +55,9 @@ async function folderCounts(account: Account, paths: string[]): Promise<(Record<
       for (const part of reply.split(`--${marker}`).slice(1, group.length + 1)) {
         const id = /Content-ID:\s*<response-(\d+)@mailchecker>/i.exec(part)?.[1];
         const status = Number(/HTTP\/1\.[01]\s+(\d{3})/.exec(part)?.[1]);
-        if (status === 401 || status === 403) throw new AuthError();
-        if (id == null || Number(id) >= group.length || status !== 200) continue;
         const start = part.indexOf('{');
+        if (isAuthFailure(status, start < 0 ? '' : part.slice(start).trim())) throw new AuthError();
+        if (id == null || Number(id) >= group.length || status !== 200) continue;
         if (start < 0) continue;
         try {
           const value: unknown = JSON.parse(part.slice(start).trim());
@@ -136,21 +136,29 @@ function decodeBody(data: string, contentType = ''): string {
   }
 }
 
-/** Collects the HTML, plain text and attachments of a MIME tree. */
+/** Collects a MIME tree in depth-first order with explicit depth and work bounds. */
 function walk(
   part: GmailPart | undefined,
   out: {html: string; text: string; attachments: RawThreadMessage['attachments']},
 ) {
-  if (!part) return out;
-  const type = (part.mimeType || '').toLowerCase();
-  if (part.filename && part.body?.attachmentId) {
-    out.attachments!.push({name: part.filename, size: part.body.size, type});
-  } else if (part.body?.data && type === 'text/html' && !out.html) {
-    out.html = decodeBody(part.body.data, headersOf(part)['content-type']);
-  } else if (part.body?.data && type === 'text/plain' && !out.text) {
-    out.text = decodeBody(part.body.data, headersOf(part)['content-type']);
+  const pending = part ? [{part, depth: 0}] : [];
+  let visited = 0;
+  while (pending.length) {
+    const {part, depth} = pending.pop()!;
+    if (++visited > 2000 || depth > 64) throw new Error(t('error_too_large'));
+    if (!part || typeof part !== 'object') continue;
+    const type = typeof part.mimeType === 'string' ? part.mimeType.toLowerCase() : '';
+    if (part.filename && part.body?.attachmentId) {
+      out.attachments!.push({name: part.filename, size: part.body.size, type});
+    } else if (part.body?.data && type === 'text/html' && !out.html) {
+      out.html = decodeBody(part.body.data, headersOf(part)['content-type']);
+    } else if (part.body?.data && type === 'text/plain' && !out.text) {
+      out.text = decodeBody(part.body.data, headersOf(part)['content-type']);
+    }
+    const children = Array.isArray(part.parts) ? part.parts : [];
+    if (visited + pending.length + children.length > 2000) throw new Error(t('error_too_large'));
+    for (let index = children.length - 1; index >= 0; index--) pending.push({part: children[index], depth: depth + 1});
   }
-  for (const child of part.parts || []) walk(child, out);
   return out;
 }
 
@@ -234,18 +242,18 @@ export const gmail: Provider = {
   async folders(account) {
     const value = await call<{labels?: {id?: string; name?: string; type?: string}[]}>(account.credentials, '/labels');
     const roles = {INBOX: 'inbox', SENT: 'sent', TRASH: 'trash', SPAM: 'spam', DRAFT: 'drafts'} as const;
-    const labels = (Array.isArray(value?.labels) ? value.labels : [])
-      .slice(0, 200)
-      .filter(
-        item =>
-          typeof item.id === 'string' &&
-          item.id.length > 0 &&
-          item.id.length <= 512 &&
-          (item.type === 'user' || Object.hasOwn(roles, item.id)),
-      )
-      .map(item => ({id: item.id!, name: item.name || item.id!, role: roles[item.id as keyof typeof roles]}))
-      .sort((a, b) => Number(Boolean(b.role)) - Number(Boolean(a.role)))
-      .slice(0, 199); // Reserve one of the 200 catalog slots for Gmail's virtual Archive.
+    const system: MailFolder[] = [];
+    const custom: MailFolder[] = [];
+    const seen = new Set<string>();
+    for (const item of Array.isArray(value?.labels) ? value.labels : []) {
+      if (typeof item?.id !== 'string' || !item.id || item.id.length > 512 || seen.has(item.id)) continue;
+      const role = Object.hasOwn(roles, item.id) ? roles[item.id as keyof typeof roles] : undefined;
+      if (!role && (item.type !== 'user' || custom.length >= 199)) continue;
+      seen.add(item.id);
+      (role ? system : custom).push({id: item.id, name: item.name || item.id, role});
+    }
+    // Reserve Archive and prioritize every system role before applying the catalog cap.
+    const labels = [...system, ...custom.slice(0, 199 - system.length)];
     const counts = await folderCounts(account, [
       ...labels.map(label => `/labels/${encodeURIComponent(label.id)}?fields=messagesTotal,messagesUnread`),
       `/messages?${new URLSearchParams({q: ARCHIVE_QUERY, maxResults: '1', fields: 'resultSizeEstimate'})}`,

@@ -384,6 +384,16 @@ export const jmap: Provider = {
       ],
       [...USING, SUBMISSION],
     );
-    if (set.email?.notCreated || set.submission?.notCreated) throw new Error(t('error_jmap_send'));
+    const draftID = set.email?.created?.draft?.id;
+    const submissionID = set.submission?.created?.send?.id;
+    if (
+      Object.hasOwn(set.email?.notCreated || {}, 'draft') ||
+      Object.hasOwn(set.submission?.notCreated || {}, 'send') ||
+      typeof draftID !== 'string' ||
+      !draftID ||
+      typeof submissionID !== 'string' ||
+      !submissionID
+    )
+      throw new Error(t('error_jmap_send'));
   },
 };
