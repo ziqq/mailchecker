@@ -13,9 +13,21 @@
  * @module background/index
  */
 import {preferences} from '../shared/preferences';
-import type {MessageAction, Preferences, Reply, RequestType} from '../shared/types';
+import type {MailMessage, MessageAction, Preferences, Reply, RequestType} from '../shared/types';
 import {addAccount, publicState, removeAccount, setAccountColor, signIn} from './accounts';
-import {act, checkAccount, checkAll, open, openNotification, reply, search, thread, updateBadge} from './mailbox';
+import {
+  act,
+  checkAccount,
+  checkAll,
+  folder,
+  folders,
+  open,
+  openNotification,
+  reply,
+  search,
+  thread,
+  updateBadge,
+} from './mailbox';
 import {hasNotifications, openApp} from './platform';
 import {readStore, writeStore} from './storage';
 import {t} from '../shared/i18n';
@@ -32,6 +44,8 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'STATE',
     'CHECK',
     'THREAD',
+    'FOLDERS',
+    'FOLDER',
     'REPLY',
     'ACT',
     'SEARCH',
@@ -89,6 +103,7 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
   const type = message?.type as RequestType;
   if (!page || typeof type !== 'string' || !allowed[page].has(type)) throw new Error(t('error_request_denied'));
   const account = String(message.account ?? '');
+  const entry = message.entry && typeof message.entry === 'object' ? (message.entry as MailMessage) : undefined;
   switch (type) {
     case 'STATE':
       return publicState(await readStore());
@@ -96,12 +111,16 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       await checkAll();
       return publicState(await readStore());
     case 'ACT':
-      await act(account, String(message.message ?? ''), message.action as MessageAction);
+      await act(account, String(message.message ?? ''), message.action as MessageAction, entry);
       return publicState(await readStore());
     case 'THREAD':
-      return thread(account, String(message.message ?? ''), String(message.thread ?? ''));
+      return thread(account, String(message.message ?? ''), String(message.thread ?? ''), entry);
+    case 'FOLDERS':
+      return folders(account);
+    case 'FOLDER':
+      return folder(account, String(message.folder ?? ''), String(message.cursor ?? ''));
     case 'REPLY':
-      await reply(account, String(message.message ?? ''), String(message.text ?? ''));
+      await reply(account, String(message.message ?? ''), String(message.text ?? ''), entry);
       return true;
     case 'SEARCH':
       return search(String(message.query ?? ''));
@@ -109,7 +128,7 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       await openApp();
       return true;
     case 'OPEN':
-      await open(account, message.message == null ? undefined : String(message.message));
+      await open(account, message.message == null ? undefined : String(message.message), entry);
       return true;
     case 'OPTIONS':
       await chrome.runtime.openOptionsPage();

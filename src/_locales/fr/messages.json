@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "Archives"
   },
+  "folder_count_estimated": {
+    "message": "Nombre estimé : $1"
+  },
+  "folder_count_partial": {
+    "message": "Nombre pour certaines boîtes mail : $1"
+  },
+  "folder_drafts": {
+    "message": "Brouillons"
+  },
+  "folder_empty": {
+    "message": "Aucun message dans ce dossier"
+  },
   "folder_inbox": {
     "message": "Réception"
   },
+  "folder_loading": {
+    "message": "Chargement…"
+  },
+  "folder_more": {
+    "message": "Charger plus"
+  },
+  "folder_sent": {
+    "message": "Envoyés"
+  },
+  "folder_spam": {
+    "message": "Indésirables"
+  },
   "folder_trash": {
     "message": "Corbeille"
+  },
+  "folder_unsupported": {
+    "message": "Cette connexion ne permet pas de consulter les dossiers. Ouvrez le webmail."
   },
   "header_cc": {
     "message": "Cc : $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "Catégories"
+  },
+  "label_folders": {
+    "message": "Dossiers"
   },
   "label_mailboxes": {
     "message": "Boîtes"
@@ -631,6 +661,12 @@
   },
   "search_title": {
     "message": "« $1 »"
+  },
+  "search_webmail_only": {
+    "message": "La recherche dans cette extension ne prend pas encore en charge les boîtes connectées via le navigateur : $1. Utilisez la recherche du webmail."
+  },
+  "search_webmail_title": {
+    "message": "Rechercher dans le webmail"
   },
   "section_inbox": {
     "message": "Autres"

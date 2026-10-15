@@ -30,7 +30,7 @@ export function senderName(from: string): string {
  */
 export function shortDate(timestamp: number, now: Date = new Date()): string {
   const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return '';
+  if (timestamp <= 0 || Number.isNaN(date.getTime())) return '';
   if (date.toDateString() === now.toDateString())
     return date.toLocaleTimeString(locale(), {hour: '2-digit', minute: '2-digit'});
   return date.toLocaleDateString(locale(), {day: 'numeric', month: 'short'});

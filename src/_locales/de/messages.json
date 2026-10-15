@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "Archiv"
   },
+  "folder_count_estimated": {
+    "message": "Geschätzte Anzahl: $1"
+  },
+  "folder_count_partial": {
+    "message": "Anzahl für einen Teil der Postfächer: $1"
+  },
+  "folder_drafts": {
+    "message": "Entwürfe"
+  },
+  "folder_empty": {
+    "message": "Keine Nachrichten in diesem Ordner"
+  },
   "folder_inbox": {
     "message": "Posteingang"
   },
+  "folder_loading": {
+    "message": "Wird geladen…"
+  },
+  "folder_more": {
+    "message": "Mehr laden"
+  },
+  "folder_sent": {
+    "message": "Gesendet"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Papierkorb"
+  },
+  "folder_unsupported": {
+    "message": "Für diese Verbindung sind keine Ordner verfügbar. Öffnen Sie das Webmail."
   },
   "header_cc": {
     "message": "Cc: $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "Kategorien"
+  },
+  "label_folders": {
+    "message": "Ordner"
   },
   "label_mailboxes": {
     "message": "Postfächer"
@@ -622,6 +652,12 @@
   },
   "search_title": {
     "message": "„$1“"
+  },
+  "search_webmail_only": {
+    "message": "Die Erweiterung unterstützt noch keine Suche für über den Browser verbundene Postfächer: $1. Nutzen Sie die Suche im Webmail."
+  },
+  "search_webmail_title": {
+    "message": "In Webmail suchen"
   },
   "section_inbox": {
     "message": "Sonstige"

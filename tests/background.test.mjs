@@ -967,3 +967,18 @@ test('Yandex keeps accepting a plain account-menu login without an accessible na
   await w.ok({type: 'ADD_ACCOUNT', provider: 'yandex', browser: true, input: {email: 'my.address@yandex.ru'}});
   assert.equal(w.stores.local.mailboxes[w.stores.local.accounts[0].id].reauth, false);
 });
+
+test('unknown-date Yandex mail notifies only for unseen IDs after the initial baseline', async () => {
+  const w = startWorker();
+  let id = '171';
+  w.context.fetch = async () => new Response(yandexHTML('my-address').replaceAll('171', id));
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'yandex', browser: true, input: {email: 'my.address@yandex.ru'}});
+  const account = w.stores.local.accounts[0].id;
+  assert.equal(w.notifications.length, 0);
+  assert.ok(w.stores.local.mailboxes[account].messages[0].date < 0);
+  id = '172';
+  await w.ok({type: 'CHECK'}, 'popup');
+  assert.equal(w.notifications.length, 1);
+  await w.ok({type: 'CHECK'}, 'popup');
+  assert.equal(w.notifications.length, 1);
+});

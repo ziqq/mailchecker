@@ -285,6 +285,27 @@ for (const layout of [
       await expect(row.locator('.unread-dot')).toHaveCount(0);
     });
 
+    test('timestamp-only checks preserve mounted rows and the open mail document', async ({page}) => {
+      await page.goto(`${layout.path}${layout.path.includes('?') ? '&' : '?'}refresh=timestamp&theme=dark`);
+      await openRow(page, 'g5');
+      await frameSamples(page);
+      await page.evaluate(() => {
+        window.refreshBefore = {
+          row: document.querySelector('.row[data-id="g5"]'),
+          document: document.querySelector('.mail-frame').contentDocument,
+        };
+      });
+      const refresh = page.getByRole('button', {name: 'Проверить сейчас', exact: true});
+      await refresh.click();
+      await expect(refresh).toBeEnabled();
+      const same = await page.evaluate(() => ({
+        row: window.refreshBefore.row === document.querySelector('.row[data-id="g5"]'),
+        document: window.refreshBefore.document === document.querySelector('.mail-frame').contentDocument,
+      }));
+      expect(same).toEqual({row: true, document: true});
+      await expect(page.locator('.reader .skeleton')).toHaveCount(0);
+    });
+
     test('ringed avatar and unread dot are centred in the row and gutter', async ({page}) => {
       await page.goto(layout.path);
       const row = page.locator('.row[data-id="w1"]');
@@ -316,6 +337,38 @@ for (const layout of [
 
 test.describe('wide audit regressions', () => {
   test.use({viewport: {width: 1440, height: 900}});
+
+  test('sidebar logo and navigation align with the list heading and search controls', async ({page}) => {
+    await page.goto('app.html');
+    await expect(page.locator('.row').first()).toBeVisible();
+    const measurements = await page.evaluate(() => {
+      const box = selector => document.querySelector(selector).getBoundingClientRect();
+      const logo = box('.sidebar .logo'),
+        title = box('.list-title h1');
+      return {
+        logoSize: getComputedStyle(document.querySelector('.sidebar .logo')).fontSize,
+        titleSize: getComputedStyle(document.querySelector('.list-title h1')).fontSize,
+        titleOffset: Math.abs(logo.y + logo.height / 2 - title.y - title.height / 2),
+        searchOffset: Math.abs(box('.search').y - box('.sidebar > .nav a:first-child').y),
+        categoryOffset: Math.abs(box('.segmented').y - box('.sidebar > .nav a:nth-child(2)').y),
+      };
+    });
+    expect(measurements.logoSize).toBe(measurements.titleSize);
+    for (const key of ['titleOffset', 'searchOffset', 'categoryOffset']) expect(measurements[key]).toBeLessThan(0.02);
+  });
+
+  test('changing the theme still updates an open mail document', async ({page}) => {
+    await page.goto('app.html?theme=dark');
+    await openRow(page, 'g5');
+    await frameSamples(page);
+    await page.evaluate(() => {
+      window.themeBefore = document.querySelector('.mail-frame').contentDocument;
+    });
+    await page.getByRole('button', {name: 'Сменить тему', exact: true}).click();
+    await expect
+      .poll(() => page.evaluate(() => window.themeBefore === document.querySelector('.mail-frame').contentDocument))
+      .toBe(false);
+  });
 
   test('empty category keeps the selected reader actions', async ({page}) => {
     await page.goto('app.html');
@@ -439,4 +492,109 @@ test.describe('browser sign-in recovery', () => {
       } else await expect(area).toHaveCount(0);
     });
   }
+});
+
+for (const layout of [
+  ...LAYOUTS,
+  {name: 'mini popup', path: 'popup.html?popup=mini', viewport: {width: 400, height: 600}},
+]) {
+  test.describe(`${layout.name} folder audit regressions`, () => {
+    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+
+    test('CSS-only images expose Show and stay blocked until permission is given', async ({page}) => {
+      const separator = layout.path.includes('?') ? '&' : '?';
+      await page.goto(`${layout.path}${separator}mail=css-images&theme=dark`);
+      const loadedImages = [];
+      const refusedImages = [];
+      page.on('response', response => {
+        if (/icon128\.png\?/.test(response.url())) loadedImages.push(response.url());
+      });
+      page.on('requestfailed', request => {
+        if (/icon128\.png\?/.test(request.url())) refusedImages.push(request.failure()?.errorText || '');
+      });
+      await openRow(page, 'g5');
+      await expect(page.getByText('Заблокировано: 4 картинки', {exact: true})).toBeVisible();
+      await frameSamples(page);
+      expect(loadedImages).toEqual([]);
+      expect(refusedImages.length).toBeGreaterThan(0);
+      expect(refusedImages.every(error => /csp/i.test(error))).toBe(true);
+      const frame = page.locator('iframe.mail-frame').last();
+      const blocked = await frame.evaluate(element => ({
+        sandbox: element.getAttribute('sandbox'),
+        csp: element.contentDocument.querySelector('meta[http-equiv="Content-Security-Policy"]').content,
+      }));
+      expect(blocked.sandbox).not.toContain('allow-scripts');
+      expect(blocked.csp).toContain('img-src data:;');
+      await page.getByRole('button', {name: 'Показать', exact: true}).click();
+      await expect(page.getByRole('button', {name: 'Показать', exact: true})).toHaveCount(0);
+      await expect.poll(() => loadedImages.some(url => url.includes('?style'))).toBe(true);
+      const allowed = await frame.evaluate(element => ({
+        sandbox: element.getAttribute('sandbox'),
+        csp: element.contentDocument.querySelector('meta[http-equiv="Content-Security-Policy"]').content,
+      }));
+      expect(allowed.sandbox).toBe(blocked.sandbox);
+      expect(allowed.csp).toContain("default-src 'none'");
+      expect(allowed.csp).toContain('img-src data: https: http:;');
+      await expectNoHorizontalScroll(page);
+    });
+
+    test('unsupported browser-session search explains exclusion without claiming no matches', async ({page}) => {
+      const separator = layout.path.includes('?') ? '&' : '?';
+      await page.goto(`${layout.path}${separator}search=webmail`);
+      await page.getByRole('searchbox').fill('absent query');
+      await page.getByRole('searchbox').press('Enter');
+      await expect(page.getByRole('heading', {name: 'Поиск в веб-почте.', exact: true})).toBeVisible();
+      const notice = page.getByRole('status');
+      await expect(notice).toContainText('В расширении пока нет поиска');
+      await expect(notice).toContainText('anton@yandex.ru');
+      await expect(notice).toContainText('anton@mail.ru');
+      await expect(page.getByText('Ничего не найдено.', {exact: true})).toHaveCount(0);
+      await expectNoHorizontalScroll(page);
+    });
+  });
+}
+
+test.describe('wide folder audit regressions', () => {
+  test.use({viewport: {width: 1440, height: 900}});
+
+  test('Gmail archive keeps a custom-folder row before and after refresh', async ({page}) => {
+    await page.goto('app.html');
+    await page.getByRole('link', {name: /^anton@gmail.com /}).click();
+    await page.getByRole('button', {name: 'Папки: Входящие', exact: true}).click();
+    await page.getByRole('menuitemradio', {name: 'Проекты 55 писем', exact: true}).click();
+    const row = page.locator('.row[data-id="gmail-project-0"]');
+    await row.click();
+    await page.getByRole('region', {name: 'Письмо'}).getByRole('button', {name: 'В архив', exact: true}).click();
+    await expect(page.locator('.busy-overlay')).toHaveCount(0);
+    await expect(row).toBeVisible();
+    const refresh = page.getByRole('button', {name: 'Проверить сейчас', exact: true});
+    await refresh.click();
+    await expect(refresh).toBeEnabled();
+    await expect(page.getByRole('button', {name: 'Загрузить ещё', exact: true})).toBeVisible();
+    await expect(row).toBeVisible();
+  });
+
+  test('search does not inherit folder pagination or Trash action restrictions', async ({page}) => {
+    await page.goto('app.html');
+    await page.getByRole('link', {name: /^anton@gmail.com /}).click();
+    await page.getByRole('button', {name: 'Папки: Входящие', exact: true}).click();
+    await page.getByRole('menuitemradio', {name: 'Проекты 55 писем', exact: true}).click();
+    await expect(page.getByRole('button', {name: 'Загрузить ещё', exact: true})).toBeVisible();
+    const search = page.getByRole('searchbox');
+    await search.fill('Казань');
+    await search.press('Enter');
+    await expect(page.getByText('Результаты поиска', {exact: true})).toBeVisible();
+    await expect(page.getByRole('button', {name: 'Загрузить ещё', exact: true})).toHaveCount(0);
+    await search.fill('');
+    await search.press('Enter');
+    await page.getByRole('button', {name: 'Папки: Проекты', exact: true}).click();
+    await page.getByRole('menuitemradio', {name: 'Корзина 1 письмо', exact: true}).click();
+    await search.fill('Казань');
+    await search.press('Enter');
+    await expect(page.getByText('Результаты поиска', {exact: true})).toBeVisible();
+    await page.locator('.row[data-id="g1"]').click();
+    const reader = page.getByRole('region', {name: 'Письмо'});
+    await expect(reader.getByRole('button', {name: 'В архив', exact: true})).toBeEnabled();
+    await expect(reader.getByRole('button', {name: 'Удалить', exact: true})).toBeEnabled();
+  });
 });

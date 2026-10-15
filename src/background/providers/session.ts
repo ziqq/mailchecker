@@ -14,7 +14,15 @@
  *
  * @module background/providers/session
  */
-import type {Account, Credentials, InboxResult, MailMessage, MessageAction} from '../../shared/types';
+import type {
+  Account,
+  Credentials,
+  FolderPage,
+  InboxResult,
+  MailFolder,
+  MailMessage,
+  MessageAction,
+} from '../../shared/types';
 import {AuthError} from '../http';
 import {decodeEntities, threadMessage, type Connection, type Provider} from './message';
 import {t} from '../../shared/i18n';
@@ -31,6 +39,10 @@ export interface SessionAdapter {
   connect(email?: string): Promise<string>;
   /** The latest Inbox messages and the unread count. */
   inbox(account: Account, limit: number): Promise<InboxResult>;
+  /** Server folders available through this webmail session. */
+  folders?(account: Account): Promise<MailFolder[]>;
+  /** One page of messages in a selected folder. */
+  folder?(account: Account, id: string, limit: number, cursor: string): Promise<FolderPage>;
   /** The webmail page for the Inbox or a message. */
   webURL(account: Account, message?: MailMessage | null): string;
   /** The full text of a listed message, when the webmail gives it. */
@@ -64,21 +76,23 @@ export function elements(html: string, tag: string, open: RegExp, from = 0, limi
     const end = html.indexOf('>', begin);
     if (end < 0) break;
     if (!open.test(html.slice(begin, end + 1))) {
-      position = begin + start.length;
+      position = end + 1;
       continue;
     }
     let depth = 1;
     let cursor = end + 1;
+    let nextOpen = html.indexOf(start, cursor);
+    let nextClose = html.indexOf(close, cursor);
     while (depth > 0) {
-      const nextOpen = html.indexOf(start, cursor);
-      const nextClose = html.indexOf(close, cursor);
       if (nextClose < 0) break;
       if (nextOpen >= 0 && nextOpen < nextClose) {
         depth++;
         cursor = nextOpen + start.length;
+        nextOpen = html.indexOf(start, cursor);
       } else {
         depth--;
         cursor = nextClose + close.length + 1;
+        if (depth > 0) nextClose = html.indexOf(close, cursor);
       }
     }
     found.push(html.slice(begin, cursor));
@@ -131,15 +145,12 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
       return empty;
     },
     inbox: (account, limit) => adapter.inbox(account, limit),
+    folders: adapter.folders && (account => adapter.folders!(account)),
+    folder: adapter.folder && ((account, id, limit, cursor) => adapter.folder!(account, id, limit, cursor)),
     // One request for the body at most; without it the stored list entry is shown, so opening
     // messages does not add load on the webmail (Yandex blocks bursts of requests).
     async thread(account, item) {
-      const body = adapter.body
-        ? await adapter.body(account, item).catch(error => {
-            if (error instanceof AuthError) throw error;
-            return null;
-          })
-        : null;
+      const body = adapter.body ? await adapter.body(account, item) : null;
       const full = Boolean(body?.html?.trim() || body?.text?.trim());
       return [
         threadMessage({
@@ -158,7 +169,7 @@ export function sessionProvider(adapter: SessionAdapter): Provider {
       await adapter.act(account, item, action);
     },
     async search() {
-      return [];
+      throw new Error(IN_WEBMAIL(adapter.label));
     },
     reply: adapter.reply && ((account, item, text) => adapter.reply!(account, item, text)),
     webURL: (account, message) => adapter.webURL(account, message),

@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "Архів"
   },
+  "folder_count_estimated": {
+    "message": "Приблизно: $1"
+  },
+  "folder_count_partial": {
+    "message": "Кількість для частини скриньок: $1"
+  },
+  "folder_drafts": {
+    "message": "Чернетки"
+  },
+  "folder_empty": {
+    "message": "У цій папці немає листів"
+  },
   "folder_inbox": {
     "message": "Вхідні"
   },
+  "folder_loading": {
+    "message": "Завантаження…"
+  },
+  "folder_more": {
+    "message": "Завантажити ще"
+  },
+  "folder_sent": {
+    "message": "Надіслані"
+  },
+  "folder_spam": {
+    "message": "Спам"
+  },
   "folder_trash": {
     "message": "Кошик"
+  },
+  "folder_unsupported": {
+    "message": "Для цього підключення перегляд папок недоступний. Відкрийте вебпошту."
   },
   "header_cc": {
     "message": "Копія: $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "Категорії"
+  },
+  "label_folders": {
+    "message": "Папки"
   },
   "label_mailboxes": {
     "message": "Скриньки"
@@ -640,6 +670,12 @@
   },
   "search_title": {
     "message": "«$1»"
+  },
+  "search_webmail_only": {
+    "message": "У розширенні поки немає пошуку для скриньок, підключених через браузер: $1. Скористайтеся пошуком у вебпошті."
+  },
+  "search_webmail_title": {
+    "message": "Пошук у вебпошті"
   },
   "section_inbox": {
     "message": "Інші"

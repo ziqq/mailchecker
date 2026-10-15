@@ -7,8 +7,8 @@
  *
  * @module background/providers/gmail
  */
-import type {Account, Credentials, MailMessage, MessageAction} from '../../shared/types';
-import {requestJSON, type RequestOptions} from '../http';
+import type {Account, Credentials, FolderPage, MailFolder, MailMessage, MessageAction} from '../../shared/types';
+import {AuthError, requestJSON, requestText, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
 import {
   bareAddress,
@@ -24,8 +24,56 @@ import {
 } from './message';
 import {t} from '../../shared/i18n';
 
+/** Gmail's virtual Archive: received mail outside Inbox, Sent, Drafts, Spam and Trash. */
+const ARCHIVE_QUERY = '-in:inbox -in:sent -in:drafts -in:spam -in:trash';
+
 /** Gmail API base for the signed-in user. */
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
+
+/** Reads folder counters in Gmail's recommended batches of at most 50 operations. */
+async function folderCounts(account: Account, paths: string[]): Promise<(Record<string, unknown> | undefined)[]> {
+  const results: (Record<string, unknown> | undefined)[] = Array(paths.length).fill(undefined);
+  for (let offset = 0; offset < paths.length; offset += 50) {
+    const group = paths.slice(offset, offset + 50);
+    const boundary = 'mailchecker_batch';
+    const body =
+      group
+        .map(
+          (path, index) =>
+            `--${boundary}\r\nContent-Type: application/http\r\nContent-ID: <${index}@mailchecker>\r\n\r\nGET /gmail/v1/users/me${path} HTTP/1.1\r\n\r\n`,
+        )
+        .join('') + `--${boundary}--\r\n`;
+    try {
+      const reply = await requestText('https://gmail.googleapis.com/batch/gmail/v1', {
+        token: account.credentials.token,
+        service: 'Gmail',
+        method: 'POST',
+        multipart: {boundary, body},
+      });
+      const marker = /^--([^\r\n]{1,200})\r?$/m.exec(reply)?.[1];
+      if (!marker) continue;
+      for (const part of reply.split(`--${marker}`).slice(1, group.length + 1)) {
+        const id = /Content-ID:\s*<response-(\d+)@mailchecker>/i.exec(part)?.[1];
+        const status = Number(/HTTP\/1\.[01]\s+(\d{3})/.exec(part)?.[1]);
+        if (status === 401 || status === 403) throw new AuthError();
+        if (id == null || Number(id) >= group.length || status !== 200) continue;
+        const start = part.indexOf('{');
+        if (start < 0) continue;
+        try {
+          const value: unknown = JSON.parse(part.slice(start).trim());
+          if (value && typeof value === 'object' && !Array.isArray(value))
+            results[offset + Number(id)] = value as Record<string, unknown>;
+        } catch {
+          // A malformed individual counter must not hide the other folder names or counts.
+        }
+      }
+    } catch (error) {
+      if (error instanceof AuthError) throw error;
+      // Keep names usable when a batch fails; absent counters remain unknown rather than zero.
+    }
+  }
+  return results;
+}
 
 /** A MIME part as returned with `format=full` or `format=metadata`. */
 interface GmailPart {
@@ -129,15 +177,35 @@ function listMessage(item: GmailMessage): MailMessage {
   });
 }
 
-/** Lists messages matching a Gmail query with metadata. */
-async function list(credentials: Credentials, q: string, limit: number): Promise<MailMessage[]> {
-  const query = new URLSearchParams({q, maxResults: String(limit)});
-  const found = await call<{messages?: {id: string}[]}>(credentials, `/messages?${query}`);
+/** Lists a bounded Gmail page, matching a query or a server label. */
+async function listPage(
+  credentials: Credentials,
+  q: string,
+  limit: number,
+  folder = '',
+  cursor = '',
+): Promise<FolderPage> {
+  const query = new URLSearchParams({maxResults: String(limit)});
+  if (q) query.set('q', q);
+  if (folder) {
+    query.set('includeSpamTrash', String(folder === 'TRASH' || folder === 'SPAM'));
+    if (folder !== 'archive') query.set('labelIds', folder);
+  }
+  if (cursor) query.set('pageToken', cursor);
+  const found = await call<{messages?: {id: string}[]; nextPageToken?: string}>(credentials, `/messages?${query}`);
   const ids = (Array.isArray(found?.messages) ? found.messages : []).slice(0, limit).map(item => String(item.id));
   const details = await Promise.all(
     ids.map(id => call<GmailMessage>(credentials, `/messages/${encodeURIComponent(id)}?format=metadata&${METADATA}`)),
   );
-  return details.map(listMessage);
+  return {
+    messages: details.map(item => ({...listMessage(item), ...(folder ? {folder} : {})})),
+    next: found?.nextPageToken || '',
+  };
+}
+
+/** Lists the first page for Inbox checks and search. */
+async function list(credentials: Credentials, q: string, limit: number): Promise<MailMessage[]> {
+  return (await listPage(credentials, q, limit)).messages;
 }
 
 /** Gmail provider. */
@@ -161,6 +229,49 @@ export const gmail: Provider = {
       list(account.credentials, 'in:inbox', limit),
     ]);
     return {unread: count(label?.messagesUnread, messages.filter(item => item.unread).length), messages};
+  },
+
+  async folders(account) {
+    const value = await call<{labels?: {id?: string; name?: string; type?: string}[]}>(account.credentials, '/labels');
+    const roles = {INBOX: 'inbox', SENT: 'sent', TRASH: 'trash', SPAM: 'spam', DRAFT: 'drafts'} as const;
+    const labels = (Array.isArray(value?.labels) ? value.labels : [])
+      .slice(0, 200)
+      .filter(
+        item =>
+          typeof item.id === 'string' &&
+          item.id.length > 0 &&
+          item.id.length <= 512 &&
+          (item.type === 'user' || Object.hasOwn(roles, item.id)),
+      )
+      .map(item => ({id: item.id!, name: item.name || item.id!, role: roles[item.id as keyof typeof roles]}))
+      .sort((a, b) => Number(Boolean(b.role)) - Number(Boolean(a.role)))
+      .slice(0, 199); // Reserve one of the 200 catalog slots for Gmail's virtual Archive.
+    const counts = await folderCounts(account, [
+      ...labels.map(label => `/labels/${encodeURIComponent(label.id)}?fields=messagesTotal,messagesUnread`),
+      `/messages?${new URLSearchParams({q: ARCHIVE_QUERY, maxResults: '1', fields: 'resultSizeEstimate'})}`,
+    ]);
+    const folders: MailFolder[] = labels.map((label, index) => ({
+      ...label,
+      total: typeof counts[index]?.messagesTotal === 'number' ? (counts[index]!.messagesTotal as number) : undefined,
+      unread: typeof counts[index]?.messagesUnread === 'number' ? (counts[index]!.messagesUnread as number) : undefined,
+    }));
+    const archive = counts[labels.length];
+    // Gmail archives by removing INBOX; it has no Archive label.
+    return [
+      {
+        id: 'archive',
+        name: '',
+        role: 'archive' as const,
+        total: typeof archive?.resultSizeEstimate === 'number' ? archive.resultSizeEstimate : undefined,
+        approximate: true,
+      },
+      ...folders,
+    ];
+  },
+
+  async folder(account, id, limit, cursor) {
+    const q = id === 'archive' ? ARCHIVE_QUERY : '';
+    return listPage(account.credentials, q, limit, id, cursor);
   },
 
   async thread(account, item) {

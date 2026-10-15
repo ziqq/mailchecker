@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "Archivio"
   },
+  "folder_count_estimated": {
+    "message": "Conteggio stimato: $1"
+  },
+  "folder_count_partial": {
+    "message": "Conteggio per alcune caselle: $1"
+  },
+  "folder_drafts": {
+    "message": "Bozze"
+  },
+  "folder_empty": {
+    "message": "Nessun messaggio in questa cartella"
+  },
   "folder_inbox": {
     "message": "Posta in arrivo"
   },
+  "folder_loading": {
+    "message": "Caricamento…"
+  },
+  "folder_more": {
+    "message": "Carica altri"
+  },
+  "folder_sent": {
+    "message": "Inviati"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Cestino"
+  },
+  "folder_unsupported": {
+    "message": "Questa connessione non consente di consultare le cartelle. Apri la webmail."
   },
   "header_cc": {
     "message": "Cc: $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "Categorie"
+  },
+  "label_folders": {
+    "message": "Cartelle"
   },
   "label_mailboxes": {
     "message": "Caselle"
@@ -631,6 +661,12 @@
   },
   "search_title": {
     "message": "«$1»"
+  },
+  "search_webmail_only": {
+    "message": "La ricerca nell’estensione non supporta ancora le caselle collegate tramite il browser: $1. Usa la ricerca nella webmail."
+  },
+  "search_webmail_title": {
+    "message": "Cerca nella webmail"
   },
   "section_inbox": {
     "message": "Tutto il resto"

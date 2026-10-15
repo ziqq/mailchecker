@@ -18,6 +18,8 @@ import type {
   MailMessage,
   MessageAction,
   ThreadMessage,
+  MailFolder,
+  FolderPage,
 } from '../../shared/types';
 import {t} from '../../shared/i18n';
 
@@ -44,6 +46,10 @@ export interface Provider {
   address?(credentials: Credentials): Promise<string>;
   /** The latest Inbox messages, newest first, and the Inbox unread count. */
   inbox(account: Account, limit: number): Promise<InboxResult>;
+  /** The server folder catalog, loaded only when the folder selector opens. */
+  folders?(account: Account): Promise<MailFolder[]>;
+  /** One page of a selected server folder, loaded only on demand. */
+  folder?(account: Account, id: string, limit: number, cursor: string): Promise<FolderPage>;
   /** Messages of a conversation with bodies, oldest first. */
   thread(account: Account, message: MailMessage): Promise<ThreadMessage[]>;
   /** Applies an action to one message. */
@@ -134,6 +140,7 @@ export interface RawMessage {
   pinned?: unknown;
   category?: Category;
   attachments?: unknown;
+  folder?: unknown;
 }
 
 /** Returns an HTTPS URL string or empty. */
@@ -167,6 +174,7 @@ export function message(value: RawMessage): MailMessage {
     pinned: Boolean(value.pinned),
     category: value.category || 'people',
     attachments: Boolean(value.attachments),
+    ...(value.folder ? {folder: text(value.folder, 512)} : {}),
   };
 }
 

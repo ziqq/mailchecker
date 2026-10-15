@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "Archiwum"
   },
+  "folder_count_estimated": {
+    "message": "Szacowana liczba: $1"
+  },
+  "folder_count_partial": {
+    "message": "Liczba dla części skrzynek: $1"
+  },
+  "folder_drafts": {
+    "message": "Wersje robocze"
+  },
+  "folder_empty": {
+    "message": "W tym folderze nie ma wiadomości"
+  },
   "folder_inbox": {
     "message": "Odebrane"
   },
+  "folder_loading": {
+    "message": "Ładowanie…"
+  },
+  "folder_more": {
+    "message": "Wczytaj więcej"
+  },
+  "folder_sent": {
+    "message": "Wysłane"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Kosz"
+  },
+  "folder_unsupported": {
+    "message": "To połączenie nie obsługuje przeglądania folderów. Otwórz pocztę w przeglądarce."
   },
   "header_cc": {
     "message": "DW: $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "Kategorie"
+  },
+  "label_folders": {
+    "message": "Foldery"
   },
   "label_mailboxes": {
     "message": "Skrzynki"
@@ -640,6 +670,12 @@
   },
   "search_title": {
     "message": "„$1”"
+  },
+  "search_webmail_only": {
+    "message": "Rozszerzenie nie obsługuje jeszcze wyszukiwania w skrzynkach połączonych przez przeglądarkę: $1. Użyj wyszukiwania w poczcie internetowej."
+  },
+  "search_webmail_title": {
+    "message": "Szukaj w poczcie internetowej"
   },
   "section_inbox": {
     "message": "Pozostałe"

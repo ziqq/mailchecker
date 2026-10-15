@@ -7,13 +7,14 @@
  *
  * @module client/components/MessageList
  */
-import {createSignal, For, Match, Show, Switch} from 'solid-js';
+import {createEffect, createSignal, For, Match, Show, Switch} from 'solid-js';
 import {initial, senderName, shortDate} from '../../shared/format';
 import {t, tn} from '../../shared/i18n';
 import {accountColor, type Entry, type Filter, type Item} from '../../shared/inbox';
 import {icon} from '../../shared/icons';
 import {store} from '../store';
 import {openSettings} from './TopBar';
+import {FolderPicker} from './FolderPicker';
 
 /** Category filter labels. */
 const FILTERS: {id: Filter; label: string}[] = [
@@ -32,7 +33,7 @@ const TITLES: Record<Filter, string> = {
 };
 
 /** A small action button that does not select the row. */
-function RowAction(props: {name: string; title: string; onClick: () => void; danger?: boolean}) {
+function RowAction(props: {name: string; title: string; onClick: () => void; danger?: boolean; disabled?: boolean}) {
   return (
     <button
       class="round ghost"
@@ -40,6 +41,7 @@ function RowAction(props: {name: string; title: string; onClick: () => void; dan
       type="button"
       title={props.title}
       aria-label={props.title}
+      disabled={props.disabled}
       onClick={event => {
         event.stopPropagation();
         props.onClick();
@@ -110,6 +112,7 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
         />
         <RowAction
           name="archive"
+          disabled={!store.canAct('archive')}
           title={`${t('action_archive')} · E`}
           onClick={() => store.act(props.entry, 'archive')}
         />
@@ -206,6 +209,10 @@ function Notices() {
 function SearchField() {
   const [value, setValue] = createSignal(store.query());
   let timer: ReturnType<typeof setTimeout> | undefined;
+  createEffect(() => {
+    setValue(store.query());
+    clearTimeout(timer);
+  });
   const run = (text: string) => {
     clearTimeout(timer);
     store.search(text);
@@ -244,20 +251,32 @@ function SearchField() {
 export function MessageList() {
   const accounts = () => store.state()?.accounts || [];
   const total = () => store.unread().all;
+  const searchUnavailable = () => accounts().filter(account => account.browser);
+  const webmailSearchOnly = () => accounts().length > 0 && searchUnavailable().length === accounts().length;
   return (
     <section class="list-pane" aria-label={t('label_messages')}>
       <header class="list-head">
         <div class="list-title">
-          <h1>
-            {store.results() ? t('search_title', store.query()) : TITLES[store.filter()]}
-            <span class="dot">.</span>
-          </h1>
+          <FolderPicker
+            title={
+              store.results()
+                ? t('search_title', store.query())
+                : store.folder()
+                  ? store.folderLabel(store.folder()!)
+                  : TITLES[store.filter()]
+            }
+          />
           <Show when={!store.results() && total()}>
-            <span class="pill strong">{tn('unread_new', total())}</span>
+            <span
+              class="pill strong"
+              title={store.unreadPartial() ? t('folder_count_partial', tn('unread_new', total())) : undefined}
+            >
+              {tn('unread_new', total())}
+            </span>
           </Show>
         </div>
         <SearchField />
-        <Show when={!store.results()}>
+        <Show when={!store.results() && !store.folder()}>
           <div class="segmented" role="tablist" aria-label={t('label_categories')}>
             <For each={FILTERS}>
               {filter => (
@@ -266,6 +285,11 @@ export function MessageList() {
                   role="tab"
                   aria-selected={store.filter() === filter.id}
                   aria-pressed={store.filter() === filter.id}
+                  title={
+                    filter.id !== 'all' && total() > store.entries().filter(entry => entry.message.unread).length
+                      ? t('folder_count_partial', tn('unread_new', store.unread()[filter.id]))
+                      : undefined
+                  }
                   onClick={() => store.setFilter(filter.id)}
                 >
                   {filter.label}
@@ -280,9 +304,42 @@ export function MessageList() {
       </header>
 
       <div class="list-body">
-        <Notices />
+        <Show when={store.results() && searchUnavailable().length}>
+          <p class="folder-status" role="status">
+            {t(
+              'search_webmail_only',
+              searchUnavailable()
+                .map(account => account.email)
+                .join(', '),
+            )}
+          </p>
+        </Show>
+        <Show when={!store.folder()}>
+          <Notices />
+        </Show>
+        <For each={store.folderErrors()}>
+          {item => (
+            <div class="notice" role="alert">
+              {icon('alert')}
+              <span>
+                <b>{store.state()?.accounts.find(account => account.id === item.account)?.email}</b> · {item.error}
+              </span>
+              <button
+                type="button"
+                class="btn small"
+                disabled={store.folderLoading() || store.catalogLoading()}
+                onClick={async () => {
+                  await store.loadFolders();
+                  await store.loadFolder();
+                }}
+              >
+                {t('action_check_now')}
+              </button>
+            </div>
+          )}
+        </For>
         <Switch>
-          <Match when={!store.state()}>
+          <Match when={!store.state() || (store.folderLoading() && !store.folderEntries().length)}>
             <div class="skeletons" aria-hidden="true">
               <For each={[1, 2, 3, 4, 5]}>{() => <div class="skeleton" />}</For>
             </div>
@@ -302,13 +359,22 @@ export function MessageList() {
               </button>
             </div>
           </Match>
+          <Match when={store.folder() && store.folderErrors().length && !store.folderEntries().length}>
+            <span />
+          </Match>
           <Match when={!store.list().some(section => section.items.length)}>
             <div class="empty small">
               <h2>
-                {store.results() ? t('search_empty') : t('inbox_empty')}
+                {store.results()
+                  ? t(webmailSearchOnly() ? 'search_webmail_title' : 'search_empty')
+                  : store.folder()
+                    ? t('folder_empty')
+                    : t('inbox_empty')}
                 <span class="dot">.</span>
               </h2>
-              <p>{store.results() ? t('search_empty_text') : t('inbox_empty_text')}</p>
+              <Show when={(store.results() && !webmailSearchOnly()) || (!store.results() && !store.folder())}>
+                <p>{store.results() ? t('search_empty_text') : t('inbox_empty_text')}</p>
+              </Show>
             </div>
           </Match>
           <Match when={true}>
@@ -328,6 +394,19 @@ export function MessageList() {
             </For>
           </Match>
         </Switch>
+        <Show when={!store.results() && store.folderNext().length}>
+          <button
+            type="button"
+            class="btn folder-more"
+            disabled={store.folderLoading()}
+            onClick={() => store.loadFolder(true)}
+          >
+            <Show when={store.folderLoading()} fallback={t('folder_more')}>
+              <span class="spinner" />
+              {t('folder_loading')}
+            </Show>
+          </button>
+        </Show>
       </div>
     </section>
   );

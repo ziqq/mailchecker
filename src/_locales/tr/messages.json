@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "Arşiv"
   },
+  "folder_count_estimated": {
+    "message": "Tahmini sayı: $1"
+  },
+  "folder_count_partial": {
+    "message": "Bazı posta kutularının sayısı: $1"
+  },
+  "folder_drafts": {
+    "message": "Taslaklar"
+  },
+  "folder_empty": {
+    "message": "Bu klasörde ileti yok"
+  },
   "folder_inbox": {
     "message": "Gelen Kutusu"
   },
+  "folder_loading": {
+    "message": "Yükleniyor…"
+  },
+  "folder_more": {
+    "message": "Daha fazla yükle"
+  },
+  "folder_sent": {
+    "message": "Gönderilenler"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Çöp Kutusu"
+  },
+  "folder_unsupported": {
+    "message": "Bu bağlantıda klasörler görüntülenemiyor. Web postasını açın."
   },
   "header_cc": {
     "message": "Bilgi: $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "Kategoriler"
+  },
+  "label_folders": {
+    "message": "Klasörler"
   },
   "label_mailboxes": {
     "message": "Posta kutuları"
@@ -622,6 +652,12 @@
   },
   "search_title": {
     "message": "“$1”"
+  },
+  "search_webmail_only": {
+    "message": "Uzantı, tarayıcı üzerinden bağlanan posta kutularında aramayı henüz desteklemiyor: $1. Web postasında arama yapın."
+  },
+  "search_webmail_title": {
+    "message": "Web postasında ara"
   },
   "section_inbox": {
     "message": "Diğerleri"

@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "보관함"
   },
+  "folder_count_estimated": {
+    "message": "예상 개수: $1"
+  },
+  "folder_count_partial": {
+    "message": "일부 메일함의 개수: $1"
+  },
+  "folder_drafts": {
+    "message": "임시보관함"
+  },
+  "folder_empty": {
+    "message": "이 폴더에 메일이 없습니다"
+  },
   "folder_inbox": {
     "message": "받은편지함"
   },
+  "folder_loading": {
+    "message": "불러오는 중…"
+  },
+  "folder_more": {
+    "message": "더 불러오기"
+  },
+  "folder_sent": {
+    "message": "보낸 편지함"
+  },
+  "folder_spam": {
+    "message": "스팸"
+  },
   "folder_trash": {
     "message": "휴지통"
+  },
+  "folder_unsupported": {
+    "message": "이 연결에서는 폴더를 볼 수 없습니다. 웹메일을 여세요."
   },
   "header_cc": {
     "message": "참조: $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "카테고리"
+  },
+  "label_folders": {
+    "message": "폴더"
   },
   "label_mailboxes": {
     "message": "메일함"
@@ -613,6 +643,12 @@
   },
   "search_title": {
     "message": "“$1”"
+  },
+  "search_webmail_only": {
+    "message": "확장 프로그램은 브라우저를 통해 연결된 메일함의 검색을 아직 지원하지 않습니다: $1. 웹메일에서 검색하세요."
+  },
+  "search_webmail_title": {
+    "message": "웹메일에서 검색"
   },
   "section_inbox": {
     "message": "기타"

@@ -11,9 +11,8 @@
 /**
  * Provider identifiers.
  *
- * `yandex`, `mailru` and `icloud` are IMAP-only services without an HTTP
- * mail API. They have no adapter yet (see docs/SAFARI.md, IMAP bridge):
- * the worker rejects them, and only the sandbox shows them.
+ * Gmail, Outlook and JMAP use APIs; Yandex and Mail.ru use the browser's
+ * webmail session. iCloud is available only in sandbox fixtures.
  */
 export type ProviderID = 'gmail' | 'outlook' | 'jmap' | 'yandex' | 'mailru' | 'icloud';
 
@@ -71,6 +70,31 @@ export interface Account {
 /** Smart Inbox category. */
 export type Category = 'people' | 'notifications' | 'newsletters';
 
+/** Well-known server folder roles, independent of provider names and IDs. */
+export type FolderRole = 'inbox' | 'sent' | 'archive' | 'trash' | 'spam' | 'drafts';
+
+/** A server folder or Gmail label. Custom names are shown as returned by the server. */
+export interface MailFolder {
+  id: string;
+  name: string;
+  role?: FolderRole;
+  parent?: string;
+  /** Total messages, when the server provides it; never the length of a loaded page. */
+  total?: number;
+  /** Unread messages reported by the server. */
+  unread?: number;
+  /** Gmail's virtual Archive uses the provider's result-size estimate. */
+  approximate?: boolean;
+  /** A common total includes only folders whose servers supplied a count, so it is a lower bound. */
+  partial?: boolean;
+}
+
+/** One bounded page of folder messages; an empty cursor means the last page. */
+export interface FolderPage {
+  messages: MailMessage[];
+  next: string;
+}
+
 /** A bounded Inbox message record for lists. */
 export interface MailMessage {
   id: string;
@@ -78,7 +102,7 @@ export interface MailMessage {
   from: string;
   subject: string;
   snippet: string;
-  /** Received time in milliseconds since the epoch. */
+  /** Received time in milliseconds; nonpositive values preserve server order when the date is unknown. */
   date: number;
   /** HTTPS link to the message in webmail, or empty. */
   link: string;
@@ -87,11 +111,15 @@ export interface MailMessage {
   pinned: boolean;
   category: Category;
   attachments: boolean;
+  /** Server folder context for actions outside the stored Inbox. */
+  folder?: string;
 }
 
 /** Inbox state returned by a provider: the latest messages and the unread count. */
 export interface InboxResult {
   unread: number;
+  /** The unread count is a lower bound because the provider did not return an authoritative total. */
+  unreadPartial?: boolean;
   messages: MailMessage[];
 }
 
@@ -171,10 +199,12 @@ export type Request =
   | {type: 'CHECK'}
   | {type: 'OPTIONS'}
   | {type: 'OPEN_APP'}
-  | {type: 'OPEN'; account: string; message?: string}
-  | {type: 'THREAD'; account: string; message: string; thread: string}
-  | {type: 'REPLY'; account: string; message: string; text: string}
-  | {type: 'ACT'; account: string; message: string; action: MessageAction}
+  | {type: 'OPEN'; account: string; message?: string; entry?: MailMessage}
+  | {type: 'FOLDERS'; account: string}
+  | {type: 'FOLDER'; account: string; folder: string; cursor?: string}
+  | {type: 'THREAD'; account: string; message: string; thread: string; entry?: MailMessage}
+  | {type: 'REPLY'; account: string; message: string; text: string; entry?: MailMessage}
+  | {type: 'ACT'; account: string; message: string; action: MessageAction; entry?: MailMessage}
   | {type: 'SEARCH'; query: string}
   | {type: 'SIGN_IN'; account: string}
   | {type: 'PREFERENCES'; value: Partial<Preferences>}

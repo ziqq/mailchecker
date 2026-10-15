@@ -7,8 +7,8 @@
  *
  * @module background/providers/outlook
  */
-import type {Credentials, MailMessage, MessageAction} from '../../shared/types';
-import {AuthError, requestJSON, type RequestOptions} from '../http';
+import type {Credentials, FolderPage, FolderRole, MailFolder, MailMessage, MessageAction} from '../../shared/types';
+import {AuthError, HTTPError, requestJSON, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
 import {addresses, categorize, count, message, threadMessage, type Provider} from './message';
 import {t} from '../../shared/i18n';
@@ -84,6 +84,96 @@ const PATCHES: Partial<Record<MessageAction, object>> = {
   unpin: {flag: {flagStatus: 'notFlagged'}},
 };
 
+/** Reads a bounded Graph folder page; continuation queries cannot change the host or folder path. */
+async function listFolder(credentials: Credentials, id: string, limit: number, cursor = ''): Promise<FolderPage> {
+  const query = cursor ? new URLSearchParams(cursor) : new URLSearchParams();
+  query.set('$top', String(limit));
+  query.set('$select', LIST_FIELDS);
+  query.set('$orderby', 'receivedDateTime desc');
+  const path = `/mailFolders/${encodeURIComponent(id)}/messages`;
+  const value = await call<{value?: GraphMessage[]; '@odata.nextLink'?: string}>(credentials, `${path}?${query}`);
+  let next = '';
+  if (value?.['@odata.nextLink']) {
+    const url = new URL(value['@odata.nextLink']);
+    if (url.origin === new URL(API).origin && url.pathname === new URL(API + path).pathname) next = url.search.slice(1);
+  }
+  return {messages: (Array.isArray(value?.value) ? value.value : []).slice(0, limit).map(listMessage), next};
+}
+
+/** Graph's stable folder names, resolved to server IDs before assigning common roles. */
+const FOLDERS: Readonly<Record<string, FolderRole>> = {
+  inbox: 'inbox',
+  sentitems: 'sent',
+  archive: 'archive',
+  deleteditems: 'trash',
+  junkemail: 'spam',
+  drafts: 'drafts',
+};
+
+/** Lists a bounded folder tree, resolving system roles by ID rather than translated display names. */
+async function folders(credentials: Credentials): Promise<MailFolder[]> {
+  const roles = new Map<string, FolderRole>();
+  await Promise.all(
+    Object.entries(FOLDERS).map(async ([id, role]) => {
+      try {
+        const value = await call<{id?: string}>(credentials, `/mailFolders/${id}?$select=id`);
+        if (value?.id) roles.set(value.id, role);
+      } catch (error) {
+        if (!(error instanceof HTTPError) || error.status !== 404) throw error;
+      }
+    }),
+  );
+  const result: MailFolder[] = [];
+  const pending = [''];
+  const visited = new Set<string>();
+  const seen = new Set<string>();
+  let requests = 0;
+  while (pending.length && result.length < 200 && requests < 200) {
+    const parent = pending.shift()!;
+    if (visited.has(parent)) continue;
+    visited.add(parent);
+    const path = parent ? `/mailFolders/${encodeURIComponent(parent)}/childFolders` : '/mailFolders';
+    let next = `${path}?$top=200&$select=id,displayName,childFolderCount,totalItemCount,unreadItemCount`;
+    const pages = new Set<string>();
+    while (next && !pages.has(next) && result.length < 200 && requests++ < 200) {
+      pages.add(next);
+      const value = await call<{
+        value?: {
+          id?: string;
+          displayName?: string;
+          childFolderCount?: number;
+          totalItemCount?: number;
+          unreadItemCount?: number;
+        }[];
+        '@odata.nextLink'?: string;
+      }>(credentials, next);
+      for (const item of (Array.isArray(value?.value) ? value.value : []).slice(0, 200 - result.length)) {
+        if (!item.id || seen.has(item.id)) continue;
+        seen.add(item.id);
+        result.push({
+          id: item.id,
+          name: item.displayName || item.id,
+          role: roles.get(item.id),
+          parent: parent || undefined,
+          total: item.totalItemCount,
+          unread: item.unreadItemCount,
+        });
+        if (item.childFolderCount) pending.push(item.id);
+      }
+      next = '';
+      const link = value?.['@odata.nextLink'];
+      if (typeof link === 'string' && link.length <= 4096) {
+        const url = new URL(link);
+        const expected = new URL(API + path);
+        if (url.origin !== expected.origin || url.pathname !== expected.pathname)
+          throw new Error(t('error_unexpected_reply', 'Microsoft Graph'));
+        next = path + url.search;
+      }
+    }
+  }
+  return result;
+}
+
 /** Outlook / Microsoft 365 provider. */
 export const outlook: Provider = {
   label: 'Outlook / Microsoft 365',
@@ -103,14 +193,17 @@ export const outlook: Provider = {
   signIn: account => oauth.microsoft({loginHint: account.email}),
 
   async inbox(account, limit) {
-    const query = new URLSearchParams({$top: String(limit), $select: LIST_FIELDS, $orderby: 'receivedDateTime desc'});
     const [folder, list] = await Promise.all([
       call<{unreadItemCount?: unknown}>(account.credentials, '/mailFolders/inbox?$select=unreadItemCount'),
-      call<{value?: GraphMessage[]}>(account.credentials, `/mailFolders/inbox/messages?${query}`),
+      listFolder(account.credentials, 'inbox', limit),
     ]);
-    const messages = (Array.isArray(list?.value) ? list.value : []).slice(0, limit).map(listMessage);
+    const messages = list.messages;
     return {unread: count(folder?.unreadItemCount, messages.filter(item => item.unread).length), messages};
   },
+
+  folders: account => folders(account.credentials),
+
+  folder: (account, id, limit, cursor) => listFolder(account.credentials, id, limit, cursor),
 
   /** Graph rejects `$orderby` with a `conversationId` filter, so messages are sorted locally. */
   async thread(account, item) {

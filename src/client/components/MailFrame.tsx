@@ -11,7 +11,7 @@
  *
  * @module client/components/MailFrame
  */
-import {createEffect, onCleanup} from 'solid-js';
+import {createEffect, createMemo, onCleanup} from 'solid-js';
 import {frameDocument, sanitizeEmail, textToHTML} from '../../shared/sanitize';
 import {t} from '../../shared/i18n';
 
@@ -27,6 +27,11 @@ export interface MailFrameProps {
 
 /** Renders one message body. */
 export function MailFrame(props: MailFrameProps) {
+  // Prop getters may depend on the entire public state; unchanged inputs must not reload the document.
+  const html = createMemo(() => props.html);
+  const text = createMemo(() => props.text);
+  const dark = createMemo(() => props.dark);
+  const allowRemote = createMemo(() => props.allowRemote);
   let frame!: HTMLIFrameElement;
   let observer: ResizeObserver | undefined;
   let animation: number | undefined;
@@ -64,12 +69,12 @@ export function MailFrame(props: MailFrameProps) {
   };
 
   createEffect(() => {
-    const plain = !props.html.trim();
+    const plain = !html().trim();
     const body = plain
-      ? {html: textToHTML(props.text), blocked: 0, trackers: 0}
-      : sanitizeEmail(props.html, props.allowRemote, props.dark);
+      ? {html: textToHTML(text()), blocked: 0, trackers: 0}
+      : sanitizeEmail(html(), allowRemote(), dark());
     props.onBlocked?.(body.blocked, body.trackers);
-    frame.srcdoc = frameDocument(body.html, {allowRemote: props.allowRemote, dark: props.dark, plain});
+    frame.srcdoc = frameDocument(body.html, {allowRemote: allowRemote(), dark: dark(), plain});
   });
 
   const onLoad = () => {

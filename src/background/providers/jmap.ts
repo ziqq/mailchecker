@@ -10,7 +10,8 @@
  *
  * @module background/providers/jmap
  */
-import type {Account, MailMessage} from '../../shared/types';
+import type {Account, FolderPage, FolderRole, MailMessage} from '../../shared/types';
+import {FOLDER_ROLES} from '../../shared/folders';
 import {AuthError, requestJSON} from '../http';
 import {addresses, categorize, count, message, replySubject, threadMessage, type Provider} from './message';
 import {t} from '../../shared/i18n';
@@ -27,8 +28,11 @@ type Call = [string, Record<string, unknown>, string];
 /** JMAP mailbox fields used here. */
 interface JMAPMailbox {
   id: string;
+  name?: string;
+  parentId?: string | null;
   role?: string | null;
   unreadEmails?: number;
+  totalEmails?: number;
 }
 
 /** JMAP address. */
@@ -146,9 +150,14 @@ function listMessage(item: JMAPEmail): MailMessage {
 }
 
 /** Queries emails with a filter and returns list messages. */
-async function query(account: Account, filter: Record<string, unknown>, limit: number): Promise<MailMessage[]> {
+async function queryPage(
+  account: Account,
+  filter: Record<string, unknown>,
+  limit: number,
+  position = 0,
+): Promise<FolderPage> {
   const replies = await run(account, [
-    ['Email/query', {filter, sort: [{property: 'receivedAt', isAscending: false}], limit}, 'query'],
+    ['Email/query', {filter, sort: [{property: 'receivedAt', isAscending: false}], limit, position}, 'query'],
     [
       'Email/get',
       {'#ids': {resultOf: 'query', name: 'Email/query', path: '/ids'}, properties: LIST_PROPERTIES},
@@ -156,7 +165,13 @@ async function query(account: Account, filter: Record<string, unknown>, limit: n
     ],
   ]);
   const list: JMAPEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
-  return list.slice(0, limit).map(listMessage);
+  const messages = list.slice(0, limit).map(listMessage);
+  return {messages, next: messages.length === limit ? String(position + messages.length) : ''};
+}
+
+/** Queries the first bounded page for Inbox checks and search. */
+async function query(account: Account, filter: Record<string, unknown>, limit: number): Promise<MailMessage[]> {
+  return (await queryPage(account, filter, limit)).messages;
 }
 
 /** Keyword and mailbox patches for each action. */
@@ -212,6 +227,34 @@ export const jmap: Provider = {
     const roles = await mailboxes(account);
     const messages = await query(account, {inMailbox: roles.inbox.id}, limit);
     return {unread: count(roles.inbox.unreadEmails, messages.filter(item => item.unread).length), messages};
+  },
+
+  async folders(account) {
+    const replies = await run(account, [
+      [
+        'Mailbox/get',
+        {ids: null, properties: ['id', 'name', 'parentId', 'role', 'totalEmails', 'unreadEmails']},
+        'folders',
+      ],
+    ]);
+    const list: JMAPMailbox[] = Array.isArray(replies.folders?.list) ? replies.folders.list : [];
+    return list
+      .slice(0, 200)
+      .filter(item => item.id)
+      .map(item => ({
+        id: item.id,
+        name: item.name || item.id,
+        parent: item.parentId || undefined,
+        role: FOLDER_ROLES.includes(item.role as FolderRole) ? (item.role as FolderRole) : undefined,
+        total: item.totalEmails,
+        unread: item.unreadEmails,
+      }));
+  },
+
+  async folder(account, id, limit, cursor) {
+    if (cursor && !/^\d{1,7}$/.test(cursor)) throw new Error(t('error_bad_message'));
+    const page = await queryPage(account, {inMailbox: id}, limit, Number(cursor || 0));
+    return {...page, messages: page.messages.map(item => ({...item, folder: id}))};
   },
 
   async thread(account, item) {

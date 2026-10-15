@@ -99,9 +99,6 @@ const NAMED: Readonly<Record<string, string>> = Object.freeze({
   navy: '#000080',
 });
 
-/** Colour literals in CSS: hex, `rgb()`/`rgba()` and the names above. */
-const COLOR = new RegExp(`#[0-9a-f]{3,8}\\b|rgba?\\([^)]*\\)|\\b(?:${Object.keys(NAMED).join('|')})\\b`, 'gi');
-
 /** Returns red, green, blue (0–255) and alpha of a colour literal, or null. */
 function parseColor(value: string): [number, number, number, number] | null {
   const literal = NAMED[value.toLowerCase()] || value;
@@ -178,13 +175,125 @@ const BACKGROUND = /^(?:background|background-color|background-image)$/i;
 const COLORED =
   /^(?:background|background-color|background-image|color|border(?:-[a-z]+)*-?color|border(?:-[a-z]+)?|outline(?:-color)?|text-decoration-color|fill|stroke)$/i;
 
-/** Returns CSS declarations (a `style` attribute or a stylesheet) with colours adapted to a dark page. */
+/** Skips a quoted CSS string or comment, including an unterminated final token. */
+function cssLiteralEnd(css: string, start: number): number {
+  if (css[start] === '/') {
+    const close = css.indexOf('*/', start + 2);
+    return close < 0 ? css.length : close + 2;
+  }
+  const quote = css[start];
+  for (let index = start + 1; index < css.length; index++) {
+    if (css[index] === '\\') index++;
+    else if (css[index] === quote) return index + 1;
+  }
+  return css.length;
+}
+
+/** Skips a CSS function without interpreting quoted, escaped or commented parentheses. */
+function cssFunctionEnd(css: string, start: number): number {
+  let depth = 1;
+  for (let index = start + 1; index < css.length; index++) {
+    const char = css[index];
+    if (char === '"' || char === "'" || (char === '/' && css[index + 1] === '*')) index = cssLiteralEnd(css, index) - 1;
+    else if (char === '\\') index++;
+    else if (char === '(') depth++;
+    else if (char === ')' && --depth === 0) return index + 1;
+  }
+  return css.length;
+}
+
+/** Recognizes a remote image URL after CSS quote and escape processing, without resolving or requesting it. */
+function remoteCSSURL(value: string): boolean {
+  const url = value
+    .trim()
+    .replace(/^(['"])([\s\S]*)\1$/, '$2')
+    .replace(/\\(?:([0-9a-f]{1,6})\s?|([\s\S]))/gi, (_whole, hex: string | undefined, escaped: string) =>
+      hex ? String.fromCodePoint(Math.min(0x10ffff, parseInt(hex, 16))) : /[\r\n]/.test(escaped) ? '' : escaped,
+    );
+  return /^(?:https?:)?\/\//i.test(url);
+}
+
+/** Adapts colours and reports remote CSS images without modifying their URLs or allowing network access. */
+function transformCSS(css: string, dark: boolean, onRemoteImage?: () => void): string {
+  const parts: string[] = [];
+  let copied = 0;
+  let statement = 0;
+  let inValue = false;
+  let colored = false;
+  let background = false;
+  let image = false;
+  let parentheses = 0;
+  const imageSets: number[] = [];
+  for (let index = 0; index < css.length;) {
+    const start = index;
+    const char = css[index];
+    if (char === '"' || char === "'" || (char === '/' && css[index + 1] === '*')) {
+      index = cssLiteralEnd(css, index);
+      if (image && imageSets.length && char !== '/' && remoteCSSURL(css.slice(start, index))) onRemoteImage?.();
+      continue;
+    }
+    if (char === '\\') {
+      index += 2;
+      continue;
+    }
+    let color = '';
+    if (/[a-z_-]/i.test(char)) {
+      while (index < css.length && /[a-z0-9_-]/i.test(css[index])) index++;
+      const word = css.slice(start, index).toLowerCase();
+      let opening = index;
+      if (word === 'url' || word === 'rgb' || word === 'rgba' || word === 'image-set' || word === '-webkit-image-set')
+        while (opening < css.length && /\s/.test(css[opening])) opening++;
+      if (image && (word === 'image-set' || word === '-webkit-image-set') && css[opening] === '(')
+        imageSets.push(parentheses + 1);
+      if (css[opening] === '(' && (word === 'url' || (colored && (word === 'rgb' || word === 'rgba')))) {
+        index = cssFunctionEnd(css, opening);
+        if (word !== 'url') color = css.slice(start, index);
+        else if (image && onRemoteImage) {
+          if (remoteCSSURL(css.slice(opening + 1, index - 1))) onRemoteImage();
+        }
+      } else if (colored && Object.hasOwn(NAMED, word)) color = css.slice(start, index);
+    } else if (colored && char === '#') {
+      color = /^#[0-9a-f]{3,8}\b/i.exec(css.slice(index, index + 10))?.[0] || '';
+      index += color.length || 1;
+    } else {
+      if (char === '(') parentheses++;
+      else if (char === ')') {
+        parentheses = Math.max(0, parentheses - 1);
+        while (imageSets.length && imageSets[imageSets.length - 1] > parentheses) imageSets.pop();
+      } else if (!parentheses && char === ':' && !inValue) {
+        const property = css
+          .slice(statement, index)
+          .replace(/\/\*[\s\S]*?(?:\*\/|$)/g, '')
+          .trim();
+        inValue = true;
+        colored = dark && COLORED.test(property);
+        background = BACKGROUND.test(property);
+        image =
+          /^(?:background(?:-image)?|border-image(?:-source)?|list-style(?:-image)?|(?:-webkit-)?mask(?:-image)?|content|cursor)$/i.test(
+            property,
+          );
+      } else if (!parentheses && (char === ';' || char === '{' || char === '}')) {
+        statement = index + 1;
+        inValue = false;
+        colored = false;
+        image = false;
+      }
+      index++;
+    }
+    if (color) {
+      const adapted = darkColor(color, background);
+      if (adapted !== color) {
+        parts.push(css.slice(copied, start), adapted);
+        copied = index;
+      }
+    }
+  }
+  return parts.length ? parts.join('') + css.slice(copied) : css;
+}
+
+/** Adapts declaration colours in one forward scan, preserving comments, strings and complete URL functions. */
 export function darkCSS(css: string): string {
-  return css.replace(/([a-z-]+)(\s*:\s*)([^;{}]+)/gi, (whole, property: string, colon: string, value: string) =>
-    COLORED.test(property)
-      ? property + colon + value.replace(COLOR, color => darkColor(color, BACKGROUND.test(property)))
-      : whole,
-  );
+  return transformCSS(css, true);
 }
 
 /**
@@ -198,6 +307,11 @@ export function sanitizeEmail(html: string, allowRemote: boolean, dark = false):
   const doc = new DOMParser().parseFromString(html, 'text/html');
   let blocked = 0;
   let trackers = 0;
+  const onRemoteImage = allowRemote
+    ? undefined
+    : () => {
+        blocked++;
+      };
   const styles = [...doc.querySelectorAll('style')].map(style => style.textContent || '');
   for (const element of [...doc.querySelectorAll('*')]) {
     const tag = element.localName;
@@ -238,9 +352,9 @@ export function sanitizeEmail(html: string, allowRemote: boolean, dark = false):
       element.setAttribute('target', '_blank');
       element.setAttribute('rel', 'noopener noreferrer');
     }
+    const style = element.getAttribute('style');
+    if (style) element.setAttribute('style', transformCSS(style, dark, onRemoteImage));
     if (dark) {
-      const style = element.getAttribute('style');
-      if (style) element.setAttribute('style', darkCSS(style));
       for (const [name, background] of [
         ['bgcolor', true],
         ['color', false],
@@ -252,7 +366,7 @@ export function sanitizeEmail(html: string, allowRemote: boolean, dark = false):
     }
   }
   const css = styles
-    .map(style => `<style>${(dark ? darkCSS(style) : style).replace(/<\/style/gi, '')}</style>`)
+    .map(style => `<style>${transformCSS(style, dark, onRemoteImage).replace(/<\/style/gi, '')}</style>`)
     .join('');
   return {html: css + (doc.body?.innerHTML || ''), blocked: blocked + trackers, trackers};
 }

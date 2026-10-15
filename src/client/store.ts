@@ -13,7 +13,17 @@
 import {batch, createMemo, createRoot, createSignal} from 'solid-js';
 import {request, errorMessage, afterReturn} from '../shared/dom';
 import {counts, merge, order, sections, type Entry, type Filter} from '../shared/inbox';
-import type {MessageAction, Preferences, PublicState, SearchHit, ThreadMessage} from '../shared/types';
+import {FOLDER_ROLES, folderName, folderPath} from '../shared/folders';
+import type {
+  FolderPage,
+  MailFolder,
+  MailMessage,
+  MessageAction,
+  Preferences,
+  PublicState,
+  SearchHit,
+  ThreadMessage,
+} from '../shared/types';
 import {t} from '../shared/i18n';
 
 /** Where the client runs: the toolbar popup or a full browser tab. */
@@ -26,21 +36,75 @@ export interface Selection {
   thread: string;
 }
 
+/** A single account's folder, or a common system role across accounts. */
+export interface FolderChoice {
+  account: string;
+  folder: MailFolder;
+}
+
 /** Conversation cache entries by `account/thread`. */
 const threads = new Map<string, Promise<ThreadMessage[]>>();
 
 /** Inbox metadata that can change conversation contents, excluding flags and check timestamps. */
 const contents = (value: PublicState): string =>
+  entryContents(
+    Object.entries(value.mailboxes).flatMap(([account, box]) => box.messages.map(message => ({account, message}))),
+  );
+
+/** Message metadata shared by Inbox and folder refreshes, excluding read and pin flags. */
+const entryContents = (entries: Entry[]): string =>
   JSON.stringify(
-    Object.entries(value.mailboxes).map(([account, box]) => [
+    entries.map(({account, message: {id, thread, date, from, subject, snippet}}) => [
       account,
-      box.messages.map(({id, thread, date, from, subject, snippet}) => [id, thread, date, from, subject, snippet]),
+      id,
+      thread,
+      date,
+      from,
+      subject,
+      snippet,
     ]),
   );
 
+/** Compares flat list records so transport clones and check timestamps keep the existing list mounted. */
+function sameEntries(previous: Entry[], next: Entry[]): boolean {
+  return (
+    previous.length === next.length &&
+    previous.every((entry, index) => {
+      const item = next[index];
+      const keys = Object.keys(entry.message) as (keyof MailMessage)[];
+      return (
+        entry.account === item.account &&
+        keys.length === Object.keys(item.message).length &&
+        keys.every(key => entry.message[key] === item.message[key])
+      );
+    })
+  );
+}
+
 export const store = createRoot(() => {
   const [state, setState] = createSignal<PublicState | null>(null);
-  const [account, setAccount] = createSignal<string>('all');
+  const [account, changeAccount] = createSignal<string>('all');
+  const [catalog, setCatalog] = createSignal<Record<string, MailFolder[]>>({});
+  const [pendingCatalogs, setPendingCatalogs] = createSignal<ReadonlySet<string>>(new Set());
+  const catalogRequests = new Map<string, Promise<void>>();
+  const catalogCheckedAt = new Map<string, number>();
+  const catalogLoading = createMemo(() =>
+    (state()?.accounts || []).some(
+      item => (account() === 'all' || item.id === account()) && pendingCatalogs().has(item.id),
+    ),
+  );
+  const [catalogErrors, setCatalogErrors] = createSignal<{account: string; error: string}[]>([]);
+  const [folder, setFolder] = createSignal<FolderChoice | null>(null);
+  const [folderEntries, setFolderEntries] = createSignal<Entry[]>([]);
+  const [folderLoading, setFolderLoading] = createSignal(false);
+  const [folderErrors, setFolderErrors] = createSignal<{account: string; error: string}[]>([]);
+  const [folderNext, setFolderNext] = createSignal<{account: string; id: string; cursor: string}[]>([]);
+  /** Invalidates responses when the user changes the account or folder during loading. */
+  let folderGeneration = 0;
+  /** Successful mutations made while the current folder page is in flight. */
+  let folderChanges: Map<string, Partial<Pick<MailMessage, 'unread' | 'pinned'>> | null> | null = null;
+  /** Catalog counters are refreshed on the next opening after mail state changes, never by an alarm. */
+  const dirtyCatalogs = new Set<string>();
   const [filter, setFilter] = createSignal<Filter>('all');
   const [selected, setSelected] = createSignal<Selection | null>(null);
   /** Last known metadata of the open message, retained when it leaves the Inbox feed. */
@@ -60,10 +124,26 @@ export const store = createRoot(() => {
   /** Cancels a pending browser-session check when another sign-in starts. */
   let cancelSignInRetry: (() => void) | undefined;
 
-  /** All Inbox entries of the selected account(s). */
+  /** Inbox entries and counts stay separate from on-demand folder pages. */
+  const inboxEntries = createMemo(
+    () => {
+      const current = state();
+      return current ? merge(current.accounts, current.mailboxes, account()) : [];
+    },
+    [],
+    {equals: sameEntries},
+  );
+  const inboxUnread = createMemo(() => ({
+    ...counts(inboxEntries()),
+    all: (state()?.accounts || [])
+      .filter(item => account() === 'all' || item.id === account())
+      .reduce((sum, item) => sum + (state()?.mailboxes[item.id]?.unread || 0), 0),
+  }));
+
+  /** Entries in the selected folder, or in the selected account(s)' Inbox. */
   const entries = createMemo(() => {
-    const current = state();
-    return current ? merge(current.accounts, current.mailboxes, account()) : [];
+    if (folder()) return folderEntries();
+    return inboxEntries();
   });
 
   /** Sections shown in the list: search results or Smart Inbox. */
@@ -77,11 +157,30 @@ export const store = createRoot(() => {
           items: hits.map(entry => ({kind: 'message' as const, entry})),
         },
       ];
+    if (folder())
+      return [
+        {
+          id: 'inbox' as const,
+          title: folderName(folder()!.folder),
+          items: entries().map(entry => ({kind: 'message' as const, entry})),
+        },
+      ];
     return sections(entries(), filter());
   });
 
   /** Unread counts per filter. */
-  const unread = createMemo(() => counts(entries()));
+  const unread = createMemo(() =>
+    folder() ? {...counts(entries()), all: folder()!.folder.unread ?? counts(entries()).all} : inboxUnread(),
+  );
+
+  /** Loaded category counts and unknown folder totals are explicitly presented as lower bounds. */
+  const unreadPartial = createMemo(() =>
+    folder()
+      ? folder()!.folder.unread == null || folder()!.folder.partial === true
+      : (state()?.accounts || []).some(
+          item => (account() === 'all' || item.id === account()) && state()?.mailboxes[item.id]?.unreadPartial,
+        ),
+  );
 
   /** Keyboard navigation order. */
   const navigation = createMemo(() => order(list(), expanded()));
@@ -92,16 +191,255 @@ export const store = createRoot(() => {
     const value = state();
     if (!selection || !value?.accounts.some(account => account.id === selection.account)) return null;
     const listed = navigation().find(entry => entry.account === selection.account && entry.message.id === selection.id);
+    if (folder() && listed) return listed;
     const message = value.mailboxes[selection.account]?.messages.find(message => message.id === selection.id);
     if (message) return listed?.message === message ? listed : {account: selection.account, message};
     return listed || retained();
   });
+
+  /** Folder choices for the selected mailbox; common roles never merge custom folders by name. */
+  const folderChoices = createMemo<FolderChoice[]>(() => {
+    const id = account();
+    const value = catalog();
+    if (id !== 'all') return (value[id] || []).map(folder => ({account: id, folder}));
+    const connected = state()?.accounts || [];
+    const roles = FOLDER_ROLES.filter(role =>
+      connected.some(item => value[item.id]?.some(folder => folder.role === role)),
+    );
+    return [
+      ...roles.map(role => {
+        const folders = connected.flatMap(item => (value[item.id] || []).filter(folder => folder.role === role));
+        const complete = connected.every(item => value[item.id]);
+        const counted = folders.filter(folder => folder.total != null);
+        const partial = !complete || counted.length !== folders.length;
+        const approximate = counted.some(folder => folder.approximate);
+        return {
+          account: 'all',
+          folder: {
+            id: role,
+            name: '',
+            role,
+            total:
+              counted.length && !(partial && approximate)
+                ? counted.reduce((sum, folder) => sum + folder.total!, 0)
+                : undefined,
+            unread:
+              complete && folders.every(folder => folder.unread != null)
+                ? folders.reduce((sum, folder) => sum + folder.unread!, 0)
+                : undefined,
+            approximate: approximate || undefined,
+            partial: partial || undefined,
+          },
+        };
+      }),
+      ...(state()?.accounts || []).flatMap(item =>
+        (value[item.id] || []).filter(folder => !folder.role).map(folder => ({account: item.id, folder})),
+      ),
+    ];
+  });
+
+  /** Names a selected folder with its server parent path. */
+  function folderLabel(choice: FolderChoice): string {
+    return folderPath(choice.folder, catalog()[choice.account] || []);
+  }
+
+  /** Keeps folder browsing from introducing permanent deletion or re-archiving an archived message. */
+  function canAct(action: MessageAction): boolean {
+    const role = results() ? undefined : folder()?.folder.role;
+    if (action === 'trash' && role === 'trash') return false;
+    if (action === 'archive' && (role === 'archive' || role === 'trash' || role === 'drafts')) return false;
+    return true;
+  }
+
+  /** Switches the mailbox and returns to its Inbox without fetching other folders. */
+  function setAccount(id: string): void {
+    folderGeneration++;
+    folderChanges = null;
+    batch(() => {
+      changeAccount(id);
+      setFolder(null);
+      setFolderEntries([]);
+      setFolderNext([]);
+      setFolderLoading(false);
+      setFolderErrors([]);
+      setResults(null);
+      setQuery('');
+      select(null);
+    });
+  }
+
+  /** Fetches only missing folder catalogs when the selector is opened. */
+  async function loadFolders(): Promise<void> {
+    const accounts = (state()?.accounts || []).filter(
+      item =>
+        (account() === 'all' || item.id === account()) &&
+        (catalogRequests.has(item.id) ||
+          !catalog()[item.id] ||
+          dirtyCatalogs.has(item.id) ||
+          Date.now() - (catalogCheckedAt.get(item.id) || 0) > 30_000),
+    );
+    await Promise.all(
+      accounts.map(item => {
+        const active = catalogRequests.get(item.id);
+        if (active) return active;
+        dirtyCatalogs.delete(item.id);
+        const pending = (async () => {
+          try {
+            const folders = await request<MailFolder[]>({type: 'FOLDERS', account: item.id});
+            setCatalog(value => ({...value, [item.id]: folders}));
+            catalogCheckedAt.set(item.id, Date.now());
+            setCatalogErrors(errors => errors.filter(error => error.account !== item.id));
+          } catch (error) {
+            dirtyCatalogs.add(item.id);
+            setCatalogErrors(errors => [
+              ...errors.filter(error => error.account !== item.id),
+              {account: item.id, error: errorMessage(error)},
+            ]);
+          } finally {
+            catalogRequests.delete(item.id);
+            setPendingCatalogs(new Set(catalogRequests.keys()));
+          }
+        })();
+        catalogRequests.set(item.id, pending);
+        setPendingCatalogs(new Set(catalogRequests.keys()));
+        return pending;
+      }),
+    );
+  }
+
+  /** Loads the selected folder or the next pages, retaining successful accounts when another fails. */
+  async function loadFolder(more = false): Promise<void> {
+    const selectedFolder = folder();
+    if (!selectedFolder || folderLoading() || results()) return;
+    const generation = ++folderGeneration;
+    folderChanges = new Map();
+    const targets = more
+      ? folderNext()
+      : selectedFolder.account === 'all'
+        ? (state()?.accounts || []).flatMap(item =>
+            (catalog()[item.id] || [])
+              .filter(folder => folder.role === selectedFolder.folder.role)
+              .map(folder => ({account: item.id, id: folder.id, cursor: ''})),
+          )
+        : [{account: selectedFolder.account, id: selectedFolder.folder.id, cursor: ''}];
+    setFolderLoading(true);
+    const errors: {account: string; error: string}[] = [];
+    const next: {account: string; id: string; cursor: string}[] = [];
+    const pages = await Promise.all(
+      targets.map(async target => {
+        try {
+          const page = await request<FolderPage>({
+            type: 'FOLDER',
+            account: target.account,
+            folder: target.id,
+            cursor: target.cursor,
+          });
+          if (page.next) next.push({...target, cursor: page.next});
+          return page.messages.map(message => ({account: target.account, message}));
+        } catch (error) {
+          errors.push({account: target.account, error: errorMessage(error)});
+          if (more) next.push(target);
+          return [];
+        }
+      }),
+    );
+    if (generation !== folderGeneration) return;
+    batch(() => {
+      const unique = new Map(
+        (more ? [...folderEntries(), ...pages.flat()] : pages.flat()).map(entry => [
+          `${entry.account}/${entry.message.id}`,
+          entry,
+        ]),
+      );
+      for (const [key, change] of folderChanges || []) {
+        if (change === null) unique.delete(key);
+        else {
+          const entry = unique.get(key);
+          if (entry) unique.set(key, {...entry, message: {...entry.message, ...change}});
+        }
+      }
+      folderChanges = null;
+      const entries = [...unique.values()].sort((a, b) => b.message.date - a.message.date);
+      if (!more && selected() && entryContents(folderEntries()) !== entryContents(entries)) invalidateThreads();
+      setFolderEntries(entries);
+      setFolderNext(next);
+      setFolderErrors(errors);
+      setFolderLoading(false);
+    });
+  }
+
+  /** Opens a folder from the selector; null keeps the account's existing Inbox view. */
+  async function chooseFolder(value: FolderChoice | null): Promise<void> {
+    folderGeneration++;
+    folderChanges = null;
+    batch(() => {
+      if (value) changeAccount(value.account);
+      setFolder(value?.folder.role === 'inbox' ? null : value);
+      setFolderEntries([]);
+      setFolderNext([]);
+      setFolderErrors([]);
+      setFolderLoading(false);
+      setResults(null);
+      setQuery('');
+      setFilter('all');
+      select(null);
+    });
+    if (folder()) await loadFolder();
+  }
+
+  /** Overlays successful actions on a folder response that may still describe the old server state. */
+  function rememberFolderChange(
+    account: string,
+    id: string,
+    change: Partial<Pick<MailMessage, 'unread' | 'pinned'>> | null,
+  ): void {
+    if (!folderChanges) return;
+    const key = `${account}/${id}`;
+    const previous = folderChanges.get(key);
+    folderChanges.set(key, previous === null || change === null ? null : {...previous, ...change});
+  }
+
+  /** Keeps known folder totals consistent with successful local reads and moves until the next catalog refresh. */
+  function updateFolderCounts(account: string, id: string, unread: boolean | undefined, leaving = false): void {
+    const choice = folder();
+    const item = folderEntries().find(entry => entry.account === account && entry.message.id === id);
+    if (!choice || !item) return;
+    const difference = leaving
+      ? -Number(item.message.unread)
+      : unread == null
+        ? 0
+        : Number(unread) - Number(item.message.unread);
+    if (!difference && !leaving) return;
+    /** Adjusts only authoritative numbers; missing counts remain unknown. */
+    const adjust = (value: MailFolder): MailFolder => ({
+      ...value,
+      unread: value.unread == null ? undefined : Math.max(0, value.unread + difference),
+      total: value.total == null ? undefined : Math.max(0, value.total - Number(leaving)),
+    });
+    setFolder({...choice, folder: adjust(choice.folder)});
+    setCatalog(value => ({
+      ...value,
+      [account]: (value[account] || []).map(folder =>
+        folder.id === (item.message.folder || choice.folder.id) ? adjust(folder) : folder,
+      ),
+    }));
+  }
 
   /** Updates public state while retaining the open message's most recent metadata. */
   function updateState(value: PublicState): void {
     batch(() => {
       const before = state();
       if (before && contents(before) !== contents(value)) invalidateThreads();
+      for (const item of value.accounts) {
+        const previous = before?.mailboxes[item.id];
+        const next = value.mailboxes[item.id];
+        if (
+          previous &&
+          (previous.unread !== next?.unread ||
+            previous.messages.map(item => item.id).join('\0') !== next?.messages.map(item => item.id).join('\0'))
+        )
+          dirtyCatalogs.add(item.id);
+      }
       setRetained(current());
       setState(value);
     });
@@ -168,6 +506,8 @@ export const store = createRoot(() => {
     setRefreshing(true);
     try {
       updateState(await request<PublicState>({type: 'CHECK'}));
+      if (results()) await search(query());
+      else if (folder()) await loadFolder();
     } catch (error) {
       fail(error);
     } finally {
@@ -180,13 +520,19 @@ export const store = createRoot(() => {
     const entry = current();
     if (!entry) return;
     if (state()?.accounts.find(account => account.id === entry.account)?.reply) setReplying(true);
-    else request({type: 'OPEN', account: entry.account, message: entry.message.id}).catch(fail);
+    else request({type: 'OPEN', account: entry.account, message: entry.message.id, entry: entry.message}).catch(fail);
   }
 
   /** Sends a reply to [entry]; returns whether it was sent. */
   async function reply(entry: Entry, text: string): Promise<boolean> {
     try {
-      await request<boolean>({type: 'REPLY', account: entry.account, message: entry.message.id, text});
+      await request<boolean>({
+        type: 'REPLY',
+        account: entry.account,
+        message: entry.message.id,
+        text,
+        entry: entry.message,
+      });
       invalidateThreads();
       setReplying(false);
       notify(t('reply_sent'));
@@ -233,8 +579,15 @@ export const store = createRoot(() => {
     const matches = (entry: Entry): boolean => entry.account === selection.account && entry.message.id === selection.id;
     const listed = state()?.mailboxes[selection.account]?.messages.find(item => item.id === selection.id);
     const hit = results()?.find(matches);
+    const folderEntry = folderEntries().find(matches);
     const open = retained();
-    if (listed?.unread || hit?.message.unread || (open && matches(open) && open.message.unread)) threads.delete(key);
+    if (
+      listed?.unread ||
+      hit?.message.unread ||
+      folderEntry?.message.unread ||
+      (open && matches(open) && open.message.unread)
+    )
+      threads.delete(key);
     let pending = threads.get(key);
     const cached = Boolean(pending);
     if (!pending) {
@@ -243,6 +596,7 @@ export const store = createRoot(() => {
         account: selection.account,
         message: selection.id,
         thread: selection.thread,
+        entry: folderEntry?.message || (open && matches(open) ? open.message : undefined),
       }).catch(error => {
         if (threads.get(key) === pending) threads.delete(key);
         throw error;
@@ -258,6 +612,9 @@ export const store = createRoot(() => {
     const target = value.find(item => item.id === selection.id);
     if (target && !target.unread && threads.get(key) === pending)
       batch(() => {
+        rememberFolderChange(selection.account, selection.id, {unread: false});
+        updateFolderCounts(selection.account, selection.id, false);
+        dirtyCatalogs.add(selection.account);
         const currentState = state();
         const box = currentState?.mailboxes[selection.account];
         const message = box?.messages.find(item => item.id === selection.id);
@@ -277,6 +634,9 @@ export const store = createRoot(() => {
           setResults(hits =>
             hits!.map(entry => (matches(entry) ? {...entry, message: {...entry.message, unread: false}} : entry)),
           );
+        setFolderEntries(entries =>
+          entries.map(entry => (matches(entry) ? {...entry, message: {...entry.message, unread: false}} : entry)),
+        );
         setRetained(entry =>
           entry && matches(entry) ? {...entry, message: {...entry.message, unread: false}} : entry,
         );
@@ -291,7 +651,11 @@ export const store = createRoot(() => {
    * @param action The action.
    */
   async function act(entry: Entry, action: MessageAction): Promise<void> {
-    const leaving = action === 'archive' || action === 'trash';
+    if (!canAct(action)) return;
+    const moving = action === 'archive' || action === 'trash';
+    const provider = state()?.accounts.find(item => item.id === entry.account)?.provider;
+    const retainsFolder = folder() && (provider === 'gmail' || provider === 'jmap');
+    const leaving = action === 'trash' || (action === 'archive' && !results() && !retainsFolder);
     /** Matches the message even when its list entry has been replaced by a state update. */
     const matches = (item: Entry): boolean => item.account === entry.account && item.message.id === entry.message.id;
     /** Whether the action still belongs to the open message. */
@@ -302,13 +666,14 @@ export const store = createRoot(() => {
       const index = items.findIndex(matches);
       next = items[index + 1] || items[index - 1] || null;
     }
-    if (leaving) setBusy(t(action === 'trash' ? 'busy_deleting' : 'busy_archiving'));
+    if (moving) setBusy(t(action === 'trash' ? 'busy_deleting' : 'busy_archiving'));
     try {
       const value = await request<PublicState>({
         type: 'ACT',
         account: entry.account,
         message: entry.message.id,
         action,
+        entry: entry.message,
       });
       batch(() => {
         const updated = {
@@ -320,6 +685,25 @@ export const store = createRoot(() => {
           },
         };
         updateState(value);
+        dirtyCatalogs.add(entry.account);
+        updateFolderCounts(
+          entry.account,
+          entry.message.id,
+          action === 'read' ? false : action === 'unread' ? true : undefined,
+          leaving,
+        );
+        rememberFolderChange(
+          entry.account,
+          entry.message.id,
+          leaving
+            ? null
+            : action === 'read' || action === 'unread'
+              ? {unread: updated.message.unread}
+              : {pinned: updated.message.pinned},
+        );
+        setFolderEntries(entries =>
+          leaving ? entries.filter(item => !matches(item)) : entries.map(item => (matches(item) ? updated : item)),
+        );
         if (action === 'unread') threads.delete(`${entry.account}/${entry.message.thread || entry.message.id}`);
         const hits = results();
         if (hits)
@@ -332,7 +716,7 @@ export const store = createRoot(() => {
     } catch (error) {
       fail(error);
     } finally {
-      if (leaving) setBusy('');
+      if (moving) setBusy('');
     }
   }
 
@@ -369,6 +753,18 @@ export const store = createRoot(() => {
     state,
     account,
     setAccount,
+    folder,
+    folderChoices,
+    folderLabel,
+    folderEntries,
+    folderLoading,
+    folderErrors: () => [...folderErrors(), ...(folder()?.account === 'all' ? catalogErrors() : [])],
+    folderNext,
+    catalogLoading,
+    catalogErrors: () => catalogErrors().filter(item => account() === 'all' || item.account === account()),
+    loadFolders,
+    chooseFolder,
+    loadFolder,
     filter,
     setFilter,
     selected,
@@ -388,6 +784,8 @@ export const store = createRoot(() => {
     entries,
     list,
     unread,
+    unreadPartial,
+    inboxUnread,
     load,
     open,
     refresh,
@@ -397,6 +795,7 @@ export const store = createRoot(() => {
     toggleStack,
     thread,
     act,
+    canAct,
     search,
     savePreferences,
     fail,

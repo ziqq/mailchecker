@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.0.33
+
+- **ADDED**: audit #7 regression coverage for the remaining eleven fixes: folder memberships, concurrent catalogs, search isolation, server counts, stable Yandex ordering, Graph continuations, Gmail batches, bounded folder sorting, body retries and CSS-only image permissions
+- **CHANGED**: search notices identify the extension's browser-session limitation; documented API search capabilities and provider differences are clarified
+
+## 0.0.32
+
+- **ADDED**: audit #7 regression tests for CSS processing, HTML parsing, folder mutation races and mounted reader/list persistence across timestamp-only checks
+- **FIXED**: Gmail and JMAP archive preserves the current custom-folder row; search controls no longer inherit a hidden folder's restrictions or pagination
+- **FIXED**: folder catalogs load independently when switching accounts; parent paths are indexed and computed once before sorting
+- **FIXED**: unread headings use server totals, incomplete counts are identified, and full Mail.ru unread pages obtain the Inbox total from folder metadata
+- **FIXED**: Yandex's unknown dates preserve stable server/page order instead of displaying fabricated check times
+- **FIXED**: Outlook follows validated folder continuations; Gmail reads counters in bounded multipart batches and retains names after individual counter failures
+- **FIXED**: transient body failures remain retryable, unsupported browser-session search is disclosed, and CSS-only remote images expose the existing permission control
+
+## 0.0.31
+
+- **CHANGED**: the wide sidebar logo matches the list title's size and vertical alignment; navigation rows align with the search field and category controls
+- **FIXED**: dark-mode CSS processing and browser-session HTML block scanning avoid quadratic rescans; colour adaptation preserves image URLs, strings and comments
+- **FIXED**: timestamp-only refreshes retain the mounted message list and open mail document
+- **FIXED**: in-flight folder pages preserve successful delete, archive, read and pin actions instead of restoring stale rows or flags
+
+## 0.0.30
+
+- **FIXED**: folder menu height ends after the last complete item that fits, including after catalog updates and window resizes
+
+## 0.0.29
+
+- **CHANGED**: the folder menu shares the header's translucent background and blur
+
+## 0.0.28
+
+- **CHANGED**: folder counters use oval badges with a visible background and smaller digits
+
+## 0.0.27
+
+- **ADDED**: on-demand server folder navigation for Gmail API, Outlook, JMAP, Yandex Mail and Mail.ru, including common system folders, separate custom folders labelled with their mailbox address and server-provided counters
+- **CHANGED**: folder message pages stay in page memory; background checks and the toolbar badge continue to cover only the Inbox
+
 ## 0.0.26
 
 - **ADDED**: workspace VS Code settings, extension recommendations, npm tasks and launch configurations adapted from the maintainer's projects

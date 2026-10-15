@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "Архив"
   },
+  "folder_count_estimated": {
+    "message": "Приблизительно: $1"
+  },
+  "folder_count_partial": {
+    "message": "Количество для части ящиков: $1"
+  },
+  "folder_drafts": {
+    "message": "Черновики"
+  },
+  "folder_empty": {
+    "message": "В этой папке нет писем"
+  },
   "folder_inbox": {
     "message": "Входящие"
   },
+  "folder_loading": {
+    "message": "Загрузка…"
+  },
+  "folder_more": {
+    "message": "Загрузить ещё"
+  },
+  "folder_sent": {
+    "message": "Отправленные"
+  },
+  "folder_spam": {
+    "message": "Спам"
+  },
   "folder_trash": {
     "message": "Корзина"
+  },
+  "folder_unsupported": {
+    "message": "Для этого подключения просмотр папок недоступен. Откройте веб-почту."
   },
   "header_cc": {
     "message": "Копия: $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "Категории"
+  },
+  "label_folders": {
+    "message": "Папки"
   },
   "label_mailboxes": {
     "message": "Ящики"
@@ -640,6 +670,12 @@
   },
   "search_title": {
     "message": "«$1»"
+  },
+  "search_webmail_only": {
+    "message": "В расширении пока нет поиска для ящиков, подключённых через браузер: $1. Используйте поиск в веб-почте."
+  },
+  "search_webmail_title": {
+    "message": "Поиск в веб-почте"
   },
   "section_inbox": {
     "message": "Остальные"

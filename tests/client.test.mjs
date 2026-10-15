@@ -85,7 +85,17 @@ function start() {
     mailboxes: {A: {messages: [message('m1')], unread: 0, checkedAt: Date.now(), error: '', reauth: false}},
     oauth: {},
   };
-  const server = {bodies: [body('m1', 'Old body')], search: [], calls: [], request: null, authenticated: false};
+  const server = {
+    bodies: [body('m1', 'Old body')],
+    search: [],
+    calls: [],
+    request: null,
+    folderRequest: null,
+    catalogRequest: null,
+    folders: [{id: 'projects', name: 'Projects'}],
+    page: {messages: [message('m1')], next: '50'},
+    authenticated: false,
+  };
   const document = Object.assign(new EventTarget(), {
     documentElement: {dataset: {mode: 'app'}},
     visibilityState: 'visible',
@@ -104,6 +114,10 @@ function start() {
       }
       if (request.type === 'THREAD') return server.request ? server.request(request) : structuredClone(server.bodies);
       if (request.type === 'SEARCH') return structuredClone(server.search);
+      if (request.type === 'FOLDERS')
+        return server.catalogRequest ? server.catalogRequest(request) : structuredClone(server.folders);
+      if (request.type === 'FOLDER')
+        return server.folderRequest ? server.folderRequest(request) : structuredClone(server.page);
       if (request.type === 'REPLY') {
         server.bodies.push(body('reply', 'Sent reply'));
         return true;
@@ -118,6 +132,64 @@ function start() {
   runInContext(bundled, context);
   return {store: context.client, data, server, document, window};
 }
+
+test('timestamp-only state clones keep list identity while changed flags remain visible', async () => {
+  const w = start();
+  await w.store.load();
+  const entries = w.store.entries();
+  const list = w.store.list();
+  w.data.mailboxes.A.checkedAt++;
+  await w.store.load();
+  assert.equal(w.store.entries(), entries);
+  assert.equal(w.store.list(), list);
+  w.data.mailboxes.A.messages[0].pinned = true;
+  await w.store.load();
+  assert.notEqual(w.store.entries(), entries);
+  assert.equal(w.store.entries()[0].message.pinned, true);
+});
+
+for (const action of ['trash', 'archive', 'read', 'unread', 'pin', 'unpin']) {
+  test(`an old folder page cannot undo a completed ${action}`, async () => {
+    const w = start();
+    // Outlook moves archived mail out of custom folders; Gmail/JMAP retain those memberships.
+    w.data.accounts[0].provider = 'outlook';
+    w.server.page.messages[0].unread = action === 'read';
+    w.server.page.messages[0].pinned = action === 'unpin';
+    await w.store.load();
+    await w.store.loadFolders();
+    await w.store.chooseFolder({account: 'A', folder: w.server.folders[0]});
+    let release;
+    w.server.folderRequest = () => new Promise(done => (release = done));
+    const loading = w.store.loadFolder();
+    await w.store.act(w.store.entries()[0], action);
+    release(structuredClone(w.server.page));
+    await loading;
+    const entries = w.store.entries();
+    if (action === 'archive' || action === 'trash') assert.equal(entries.length, 0);
+    else if (action === 'read' || action === 'unread') assert.equal(entries[0].message.unread, action === 'unread');
+    else assert.equal(entries[0].message.pinned, action === 'pin');
+    assert.equal(w.store.folderLoading(), false);
+    assert.equal(w.store.folderNext()[0].cursor, '50');
+  });
+}
+
+test('a pending next page preserves combined read and pin mutations', async () => {
+  const w = start();
+  w.server.page.messages[0].unread = true;
+  await w.store.load();
+  await w.store.loadFolders();
+  await w.store.chooseFolder({account: 'A', folder: w.server.folders[0]});
+  let release;
+  w.server.folderRequest = () => new Promise(done => (release = done));
+  const loading = w.store.loadFolder(true);
+  await w.store.act(w.store.entries()[0], 'read');
+  await w.store.act(w.store.entries()[0], 'pin');
+  release({...structuredClone(w.server.page), next: ''});
+  await loading;
+  assert.equal(w.store.entries()[0].message.unread, false);
+  assert.equal(w.store.entries()[0].message.pinned, true);
+  assert.equal(w.store.folderNext().length, 0);
+});
 
 test('conversation refresh returns new mail while timestamp-only checks reuse the cache', async () => {
   const w = start();
@@ -263,4 +335,160 @@ test('a completed sign-in cancels a previous pending return check', async () => 
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(w.server.calls.filter(call => call.type === 'CHECK').length, 0);
   assert.equal(w.store.state().mailboxes.A.reauth, false);
+});
+
+for (const provider of ['gmail', 'jmap', 'outlook']) {
+  test(`${provider} archive reconciles custom-folder membership through a refresh`, async () => {
+    const w = start();
+    w.data.accounts[0].provider = provider;
+    await w.store.load();
+    await w.store.loadFolders();
+    await w.store.chooseFolder({account: 'A', folder: w.server.folders[0]});
+    const entry = w.store.entries()[0];
+    w.store.select(entry);
+    await w.store.act(entry, 'archive');
+    const retained = provider !== 'outlook';
+    assert.equal(w.store.entries().length, Number(retained));
+    assert.equal(w.store.selected()?.id, retained ? 'm1' : undefined);
+    // The provider's confirmed membership is the source of truth for the next page.
+    if (!retained) w.server.page.messages = [];
+    await w.store.refresh();
+    assert.equal(w.store.entries().length, Number(retained));
+    if (retained) {
+      await w.store.act(w.store.entries()[0], 'trash');
+      assert.equal(w.store.entries().length, 0);
+    }
+  });
+}
+
+test('catalog loads are deduplicated per account without blocking a newly selected mailbox', async () => {
+  const w = start();
+  w.data.accounts.push({...w.data.accounts[0], id: 'B'});
+  w.data.mailboxes.B = structuredClone(w.data.mailboxes.A);
+  let release;
+  w.server.catalogRequest = request =>
+    request.account === 'A'
+      ? new Promise(done => (release = done))
+      : Promise.resolve([{id: 'b-projects', name: 'B projects'}]);
+  await w.store.load();
+  w.store.setAccount('A');
+  const first = w.store.loadFolders();
+  const duplicate = w.store.loadFolders();
+  assert.equal(w.store.catalogLoading(), true);
+  assert.equal(w.server.calls.filter(call => call.type === 'FOLDERS' && call.account === 'A').length, 1);
+  w.store.setAccount('B');
+  await w.store.loadFolders();
+  assert.equal(w.store.catalogLoading(), false);
+  assert.equal(w.store.folderChoices()[0].folder.id, 'b-projects');
+  release([{id: 'a-projects', name: 'A projects'}]);
+  await Promise.all([first, duplicate]);
+  assert.equal(w.store.folderChoices()[0].folder.id, 'b-projects');
+  w.store.setAccount('A');
+  await w.store.loadFolders();
+  assert.equal(w.store.folderChoices()[0].folder.id, 'a-projects');
+  assert.equal(w.server.calls.filter(call => call.type === 'FOLDERS').length, 2);
+});
+
+test('failed catalogs retry and timestamp-only checks do not refetch fresh counters', async () => {
+  const w = start();
+  let attempts = 0;
+  w.server.catalogRequest = async () => {
+    if (++attempts === 1) throw new Error('Temporary catalog failure');
+    return w.server.folders;
+  };
+  await w.store.load();
+  await w.store.loadFolders();
+  assert.equal(w.store.catalogLoading(), false);
+  assert.equal(w.store.catalogErrors().length, 1);
+  await w.store.loadFolders();
+  assert.equal(w.store.catalogErrors().length, 0);
+  w.data.mailboxes.A.checkedAt++;
+  await w.store.load();
+  await w.store.loadFolders();
+  assert.equal(attempts, 2);
+  w.data.mailboxes.A.unread++;
+  await w.store.load();
+  await w.store.loadFolders();
+  assert.equal(attempts, 3);
+});
+
+test('global search from Trash ignores hidden folder restrictions, pagination and refresh', async () => {
+  const w = start();
+  const trash = {id: 'trash', name: 'Trash', role: 'trash'};
+  await w.store.load();
+  await w.store.chooseFolder({account: 'A', folder: trash});
+  assert.equal(w.store.canAct('archive'), false);
+  assert.equal(w.store.canAct('trash'), false);
+  w.server.search = [{account: 'A', message: message('found')}];
+  await w.store.search('found');
+  assert.equal(w.store.canAct('archive'), true);
+  assert.equal(w.store.canAct('trash'), true);
+  const before = w.server.calls.filter(call => call.type === 'FOLDER').length;
+  await w.store.loadFolder(true);
+  w.server.search = [];
+  await w.store.refresh();
+  assert.equal(w.store.results().length, 0);
+  assert.equal(w.server.calls.filter(call => call.type === 'FOLDER').length, before);
+  assert.equal(w.server.calls.filter(call => call.type === 'SEARCH').length, 2);
+  await w.store.search('');
+  assert.equal(w.store.canAct('trash'), false);
+});
+
+test('unread headings use server totals and preserve account-specific partial status', async () => {
+  const w = start();
+  w.data.mailboxes.A.unread = 120;
+  w.data.mailboxes.A.messages[0].unread = true;
+  w.data.accounts.push({...w.data.accounts[0], id: 'B'});
+  w.data.mailboxes.B = {...structuredClone(w.data.mailboxes.A), unread: 50, unreadPartial: true};
+  await w.store.load();
+  assert.equal(w.store.unread().all, 170);
+  assert.equal(w.store.unreadPartial(), true);
+  w.store.setAccount('A');
+  assert.equal(w.store.unread().all, 120);
+  assert.equal(w.store.unread().people, 1);
+  assert.equal(w.store.unreadPartial(), false);
+  w.store.setAccount('B');
+  assert.equal(w.store.unread().all, 50);
+  assert.equal(w.store.unreadPartial(), true);
+});
+
+test('known folder totals follow successful reads and moves without treating unknown counts as zero', async () => {
+  const w = start();
+  const folder = {id: 'projects', name: 'Projects', unread: 90, total: 120};
+  w.server.folders = [folder];
+  w.server.page.messages[0].unread = true;
+  await w.store.load();
+  await w.store.loadFolders();
+  await w.store.chooseFolder({account: 'A', folder});
+  assert.equal(w.store.unread().all, 90);
+  assert.equal(w.store.unreadPartial(), false);
+  await w.store.act(w.store.entries()[0], 'read');
+  assert.equal(w.store.unread().all, 89);
+  assert.equal(w.store.folder().folder.total, 120);
+  await w.store.act(w.store.entries()[0], 'unread');
+  assert.equal(w.store.unread().all, 90);
+  await w.store.act(w.store.entries()[0], 'trash');
+  assert.equal(w.store.unread().all, 89);
+  assert.equal(w.store.folder().folder.total, 119);
+  assert.equal(w.store.folderChoices()[0].folder.total, 119);
+  await w.store.chooseFolder({account: 'A', folder: {id: 'unknown', name: 'Unknown'}});
+  assert.equal(w.store.unreadPartial(), true);
+  await w.store.act(w.store.entries()[0], 'read');
+  assert.equal(w.store.folder().folder.total, undefined);
+  assert.equal(w.store.folder().folder.unread, undefined);
+});
+
+test('a transient body error is retried on reopening, then the full body is cached', async () => {
+  const w = start();
+  let attempts = 0;
+  w.server.request = async () => {
+    if (++attempts === 1) throw new Error('Temporary body failure');
+    return [body('m1', 'Complete body')];
+  };
+  await w.store.load();
+  const selection = {account: 'A', id: 'm1', thread: 'T'};
+  await assert.rejects(w.store.thread(selection), /Temporary body failure/);
+  assert.equal((await w.store.thread(selection))[0].text, 'Complete body');
+  assert.equal((await w.store.thread(selection))[0].text, 'Complete body');
+  assert.equal(attempts, 2);
 });

@@ -5,7 +5,7 @@
  *
  * Mail.ru read through the browser's sign-in: the Mail.ru webmail API.
  *
- * Mail.ru has no public HTTP mail API; its webmail API on `e.mail.ru` gives
+ * This adapter uses the webmail API on `e.mail.ru`, which gives
  * a token for the signed-in address, then the unread Inbox messages. The API
  * also needs the webmail's own session cookie: without it the reply is
  * `nosdc`, and `auth.mail.ru/sdc` issues it from the Mail.ru sign-in,
@@ -17,7 +17,8 @@
  *
  * @module background/providers/mailru
  */
-import type {Account, InboxResult, MailMessage} from '../../shared/types';
+import type {Account, FolderPage, FolderRole, InboxResult, MailFolder, MailMessage} from '../../shared/types';
+import {FOLDER_ROLES} from '../../shared/folders';
 import {AuthError, requestJSON, type RequestOptions} from '../http';
 import {bareAddress, categorize, message, replySubject} from './message';
 import {firstAddress, sessionProvider} from './session';
@@ -101,6 +102,89 @@ const OPTIONS: RequestOptions = {session: true, service: t('service_mailru')};
 /** The trash folder of a Mail.ru mailbox. */
 const TRASH = '500002';
 
+/** Parses Mail.ru's server catalog; type and archive flags identify roles without guessing names. */
+export function parseFolders(reply: Reply | null): MailFolder[] {
+  if (Number(reply?.status) === 403) throw new AuthError(t('error_sign_in_mailru'));
+  if (Number(reply?.status) !== 200) throw new Error(t('error_unexpected_reply', t('service_mailru')));
+  const body = reply?.body as {folders?: unknown} | unknown[] | undefined;
+  const list = Array.isArray(body)
+    ? body
+    : Array.isArray((body as {folders?: unknown})?.folders)
+      ? (body as {folders: unknown[]}).folders
+      : null;
+  if (!list) throw new Error(t('error_unexpected_reply', t('service_mailru')));
+  return list.slice(0, 200).flatMap(value => {
+    const item = value as Record<string, unknown>;
+    const id = String(item.id ?? '');
+    if (!/^\d+$/.test(id)) return [];
+    const role = item.archive === true ? 'archive' : String(item.type || '');
+    return [
+      {
+        id,
+        name: String(item.name || id),
+        role: FOLDER_ROLES.includes(role as FolderRole) ? (role as FolderRole) : undefined,
+        parent: item.parent != null && Number(item.parent) >= 0 ? String(item.parent) : undefined,
+        total: item.messages_total == null ? undefined : Number(item.messages_total),
+        unread: item.messages_unread == null ? undefined : Number(item.messages_unread),
+      },
+    ];
+  });
+}
+
+/** Parses the web client's smart thread list into bounded message metadata. */
+export function parseFolderPage(reply: Reply | null, folder: string, offset: number, limit: number): FolderPage {
+  if (Number(reply?.status) === 403) throw new AuthError(t('error_sign_in_mailru'));
+  if (Number(reply?.status) !== 200) throw new Error(t('error_unexpected_reply', t('service_mailru')));
+  const body = reply?.body as {threads?: Record<string, unknown>[]; threads_total?: number} | undefined;
+  if (!Array.isArray(body?.threads)) throw new Error(t('error_unexpected_reply', t('service_mailru')));
+  const messages = body.threads.slice(0, limit).flatMap(thread => {
+    const children = Array.isArray(thread.messages) ? (thread.messages as Record<string, unknown>[]) : [];
+    const item = children.find(item => item.id === thread.expand) || children[children.length - 1] || thread;
+    const id = String(item.id || thread.id || '');
+    if (!id) return [];
+    const from = sender((item.correspondents as {from?: Sender[]} | undefined)?.from?.[0] ?? item.from);
+    const seconds = Number(item.date);
+    const flags = item.flags as {unread?: unknown; flagged?: unknown; attach?: unknown} | undefined;
+    return [
+      message({
+        id,
+        thread: String(thread.id || `0:${id}:${folder}`),
+        folder,
+        from,
+        subject: item.subject ?? thread.subject,
+        snippet: item.snippet ?? thread.snippet,
+        date: seconds > 0 ? seconds * (seconds < 1e12 ? 1000 : 1) : Date.now(),
+        unread: flags?.unread ?? Number(thread.length_unread) > 0,
+        pinned: flags?.flagged,
+        attachments: flags?.attach,
+        link: link(String(thread.id || id), folder),
+        category: categorize({from}),
+      }),
+    ];
+  });
+  const total = Number(body.threads_total);
+  const more = messages.length === limit && (!Number.isFinite(total) || offset + messages.length < total);
+  return {messages, next: more ? String(offset + messages.length) : ''};
+}
+
+/** Reads the same folder-list endpoint as Mail.ru's web client, using the signed-in account's token. */
+async function folderPage(
+  email: string,
+  folder: string,
+  limit: number,
+  offset: number,
+  accessToken?: string,
+): Promise<Reply> {
+  const query = new URLSearchParams({
+    folder,
+    limit: String(limit),
+    offset: String(offset),
+    last_modified: '1',
+    token: accessToken || (await token(email)),
+  });
+  return call(`${API}/threads/status/smart?${mailbox(email)}&${query}`, OPTIONS);
+}
+
 /** Returns an API token for [email], issued for the browser's Mail.ru sign-in. */
 async function token(email: string): Promise<string> {
   const reply = await call(`${API}/tokens?${mailbox(email)}`, OPTIONS);
@@ -113,9 +197,18 @@ async function token(email: string): Promise<string> {
 /** Reads the unread Inbox messages of [email] with the browser's Mail.ru sign-in. */
 async function unread(email: string): Promise<InboxResult> {
   const value = await token(email);
-  return parseUnread(
+  const result = parseUnread(
     await call(`${API}/messages/status/unread?${mailbox(email)}&token=${encodeURIComponent(value)}&limit=50`, OPTIONS),
   );
+  if (result.messages.length < 50) return result;
+  try {
+    const folders = parseFolders(await folderPage(email, '0', 1, 0, value));
+    const total = folders.find(folder => folder.role === 'inbox')?.unread;
+    if (Number.isSafeInteger(total) && total! >= result.unread) return {...result, unread: total!};
+  } catch (error) {
+    if (error instanceof AuthError) throw error;
+  }
+  return {...result, unreadPartial: true};
 }
 
 /**
@@ -155,15 +248,23 @@ export const mailru = sessionProvider({
     return address;
   },
   async inbox(account: Account, limit: number) {
-    const {unread: total, messages} = await unread(account.email);
-    return {unread: total, messages: messages.slice(0, limit)};
+    const result = await unread(account.email);
+    return {...result, messages: result.messages.slice(0, limit)};
+  },
+  async folders(account) {
+    return parseFolders(await folderPage(account.email, '0', 1, 0));
+  },
+  async folder(account, id, limit, cursor) {
+    if (!/^\d{1,12}$/.test(id) || (cursor && !/^\d{1,7}$/.test(cursor))) throw new Error(t('error_bad_message'));
+    const offset = Number(cursor || 0);
+    return parseFolderPage(await folderPage(account.email, id, limit, offset), id, offset, limit);
   },
   webURL: (_account: Account, item?: MailMessage | null) => item?.link || 'https://e.mail.ru/inbox/',
   async body(account, item) {
     const value = await token(account.email);
     const reply = await call(
       `${API}/messages/message?${mailbox(account.email)}&id=${encodeURIComponent(item.id)}` +
-        `&htmlencoded=false&token=${encodeURIComponent(value)}`,
+        `&folder_id=${encodeURIComponent(item.folder || item.thread.split(':').pop() || '0')}&htmlencoded=false&token=${encodeURIComponent(value)}`,
       OPTIONS,
     );
     if (Number(reply?.status) === 403) throw new AuthError(t('error_sign_in_mailru'));
@@ -197,7 +298,9 @@ export const mailru = sessionProvider({
     }
     const mark = action === 'unread' ? 'set' : 'unset';
     await post(account.email, 'threads/marks', {
-      marks: JSON.stringify([{name: 'unread', [mark]: [item.thread], folder: 0}]),
+      marks: JSON.stringify([
+        {name: 'unread', [mark]: [item.thread], folder: Number(item.folder || item.thread.split(':').pop() || 0)},
+      ]),
       message_id_last: last,
     });
   },

@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "Archive"
   },
+  "folder_count_estimated": {
+    "message": "Estimated count: $1"
+  },
+  "folder_count_partial": {
+    "message": "Count for some mailboxes: $1"
+  },
+  "folder_drafts": {
+    "message": "Drafts"
+  },
+  "folder_empty": {
+    "message": "No messages in this folder"
+  },
   "folder_inbox": {
     "message": "Inbox"
   },
+  "folder_loading": {
+    "message": "Loading…"
+  },
+  "folder_more": {
+    "message": "Load more"
+  },
+  "folder_sent": {
+    "message": "Sent"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Trash"
+  },
+  "folder_unsupported": {
+    "message": "Folder browsing is unavailable for this connection. Open webmail."
   },
   "header_cc": {
     "message": "Cc: $1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "Categories"
+  },
+  "label_folders": {
+    "message": "Folders"
   },
   "label_mailboxes": {
     "message": "Mailboxes"
@@ -622,6 +652,12 @@
   },
   "search_title": {
     "message": "“$1”"
+  },
+  "search_webmail_only": {
+    "message": "Search is not yet supported in this extension for mailboxes connected through the browser: $1. Use search in webmail."
+  },
+  "search_webmail_title": {
+    "message": "Search in webmail"
   },
   "section_inbox": {
     "message": "Everything else"

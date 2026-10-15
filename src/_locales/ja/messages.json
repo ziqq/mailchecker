@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "アーカイブ"
   },
+  "folder_count_estimated": {
+    "message": "推定件数: $1"
+  },
+  "folder_count_partial": {
+    "message": "一部のメールボックスの件数: $1"
+  },
+  "folder_drafts": {
+    "message": "下書き"
+  },
+  "folder_empty": {
+    "message": "このフォルダーにメールはありません"
+  },
   "folder_inbox": {
     "message": "受信トレイ"
   },
+  "folder_loading": {
+    "message": "読み込み中…"
+  },
+  "folder_more": {
+    "message": "さらに読み込む"
+  },
+  "folder_sent": {
+    "message": "送信済み"
+  },
+  "folder_spam": {
+    "message": "迷惑メール"
+  },
   "folder_trash": {
     "message": "ゴミ箱"
+  },
+  "folder_unsupported": {
+    "message": "この接続ではフォルダーを表示できません。ウェブメールを開いてください。"
   },
   "header_cc": {
     "message": "Cc：$1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "カテゴリ"
+  },
+  "label_folders": {
+    "message": "フォルダー"
   },
   "label_mailboxes": {
     "message": "メールボックス"
@@ -613,6 +643,12 @@
   },
   "search_title": {
     "message": "「$1」"
+  },
+  "search_webmail_only": {
+    "message": "この拡張機能は、ブラウザー経由で接続したメールボックスの検索にまだ対応していません：$1。ウェブメールで検索してください。"
+  },
+  "search_webmail_title": {
+    "message": "ウェブメールで検索"
   },
   "section_inbox": {
     "message": "その他"

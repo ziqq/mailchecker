@@ -425,11 +425,38 @@
   "folder_archive": {
     "message": "归档"
   },
+  "folder_count_estimated": {
+    "message": "估计数量：$1"
+  },
+  "folder_count_partial": {
+    "message": "部分邮箱的数量：$1"
+  },
+  "folder_drafts": {
+    "message": "草稿"
+  },
+  "folder_empty": {
+    "message": "此文件夹中没有邮件"
+  },
   "folder_inbox": {
     "message": "收件箱"
   },
+  "folder_loading": {
+    "message": "正在加载…"
+  },
+  "folder_more": {
+    "message": "加载更多"
+  },
+  "folder_sent": {
+    "message": "已发送"
+  },
+  "folder_spam": {
+    "message": "垃圾邮件"
+  },
   "folder_trash": {
     "message": "已删除"
+  },
+  "folder_unsupported": {
+    "message": "此连接不支持浏览文件夹。请打开网页版邮箱。"
   },
   "header_cc": {
     "message": "抄送：$1"
@@ -472,6 +499,9 @@
   },
   "label_categories": {
     "message": "类别"
+  },
+  "label_folders": {
+    "message": "文件夹"
   },
   "label_mailboxes": {
     "message": "邮箱"
@@ -613,6 +643,12 @@
   },
   "search_title": {
     "message": "“$1”"
+  },
+  "search_webmail_only": {
+    "message": "此扩展暂不支持搜索通过浏览器连接的邮箱：$1。请使用网页版邮箱搜索。"
+  },
+  "search_webmail_title": {
+    "message": "在网页版邮箱中搜索"
   },
   "section_inbox": {
     "message": "其他"

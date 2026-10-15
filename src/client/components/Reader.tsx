@@ -80,8 +80,7 @@ function Message(props: {message: ThreadMessage; open: boolean; allowRemote: boo
             >
               {props.message.from.match(/<([^>]+)>/)?.[1] || props.message.from}
               {props.message.to ? ` → ${senderName(props.message.to.split(',')[0])}` : ''}
-              {' · '}
-              {shortDate(props.message.date)}
+              {props.message.date > 0 ? ` · ${shortDate(props.message.date)}` : ''}
             </span>
           </div>
         </header>
@@ -247,6 +246,7 @@ export function Reader() {
                   type="button"
                   title={`${t('action_archive')} · E`}
                   aria-label={t('action_archive')}
+                  disabled={!store.canAct('archive')}
                   onClick={() => act('archive')}
                 >
                   {icon('archive')}
@@ -256,6 +256,7 @@ export function Reader() {
                   type="button"
                   title={`${t('action_delete')} · #`}
                   aria-label={t('action_delete')}
+                  disabled={!store.canAct('trash')}
                   onClick={() => act('trash')}
                 >
                   {icon('trash')}
@@ -285,7 +286,12 @@ export function Reader() {
                   title={t('action_open_webmail')}
                   aria-label={t('action_open_webmail')}
                   onClick={() =>
-                    request({type: 'OPEN', account: current().account, message: current().message.id}).catch(store.fail)
+                    request({
+                      type: 'OPEN',
+                      account: current().account,
+                      message: current().message.id,
+                      entry: current().message,
+                    }).catch(store.fail)
                   }
                 >
                   {icon('external')}

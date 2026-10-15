@@ -46,6 +46,22 @@ function current(): Fixtures & {preferences: Preferences} {
         reauth: true,
       };
     if (query.get('mail') === 'percentage') data.threads['gmail/g5'][0].html += '<style>html,body{height:100%}</style>';
+    if (query.get('mail') === 'background')
+      data.threads['gmail/g5'][0].html =
+        `<div style="background-image:url('${location.origin}/icons/icon128.png');background-repeat:no-repeat;min-height:160px">CSS background image</div>`;
+    if (query.get('mail') === 'css-images') {
+      const image = `${location.origin}/icons/icon128.png`;
+      data.threads['gmail/g5'][0].html = `<style>
+        .background {background-image:url('${image}?style')}
+        .image-set {background-image:image-set("${image}?one" 1x,url('${image}?two') 2x)}
+        @font-face {font-family:Unused;src:url('${location.origin}/unused.woff')}
+        .text::after {content:"https://example.test/plain-text"}
+      </style><div class="background" style="min-height:160px">Stylesheet image</div>
+      <div class="image-set">Image set</div>
+      <div style="background-image:url('${image.replace('http', '\\68 ttp')}?escaped')">Escaped URL</div>
+      <div style="background-image:url('data:image/png;base64,iVBORw0KGgo=')">Embedded image</div>`;
+    }
+    if (query.get('search') === 'webmail') data.accounts = data.accounts.filter(account => account.browser);
   }
   return data;
 }
@@ -84,12 +100,27 @@ function account(id: string): string {
 
 /** Applies a message action. */
 function act(id: string, message: string, action: string): void {
-  const {mailboxes, archive} = current();
+  const {mailboxes, archive, folderMessages, accounts, folders} = current();
   const messages = mailboxes[account(id)].messages;
-  const target = messages.find(item => item.id === message);
+  const target =
+    messages.find(item => item.id === message) ||
+    Object.values(folderMessages[id])
+      .flat()
+      .find(item => item.id === message);
   if (!target) throw new Error('Письмо не найдено.');
   if (action === 'archive' || action === 'trash') {
+    const destination = action === 'archive' ? 'archive' : 'trash';
     if (action === 'archive') archive[id] = [{...target, unread: false}, ...(archive[id] || [])];
+    const labels = ['gmail', 'jmap'].includes(accounts.find(account => account.id === id)!.provider);
+    for (const key of Object.keys(folderMessages[id]))
+      if (
+        action === 'trash' ||
+        !labels ||
+        folders[id].find(folder => folder.id === key)?.role === 'inbox' ||
+        key === destination
+      )
+        folderMessages[id][key] = folderMessages[id][key].filter(item => item.id !== message);
+    folderMessages[id][destination] = [{...target, folder: destination}, ...(folderMessages[id][destination] || [])];
     update(
       id,
       messages.filter(item => item !== target),
@@ -103,6 +134,10 @@ function act(id: string, message: string, action: string): void {
     unpin: {pinned: false},
   };
   if (!flags[action]) throw new Error('Неизвестное действие.');
+  for (const key of Object.keys(folderMessages[id]))
+    folderMessages[id][key] = folderMessages[id][key].map(item =>
+      item.id === message ? {...item, ...flags[action]} : item,
+    );
   update(
     id,
     messages.map(item => (item === target ? {...item, ...flags[action]} : item)),
@@ -124,7 +159,8 @@ function check(accountID = ''): void {
   const now = Date.now();
   for (const [id, box] of Object.entries(mailboxes)) {
     if (accountID && id !== accountID) continue;
-    const delivered = (incoming[id] || []).map(item => ({...item, date: now}));
+    const delivered =
+      query.get('refresh') === 'timestamp' ? [] : (incoming[id] || []).map(item => ({...item, date: now}));
     incoming[id] = [];
     if (delivered.length) update(id, [...delivered, ...box.messages]);
     if (!mailboxes[id].reauth) mailboxes[id] = {...mailboxes[id], checkedAt: now};
@@ -136,13 +172,22 @@ function check(accountID = ''): void {
 
 /** Returns a conversation; messages without a fixture conversation become one-message threads. */
 function thread(id: string, message: string, key: string): ThreadMessage[] {
-  const {mailboxes, archive, threads, accounts} = current();
+  const {mailboxes, archive, threads, accounts, folderMessages} = current();
   const fixture = threads[`${account(id)}/${key || message}`];
-  const item = [...mailboxes[id].messages, ...(archive[id] || [])].find(entry => entry.id === message);
+  const item = [...mailboxes[id].messages, ...(archive[id] || []), ...Object.values(folderMessages[id]).flat()].find(
+    entry => entry.id === message,
+  );
   if (!item) throw new Error('Письмо не найдено.');
   if (item.unread) {
     if (mailboxes[id].messages.includes(item)) act(id, message, 'read');
-    else archive[id] = archive[id].map(entry => (entry.id === message ? {...entry, unread: false} : entry));
+    else {
+      if (archive[id])
+        archive[id] = archive[id].map(entry => (entry.id === message ? {...entry, unread: false} : entry));
+      for (const key of Object.keys(folderMessages[id]))
+        folderMessages[id][key] = folderMessages[id][key].map(entry =>
+          entry.id === message ? {...entry, unread: false} : entry,
+        );
+    }
   }
   if (fixture) return fixture.map(entry => (entry.id === message ? {...entry, unread: false} : entry));
   const email = accounts.find(entry => entry.id === id)!.email;
@@ -164,10 +209,20 @@ function thread(id: string, message: string, key: string): ThreadMessage[] {
 
 /** Searches Inbox and archived mail of every account by sender, subject and snippet. */
 function search(query: string): SearchHit[] {
-  const {accounts, mailboxes, archive} = current();
+  const {accounts, mailboxes, archive, folderMessages} = current();
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   return accounts
-    .flatMap(({id}) => [...mailboxes[id].messages, ...(archive[id] || [])].map(message => ({account: id, message})))
+    .filter(account => !account.browser)
+    .flatMap(({id}) =>
+      [
+        ...new Map(
+          [...mailboxes[id].messages, ...(archive[id] || []), ...Object.values(folderMessages[id]).flat()].map(item => [
+            item.id,
+            item,
+          ]),
+        ).values(),
+      ].map(message => ({account: id, message})),
+    )
     .filter(({message}) => {
       const haystack = `${message.from} ${message.subject} ${message.snippet}`.toLowerCase();
       return words.every(word => haystack.includes(word));
@@ -183,6 +238,35 @@ function answer(message: Request): unknown {
     case 'CHECK':
       check();
       return state();
+    case 'FOLDERS':
+      return current().folders[account(message.account)].map(folder => {
+        const items =
+          folder.role === 'inbox'
+            ? current().mailboxes[message.account].messages
+            : current().folderMessages[message.account][folder.id] || [];
+        return {
+          ...folder,
+          total:
+            message.account === 'yandex'
+              ? undefined
+              : folder.role === 'inbox'
+                ? Math.max(items.length, current().mailboxes[message.account].unread)
+                : items.length,
+          unread:
+            folder.role === 'inbox'
+              ? current().mailboxes[message.account].unread
+              : items.filter(item => item.unread).length,
+        };
+      });
+    case 'FOLDER': {
+      const id = account(message.account);
+      const items =
+        message.folder === 'inbox' ? current().mailboxes[id].messages : current().folderMessages[id][message.folder];
+      if (!items) throw new Error(t('error_bad_message'));
+      const offset = Number(message.cursor || 0);
+      const messages = items.slice(offset, offset + 50).map(item => ({...item, folder: message.folder}));
+      return {messages, next: offset + messages.length < items.length ? String(offset + messages.length) : ''};
+    }
     case 'ACT':
       act(message.account, message.message, message.action);
       return state();
@@ -239,9 +323,20 @@ function answer(message: Request): unknown {
  * @returns The worker reply envelope.
  */
 export async function handle(message: Request): Promise<Reply> {
-  const slowThread = message.type === 'THREAD' && new URLSearchParams(location.search).get('refresh') === 'slow';
-  await new Promise(resolve => setTimeout(resolve, slowThread ? 2000 : LATENCY));
+  const query = new URLSearchParams(location.search);
+  const delayed =
+    (message.type === 'THREAD' && query.get('refresh') === 'slow') ||
+    (message.type === 'FOLDER' && query.get('folders') === 'slow');
+  await new Promise(resolve => setTimeout(resolve, delayed ? 2000 : LATENCY));
   try {
+    if (
+      (message.type === 'FOLDERS' || message.type === 'FOLDER') &&
+      query.get('folders') === 'partial' &&
+      message.account === 'mailru'
+    )
+      throw new Error(current().mailboxes.mailru.error);
+    if (message.type === 'FOLDERS' && query.get('folders') === 'gmail-web' && message.account === 'gmail')
+      throw new Error(t('folder_unsupported'));
     return {ok: true, value: structuredClone(answer(message))};
   } catch (error) {
     return {ok: false, error: error instanceof Error ? error.message : 'Неизвестная ошибка.'};

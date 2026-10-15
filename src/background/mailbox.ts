@@ -16,7 +16,17 @@
  */
 import {senderName} from '../shared/format';
 import {accents, preferences} from '../shared/preferences';
-import type {Account, MailMessage, Mailbox, MessageAction, SearchHit, ThreadMessage} from '../shared/types';
+import type {
+  Account,
+  FolderPage,
+  MailFolder,
+  MailMessage,
+  Mailbox,
+  MessageAction,
+  SearchHit,
+  ThreadMessage,
+} from '../shared/types';
+import {FOLDER_ROLES, orderFolders} from '../shared/folders';
 import {adapter, withAccount} from './accounts';
 import {message as normalize} from './providers/message';
 import {hasNotifications, setBadge} from './platform';
@@ -75,6 +85,7 @@ export async function checkAccount(id: string): Promise<void> {
     const failure = error as Error & {reauth?: boolean};
     result = {
       unread: previous?.unread || 0,
+      ...(previous?.unreadPartial ? {unreadPartial: true} : {}),
       messages: previous?.messages || [],
       error: failure?.message || t('error_check_failed'),
       reauth: Boolean(failure?.reauth),
@@ -103,7 +114,7 @@ export async function checkAccount(id: string): Promise<void> {
   if (account && previous?.notified && !result.error && settings.notifications) {
     const known = new Set(previous.messages.map(item => item.id));
     const fresh = result.messages.filter(
-      item => item.unread && !known.has(item.id) && item.date > Date.now() - NOTIFY_WINDOW,
+      item => item.unread && !known.has(item.id) && (item.date <= 0 || item.date > Date.now() - NOTIFY_WINDOW),
     );
     await notify(account, fresh);
   }
@@ -164,8 +175,49 @@ export async function openNotification(id: string): Promise<void> {
 }
 
 /** Returns a listed message, or a minimal record for a message outside the list (search hits). */
-function lookup(box: Mailbox | undefined, id: string, thread = ''): MailMessage {
-  return box?.messages.find(entry => entry.id === id) || normalize({id, thread});
+function lookup(box: Mailbox | undefined, id: string, thread = '', entry?: MailMessage): MailMessage {
+  return box?.messages.find(item => item.id === id) || normalize(entry && entry.id === id ? entry : {id, thread});
+}
+
+/** Returns a bounded server catalog without changing the Inbox, notification baseline or badge. */
+export async function folders(accountID: string): Promise<MailFolder[]> {
+  return withAccount(accountID, async (module, account) => {
+    if (!module.folders) throw new Error(t('folder_unsupported'));
+    const value = await module.folders(account);
+    const seen = new Set<string>();
+    return orderFolders(
+      value.slice(0, 200).flatMap(item => {
+        const id = String(item.id || '').slice(0, 512);
+        if (!id || seen.has(id)) return [];
+        seen.add(id);
+        return [
+          {
+            id,
+            name: String(item.name || id).slice(0, 300),
+            role: item.role && FOLDER_ROLES.includes(item.role) ? item.role : undefined,
+            parent: item.parent ? String(item.parent).slice(0, 512) : undefined,
+            total: Number.isSafeInteger(item.total) && item.total! >= 0 ? item.total : undefined,
+            unread: Number.isSafeInteger(item.unread) && item.unread! >= 0 ? item.unread : undefined,
+            approximate: item.approximate === true || undefined,
+          },
+        ];
+      }),
+    );
+  });
+}
+
+/** Loads one selected folder page on demand; folder metadata and bodies are never persisted. */
+export async function folder(accountID: string, id: string, cursor = ''): Promise<FolderPage> {
+  if (!id || id.length > 512 || cursor.length > 4096) throw new Error(t('error_bad_message'));
+  const limit = 50;
+  return withAccount(accountID, async (module, account) => {
+    if (!module.folder) throw new Error(t('folder_unsupported'));
+    const value = await module.folder(account, id, limit, cursor);
+    return {
+      messages: value.messages.slice(0, limit).map(item => normalize({...item, folder: id})),
+      next: String(value.next || '').slice(0, 4096),
+    };
+  });
 }
 
 /**
@@ -178,7 +230,12 @@ function lookup(box: Mailbox | undefined, id: string, thread = ''): MailMessage 
  * @param messageID The provider message ID.
  * @param action The action.
  */
-export async function act(accountID: string, messageID: string, action: MessageAction): Promise<void> {
+export async function act(
+  accountID: string,
+  messageID: string,
+  action: MessageAction,
+  entry?: MailMessage,
+): Promise<void> {
   if (!ACTIONS.includes(action)) throw new Error(t('error_unknown_action'));
   if (!messageID || messageID.length > 512) throw new Error(t('error_bad_message'));
   const changes = revision(accountID);
@@ -186,7 +243,7 @@ export async function act(accountID: string, messageID: string, action: MessageA
   changes.actions++;
   try {
     const {mailboxes = {}} = await readStore();
-    const item = lookup(mailboxes[accountID], messageID);
+    const item = lookup(mailboxes[accountID], messageID, '', entry);
     await withAccount(accountID, (module, account) => module.act(account, item, action));
     await updateMessage(accountID, messageID, action);
   } finally {
@@ -227,10 +284,15 @@ async function updateMessage(accountID: string, messageID: string, action: Messa
  * @param messageID The selected message.
  * @param threadID Its conversation ID.
  */
-export async function thread(accountID: string, messageID: string, threadID: string): Promise<ThreadMessage[]> {
+export async function thread(
+  accountID: string,
+  messageID: string,
+  threadID: string,
+  entry?: MailMessage,
+): Promise<ThreadMessage[]> {
   if (!messageID || messageID.length > 512 || threadID.length > 512) throw new Error(t('error_bad_message'));
   const {mailboxes = {}} = await readStore();
-  const item = lookup(mailboxes[accountID], messageID, threadID);
+  const item = lookup(mailboxes[accountID], messageID, threadID, entry);
   const messages = await withAccount(accountID, (module, account) =>
     module.thread(account, {...item, thread: item.thread || threadID}),
   );
@@ -238,7 +300,7 @@ export async function thread(accountID: string, messageID: string, threadID: str
   if (item.unread || target?.unread) {
     try {
       if (target && !target.unread) await updateMessage(accountID, messageID, 'read');
-      else await act(accountID, messageID, 'read');
+      else await act(accountID, messageID, 'read', item);
       if (target) target.unread = false;
     } catch (error) {
       if ((error as {reauth?: boolean})?.reauth) throw error;
@@ -254,11 +316,11 @@ export async function thread(accountID: string, messageID: string, threadID: str
  * @param messageID The message replied to.
  * @param text The reply text.
  */
-export async function reply(accountID: string, messageID: string, text: string): Promise<void> {
+export async function reply(accountID: string, messageID: string, text: string, entry?: MailMessage): Promise<void> {
   if (!messageID || messageID.length > 512) throw new Error(t('error_bad_message'));
   if (!text.trim() || text.length > 100_000) throw new Error(t('error_reply_text'));
   const {mailboxes = {}} = await readStore();
-  const item = lookup(mailboxes[accountID], messageID);
+  const item = lookup(mailboxes[accountID], messageID, '', entry);
   await withAccount(accountID, (module, account) => {
     if (!module.reply) throw new Error(t('error_reply_webmail'));
     return module.reply(account, item, text);
@@ -289,10 +351,10 @@ export async function search(query: string): Promise<SearchHit[]> {
 }
 
 /** Opens the webmail Inbox or a listed message in a new tab. */
-export async function open(accountID: string, messageID?: string): Promise<void> {
+export async function open(accountID: string, messageID?: string, entry?: MailMessage): Promise<void> {
   const {accounts = [], mailboxes = {}} = await readStore();
   const account = accounts.find(item => item.id === accountID);
   if (!account) throw new Error(t('error_account_missing'));
-  const item = messageID ? mailboxes[accountID]?.messages?.find(entry => entry.id === messageID) : null;
+  const item = messageID ? lookup(mailboxes[accountID], messageID, '', entry) : null;
   await chrome.tabs.create({url: adapter(account).webURL(account, item)});
 }

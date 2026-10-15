@@ -12,7 +12,16 @@
  *
  * @module sandbox/fixtures
  */
-import type {Attachment, Category, Mailbox, MailMessage, PublicAccount, ThreadMessage} from '../shared/types';
+import type {
+  Attachment,
+  Category,
+  Mailbox,
+  MailFolder,
+  MailMessage,
+  PublicAccount,
+  ThreadMessage,
+} from '../shared/types';
+import {FOLDER_ROLES} from '../shared/folders';
 
 /** Mock data: public accounts, mailboxes, extra mail found only by search, conversations and incoming mail. */
 export interface Fixtures {
@@ -24,6 +33,9 @@ export interface Fixtures {
   threads: Record<string, ThreadMessage[]>;
   /** Messages delivered by the next check, per account. */
   incoming: Record<string, MailMessage[]>;
+  /** Server catalogs and non-Inbox messages used by on-demand folder navigation. */
+  folders: Record<string, MailFolder[]>;
+  folderMessages: Record<string, Record<string, MailMessage[]>>;
 }
 
 /** Minutes, hours and days in milliseconds. */
@@ -430,5 +442,52 @@ export function createFixtures(now: number): Fixtures {
     ],
   };
 
-  return {accounts, mailboxes, archive, threads, incoming};
+  const folders = Object.fromEntries(
+    accounts.map(account => [
+      account.id,
+      [
+        ...FOLDER_ROLES.map(role => ({id: role, name: '', role})),
+        {id: 'projects', name: 'Проекты'},
+        {id: 'projects/client', name: 'Клиент', parent: 'projects'},
+      ],
+    ]),
+  );
+  const folderMessages = Object.fromEntries(
+    accounts.map(account => [
+      account.id,
+      Object.fromEntries([
+        ...FOLDER_ROLES.filter(role => role !== 'inbox').map(role => [
+          role,
+          role === 'archive'
+            ? archive[account.id] || []
+            : [
+                m({
+                  id: `${account.id}-${role}`,
+                  from: role === 'sent' || role === 'drafts' ? account.email : 'Sender <sender@example.com>',
+                  subject: `${role} · ${account.email}`,
+                  snippet: 'Письмо в папке.',
+                  ago: HOUR,
+                  unread: role === 'spam',
+                  folder: role,
+                }),
+              ],
+        ]),
+        [
+          'projects',
+          Array.from({length: 55}, (_, index) =>
+            m({
+              id: `${account.id}-project-${index}`,
+              from: 'Project <project@example.com>',
+              subject: `Проект ${index + 1}`,
+              snippet: 'Письмо в пользовательской папке.',
+              ago: (index + 1) * MINUTE,
+              folder: 'projects',
+            }),
+          ),
+        ],
+        ['projects/client', []],
+      ]),
+    ]),
+  );
+  return {accounts, mailboxes, archive, threads, incoming, folders, folderMessages};
 }

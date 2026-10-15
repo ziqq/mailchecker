@@ -98,6 +98,8 @@ export interface RequestOptions {
   json?: unknown;
   /** A body sent as `application/x-www-form-urlencoded`. */
   form?: Record<string, string>;
+  /** A pre-serialized MIME request; still uses the same credential, timeout and response-size limits. */
+  multipart?: {boundary: string; body: string};
   /** The service name used in error messages. */
   service?: string;
   /**
@@ -112,7 +114,7 @@ export interface RequestOptions {
 /** Sends a bounded request and returns the response with its text body. */
 async function send(
   url: string,
-  {method = 'GET', token, json, form, service = t('service_server'), session = false}: RequestOptions,
+  {method = 'GET', token, json, form, multipart, service = t('service_server'), session = false}: RequestOptions,
   accept: string,
 ): Promise<{response: Response; text: string}> {
   const target = new URL(url);
@@ -129,6 +131,10 @@ async function send(
   } else if (form) {
     headers['Content-Type'] = 'application/x-www-form-urlencoded';
     body = new URLSearchParams(form).toString();
+  } else if (multipart) {
+    if (!/^[a-z0-9_-]{1,70}$/i.test(multipart.boundary)) throw new Error(t('error_bad_message'));
+    headers['Content-Type'] = `multipart/mixed; boundary=${multipart.boundary}`;
+    body = multipart.body;
   }
   let response: Response;
   try {
