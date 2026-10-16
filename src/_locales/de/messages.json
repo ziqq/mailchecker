@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · ungelesen: $1 · Postfächer mit Fehlern: $2"
   },
+  "bulk_progress": {
+    "message": "In den Papierkorb verschieben: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Ausgewählt: $1"
+  },
   "busy_archiving": {
     "message": "Wird archiviert…"
   },
@@ -673,6 +679,15 @@
   },
   "section_pinned": {
     "message": "Angeheftet"
+  },
+  "select_loaded": {
+    "message": "Alle geladenen Nachrichten auswählen"
+  },
+  "select_message": {
+    "message": "$1 auswählen: $2"
+  },
+  "select_messages": {
+    "message": "Nachrichten auswählen"
   },
   "service_mailru": {
     "message": "Mail.ru"

@@ -1,15 +1,17 @@
-# Изображения карточки
+# Chrome Web Store images
 
-Черновик первого релиза **0.0.40**, снят в Chromium 15 октября 2026 года. Реальный интерфейс sandbox, локальные шрифты Inter, scale 1. Почтовые данные вымышлены.
+Prepared on 16 October 2026 from the **0.0.41** sandbox in Chromium. All interface text and fictional email data are in English. Screenshots use the bundled Inter fonts at scale 1.
 
-| Файл                                   | Размер   | Содержание                                |
-| -------------------------------------- | -------- | ----------------------------------------- |
-| [inbox-dark.png](inbox-dark.png)       | 1280×800 | Общие входящие, тёмная тема               |
-| [reader-light.png](reader-light.png)   | 1280×800 | Переписка и вложения, светлая тема        |
-| [folders-dark.png](folders-dark.png)   | 1280×800 | Список общих папок с открытой перепиской  |
-| [promo-440x280.png](promo-440x280.png) | 440×280  | Бренд, существующая иконка и цвета ящиков |
-| [icon128.png](icon128.png)             | 128×128  | Копия `src/icons/icon128.png`             |
+| File                                   | Size     | Content                                                       |
+| -------------------------------------- | -------- | ------------------------------------------------------------- |
+| [inbox-dark.jpg](inbox-dark.jpg)       | 1280×800 | Unified inbox, notification stacks and blocked remote images  |
+| [reader-light.jpg](reader-light.jpg)   | 1280×800 | Three-message conversation and attachments in the light theme |
+| [folders-dark.jpg](folders-dark.jpg)   | 1280×800 | System and custom folders for a selected JMAP mailbox         |
+| [promo-440x280.png](promo-440x280.png) | 440×280  | Existing icon, brand and mailbox colors                       |
+| [icon128.png](icon128.png)             | 128×128  | Copy of `src/icons/icon128.png`                               |
 
-Экраны сняты с `app.html?theme=dark&palette=neutral` и `app.html?theme=light&palette=neutral`. Для демонстрации использованы четыре подключённых тестовых ящика: Gmail через браузер, JMAP, Яндекс и Mail.ru. В выделенных демоданных удалены будущий iCloud и ненастроенный Microsoft OAuth, Mail.ru показан с действующей сессией. Исходные фикстуры репозитория и интерфейс не менялись. Данные адаптированы перед созданием состояния, без ретуши DOM или готовых изображений.
+Screenshots use `app.html?theme=dark&palette=neutral&lang=en` and `app.html?theme=light&palette=neutral&lang=en`. The folder screenshot switches to dark mode through the normal theme control. The regular sandbox fixtures now contain English senders, subjects, bodies, attachments and custom folders; the sandbox index opens the English interface through `lang=en`.
 
-Промо собрано из существующей иконки и оформления проекта. Скриншоты не подтверждают живой вход или работу серверных запросов. Перед публикацией сверить их с окончательной конфигурацией релизного ZIP. Общий план, тексты и оставшиеся шаги — [CHROME_WEB_STORE.md](../CHROME_WEB_STORE.md).
+For the store captures, a separate temporary copy of those fixtures includes only browser-sign-in Gmail, JMAP, Yandex Mail and Mail.ru. It excludes the future iCloud adapter and unconfigured Microsoft OAuth, and shows Mail.ru with a healthy session. Gmail is marked as a browser connection with replies delegated to webmail. These changes are made before state creation in that isolated build; the repository keeps all six provider fixtures and its error scenarios. No DOM or image retouching is used.
+
+The promo uses the existing project artwork and contains only the English brand name. Screenshots demonstrate the interface, not successful live sign-in or server requests. Compare them against the final release configuration before submission. See [CHROME_WEB_STORE.md](../CHROME_WEB_STORE.md) for listing text, disclosures and outstanding release work.

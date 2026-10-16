@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · não lidas: $1 · caixas com erros: $2"
   },
+  "bulk_progress": {
+    "message": "Movendo para a lixeira: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Selecionadas: $1"
+  },
   "busy_archiving": {
     "message": "Arquivando…"
   },
@@ -682,6 +688,15 @@
   },
   "section_pinned": {
     "message": "Fixadas"
+  },
+  "select_loaded": {
+    "message": "Selecionar todas as mensagens carregadas"
+  },
+  "select_message": {
+    "message": "Selecionar $1: $2"
+  },
+  "select_messages": {
+    "message": "Selecionar mensagens"
   },
   "service_mailru": {
     "message": "Mail.ru"

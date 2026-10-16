@@ -1,5 +1,7 @@
 # Privacy
 
+Last updated: 16 October 2026.
+
 mailchecker has no backend, analytics, advertising or telemetry. Requests go directly from the browser to the mail provider the user connected.
 
 ## Local data
@@ -19,7 +21,7 @@ Removing an account deletes its credentials, check result and IndexedDB cache, a
 
 API requests send no cookies, refuse redirects and time out after 25 seconds. Requests through the browser's sign-in send the browser's own cookies, and only to the hosts above; they follow the site's redirects and treat a redirect away from it as signed out. Responses are read with size limits.
 
-Message bodies are shown in a sandboxed frame without scripts. Remote images, including tracking pixels, are not loaded until the user chooses to show them for that conversation, so senders do not learn that a message was opened.
+Message bodies are shown in a sandboxed frame without scripts. Remote images, including tracking pixels, are not loaded until the user chooses to show them for that conversation. Blocking these requests prevents image-based open tracking; the connected mail service still receives the requests needed to load mail and acknowledge read state.
 
 ## Permissions
 
@@ -31,3 +33,7 @@ Message bodies are shown in a sandboxed frame without scripts. Remote images, in
 ## Limited use
 
 Information received from Google APIs is used only for the user-facing mail features described here. This use complies with the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy) and its Limited Use requirements. mailchecker does not sell mail data, use it for advertising or transfer it to a developer-operated server.
+
+## Contact
+
+mailchecker is developed by Anton Ustinoff. For privacy questions, contact [a.a.ustinoff@gmail.com](mailto:a.a.ustinoff@gmail.com). Do not include mailbox passwords, access tokens or private email content in a support request.

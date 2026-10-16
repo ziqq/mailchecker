@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · 未読：$1 · エラーのあるメールボックス：$2"
   },
+  "bulk_progress": {
+    "message": "ゴミ箱に移動中: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "選択済み: $1"
+  },
   "busy_archiving": {
     "message": "アーカイブしています…"
   },
@@ -664,6 +670,15 @@
   },
   "section_pinned": {
     "message": "固定済み"
+  },
+  "select_loaded": {
+    "message": "読み込み済みのメールをすべて選択"
+  },
+  "select_message": {
+    "message": "$1: $2 を選択"
+  },
+  "select_messages": {
+    "message": "メールを選択"
   },
   "service_mailru": {
     "message": "Mail.ru"

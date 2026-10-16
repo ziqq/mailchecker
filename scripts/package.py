@@ -5,7 +5,8 @@
 """Package a deterministic Chrome extension ZIP from the bundled build/ directory.
 
 The ZIP contains every file in build/ plus PRIVACY.md (and LICENSE when
-present), with `manifest.json` at its root. Entries are sorted, stored
+present), with `manifest.json` at its root and its development-only `key`
+omitted for Chrome Web Store uploads. Entries are sorted, stored
 without compression and use fixed timestamps and permissions, so the
 archive bytes are reproducible. A `.sha256` file is written next to it.
 
@@ -57,6 +58,17 @@ def validate_tag(tag, version):
         raise ValueError('The newest changelog section must match the release tag.')
 
 
+def packaged_bytes(name, path):
+    """Return runtime bytes, omitting the unpacked-install key from the store manifest."""
+    data = path.read_bytes()
+    if name == 'manifest.json':
+        manifest = json.loads(data)
+        if 'key' in manifest:
+            del manifest['key']
+            return (json.dumps(manifest, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+    return data
+
+
 def verify(path, files):
     """Verify entry names, deterministic metadata, every byte and the SHA-256 file."""
     with ZipFile(path) as archive:
@@ -67,7 +79,7 @@ def verify(path, files):
         for entry in archive.infolist():
             if entry.date_time != TIMESTAMP or entry.compress_type != ZIP_STORED:
                 raise ValueError(f'Non-deterministic ZIP metadata: {entry.filename}')
-            if archive.read(entry) != files[entry.filename].read_bytes():
+            if archive.read(entry) != packaged_bytes(entry.filename, files[entry.filename]):
                 raise ValueError(f'Packaged bytes differ from the build: {entry.filename}')
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     if path.with_suffix('.sha256').read_text(encoding='utf-8') != f'{digest}  {path.name}\n':
@@ -84,7 +96,7 @@ def write_zip(source, output):
             info = ZipInfo(name, TIMESTAMP)
             info.external_attr = 0o644 << 16
             info.compress_type = ZIP_STORED
-            archive.writestr(info, path.read_bytes())
+            archive.writestr(info, packaged_bytes(name, path))
     digest = hashlib.sha256(target.read_bytes()).hexdigest()
     target.with_suffix('.sha256').write_text(f'{digest}  {target.name}\n', encoding='utf-8')
     return target

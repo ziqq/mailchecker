@@ -61,19 +61,38 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
     <article
       class="row"
       classList={{read: !message().unread, nested: props.nested}}
-      aria-selected={selected()}
+      aria-selected={store.selecting() ? store.isChecked(props.entry) : selected()}
       tabindex="0"
       data-id={message().id}
-      onClick={() => store.select(props.entry)}
-      onKeyDown={event => event.key === 'Enter' && store.select(props.entry)}
+      onClick={() => (store.selecting() ? store.toggleChecked(props.entry) : store.select(props.entry))}
+      onKeyDown={event => {
+        if (event.key !== 'Enter' || event.target !== event.currentTarget) return;
+        if (store.selecting()) store.toggleChecked(props.entry);
+        else store.select(props.entry);
+      }}
     >
-      <span
-        class="avatar"
-        classList={{ringed: accounts().length > 1}}
-        style={accounts().length > 1 ? {'--ring': accountColor(accounts(), props.entry.account)} : undefined}
+      <Show
+        when={store.selecting()}
+        fallback={
+          <span
+            class="avatar"
+            classList={{ringed: accounts().length > 1}}
+            style={accounts().length > 1 ? {'--ring': accountColor(accounts(), props.entry.account)} : undefined}
+          >
+            {initial(senderName(message().from))}
+          </span>
+        }
       >
-        {initial(senderName(message().from))}
-      </span>
+        <span class="row-check">
+          <input
+            type="checkbox"
+            aria-label={t('select_message', senderName(message().from), message().subject)}
+            checked={store.isChecked(props.entry)}
+            onClick={event => event.stopPropagation()}
+            onChange={() => store.toggleChecked(props.entry)}
+          />
+        </span>
+      </Show>
       <Show when={message().unread}>
         <span class="unread-dot" />
       </Show>
@@ -99,24 +118,33 @@ export function Row(props: {entry: Entry; nested?: boolean}) {
           </Show>
         </div>
       </div>
-      <div class="row-actions">
-        <RowAction
-          name="pin"
-          title={`${t(message().pinned ? 'action_unpin' : 'action_pin')} · S`}
-          onClick={() => store.act(props.entry, message().pinned ? 'unpin' : 'pin')}
-        />
-        <RowAction
-          name="unread"
-          title={`${t(message().unread ? 'action_read' : 'action_unread')} · U`}
-          onClick={() => store.act(props.entry, message().unread ? 'read' : 'unread')}
-        />
-        <RowAction
-          name="archive"
-          disabled={!store.canAct('archive')}
-          title={`${t('action_archive')} · E`}
-          onClick={() => store.act(props.entry, 'archive')}
-        />
-      </div>
+      <Show when={!store.selecting()}>
+        <div class="row-actions">
+          <RowAction
+            name="pin"
+            title={`${t(message().pinned ? 'action_unpin' : 'action_pin')} · S`}
+            onClick={() => store.act(props.entry, message().pinned ? 'unpin' : 'pin')}
+          />
+          <RowAction
+            name="unread"
+            title={`${t(message().unread ? 'action_read' : 'action_unread')} · U`}
+            onClick={() => store.act(props.entry, message().unread ? 'read' : 'unread')}
+          />
+          <RowAction
+            name="archive"
+            disabled={!store.canAct('archive')}
+            title={`${t('action_archive')} · E`}
+            onClick={() => store.act(props.entry, 'archive')}
+          />
+          <RowAction
+            name="trash"
+            danger
+            disabled={!store.canAct('trash')}
+            title={`${t('action_delete')} · #`}
+            onClick={() => store.act(props.entry, 'trash')}
+          />
+        </div>
+      </Show>
     </article>
   );
 }
@@ -133,37 +161,39 @@ function Stack(props: {item: Extract<Item, {kind: 'stack'}>}) {
       entry => store.selected()?.id === entry.message.id && store.selected()?.account === entry.account,
     );
   return (
-    <div class="stack-card" classList={{open: open()}}>
-      <button
-        class="row stack-head"
-        type="button"
-        aria-selected={selected()}
-        aria-expanded={open()}
-        onClick={() => store.toggleStack(props.item.key)}
-      >
-        <Show when={unread()}>
-          <span class="unread-dot" />
+    <Show when={!store.selecting()} fallback={<For each={props.item.entries}>{entry => <Row entry={entry} />}</For>}>
+      <div class="stack-card" classList={{open: open()}}>
+        <button
+          class="row stack-head"
+          type="button"
+          aria-selected={selected()}
+          aria-expanded={open()}
+          onClick={() => store.toggleStack(props.item.key)}
+        >
+          <Show when={unread()}>
+            <span class="unread-dot" />
+          </Show>
+          <span class="avatar tile-avatar">{icon('layers')}</span>
+          <div class="row-body">
+            <div class="row-top">
+              <span class="from">{senderName(first().from)}</span>
+              <span class="time">{shortDate(first().date)}</span>
+            </div>
+            <div class="subject">{first().subject}</div>
+            <div class="snippet">
+              {tn('messages_count', props.item.entries.length)}
+              {unread() ? ` · ${tn('unread_new', unread())}` : ''}
+            </div>
+          </div>
+          <span class="count-badge">×{props.item.entries.length}</span>
+        </button>
+        <Show when={open()}>
+          <div class="stack-items">
+            <For each={props.item.entries}>{entry => <Row entry={entry} nested />}</For>
+          </div>
         </Show>
-        <span class="avatar tile-avatar">{icon('layers')}</span>
-        <div class="row-body">
-          <div class="row-top">
-            <span class="from">{senderName(first().from)}</span>
-            <span class="time">{shortDate(first().date)}</span>
-          </div>
-          <div class="subject">{first().subject}</div>
-          <div class="snippet">
-            {tn('messages_count', props.item.entries.length)}
-            {unread() ? ` · ${tn('unread_new', unread())}` : ''}
-          </div>
-        </div>
-        <span class="count-badge">×{props.item.entries.length}</span>
-      </button>
-      <Show when={open()}>
-        <div class="stack-items">
-          <For each={props.item.entries}>{entry => <Row entry={entry} nested />}</For>
-        </div>
-      </Show>
-    </div>
+      </div>
+    </Show>
   );
 }
 
@@ -267,17 +297,69 @@ export function MessageList() {
                   : TITLES[store.filter()]
             }
           />
-          <Show when={!store.results() && total()}>
-            <span
-              class="pill strong"
-              title={store.unreadPartial() ? t('folder_count_partial', tn('unread_new', total())) : undefined}
-            >
-              {tn('unread_new', total())}
-            </span>
-          </Show>
+          <div class="list-tools">
+            <Show when={!store.results() && total()}>
+              <span
+                class="pill strong"
+                title={store.unreadPartial() ? t('folder_count_partial', tn('unread_new', total())) : undefined}
+              >
+                {tn('unread_new', total())}
+              </span>
+            </Show>
+            <Show when={!store.selecting() && store.selectable().length}>
+              <button
+                class="round ghost"
+                type="button"
+                title={t('select_messages')}
+                aria-label={t('select_messages')}
+                disabled={!store.canAct('trash')}
+                onClick={store.toggleSelecting}
+              >
+                {icon('check')}
+              </button>
+            </Show>
+          </div>
         </div>
         <SearchField />
-        <Show when={!store.results() && !store.folder()}>
+        <Show when={store.selecting()}>
+          <div class="bulk-actions" role="group" aria-label={t('select_messages')}>
+            <label title={t('select_loaded')}>
+              <input
+                type="checkbox"
+                aria-label={t('select_loaded')}
+                checked={store.selectable().length > 0 && store.checkedEntries().length === store.selectable().length}
+                ref={element =>
+                  createEffect(() => {
+                    element.indeterminate =
+                      store.checkedEntries().length > 0 && store.checkedEntries().length < store.selectable().length;
+                  })
+                }
+                onChange={store.checkAll}
+              />
+              <span>{t('bulk_selected', store.checkedEntries().length)}</span>
+            </label>
+            <button
+              type="button"
+              class="round ghost danger"
+              title={t('action_delete')}
+              aria-label={t('action_delete')}
+              disabled={!store.checkedEntries().length}
+              onClick={store.trashChecked}
+            >
+              {icon('trash')}
+            </button>
+            <button
+              type="button"
+              class="round ghost"
+              title={t('action_cancel')}
+              aria-label={t('action_cancel')}
+              onClick={store.toggleSelecting}
+            >
+              {icon('close')}
+            </button>
+          </div>
+        </Show>
+        <Show when={!store.selecting() && !store.results() && !store.folder()}>
           <div class="segmented" role="tablist" aria-label={t('label_categories')}>
             <For each={FILTERS}>
               {filter => (
@@ -305,6 +387,12 @@ export function MessageList() {
       </header>
 
       <div class="list-body">
+        <Show when={store.bulkError()}>
+          <div class="notice" role="alert">
+            {icon('alert')}
+            <span>{store.bulkError()}</span>
+          </div>
+        </Show>
         <Show when={store.searchError()}>
           <div class="notice" role="alert">
             {icon('alert')}

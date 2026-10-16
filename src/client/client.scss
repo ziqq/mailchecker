@@ -386,6 +386,46 @@ html[data-narrow='true'] body {
     min-width: 0;
   }
 }
+.list-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  .round.ghost {
+    width: 24px;
+    height: 24px;
+  }
+}
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 30px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+}
+.bulk-actions,
+.row-check {
+  input[type='checkbox'] {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+}
 .folder-title {
   display: flex;
   align-items: center;
@@ -579,6 +619,13 @@ kbd {
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
+}
+.row-check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
 }
 .row-body {
   flex: 1;

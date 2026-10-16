@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · okunmamış: $1 · hatalı posta kutusu: $2"
   },
+  "bulk_progress": {
+    "message": "Çöp kutusuna taşınıyor: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Seçilen: $1"
+  },
   "busy_archiving": {
     "message": "Arşivleniyor…"
   },
@@ -673,6 +679,15 @@
   },
   "section_pinned": {
     "message": "Sabitlenenler"
+  },
+  "select_loaded": {
+    "message": "Yüklenen tüm iletileri seç"
+  },
+  "select_message": {
+    "message": "$1: $2 seç"
+  },
+  "select_messages": {
+    "message": "İletileri seç"
   },
   "service_mailru": {
     "message": "Mail.ru"

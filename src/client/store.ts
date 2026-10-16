@@ -146,6 +146,10 @@ export const store = createRoot(() => {
   const [replying, setReplying] = createSignal(false);
   /** The archive or trash in progress, shown over the window; empty when idle. */
   const [busy, setBusy] = createSignal('');
+  /** Explicit multi-selection is scoped to the currently loaded list. */
+  const [selecting, setSelecting] = createSignal(false);
+  const [checked, setChecked] = createSignal<ReadonlySet<string>>(new Set());
+  const [bulkError, setBulkError] = createSignal('');
   /** Cancels a pending browser-session check when another sign-in starts. */
   let cancelSignInRetry: (() => void) | undefined;
 
@@ -209,6 +213,53 @@ export const store = createRoot(() => {
 
   /** Keyboard navigation order. */
   const navigation = createMemo(() => order(list(), expanded()));
+
+  /** Includes loaded members of collapsed stacks, without fetching additional pages. */
+  const selectable = createMemo(() =>
+    list().flatMap(section => section.items.flatMap(item => (item.kind === 'message' ? [item.entry] : item.entries))),
+  );
+  const checkedEntries = createMemo(() => selectable().filter(entry => isChecked(entry)));
+
+  /** Whether this loaded message is included in the explicit multi-selection. */
+  function isChecked(entry: Entry): boolean {
+    return checked().has(`${entry.account}/${entry.message.id}`);
+  }
+
+  /** Leaves multi-selection when its account, folder, category or search changes. */
+  function resetSelection(): void {
+    setSelecting(false);
+    setChecked(new Set<string>());
+    setBulkError('');
+  }
+
+  /** Enters selection mode or cancels it, preserving the open reader. */
+  function toggleSelecting(): void {
+    if (busy()) return;
+    if (selecting()) resetSelection();
+    else setSelecting(true);
+  }
+
+  /** Toggles one loaded message without opening or marking it read. */
+  function toggleChecked(entry: Entry): void {
+    if (busy()) return;
+    const key = `${entry.account}/${entry.message.id}`;
+    setChecked(previous => {
+      const next = new Set(previous);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  /** Selects or clears only the messages already loaded in the current view. */
+  function checkAll(): void {
+    if (busy()) return;
+    setChecked(
+      checkedEntries().length === selectable().length
+        ? new Set<string>()
+        : new Set(selectable().map(entry => `${entry.account}/${entry.message.id}`)),
+    );
+  }
 
   /** The selected entry, independent of visible filters and unread-only Inbox feeds. */
   const current = createMemo(() => {
@@ -279,6 +330,7 @@ export const store = createRoot(() => {
 
   /** Switches the mailbox and returns to its Inbox without fetching other folders. */
   function setAccount(id: string): void {
+    resetSelection();
     folderGeneration++;
     searchGeneration++;
     searchChanges = null;
@@ -413,6 +465,7 @@ export const store = createRoot(() => {
 
   /** Opens a folder from the selector; null keeps the account's existing Inbox view. */
   async function chooseFolder(value: FolderChoice | null): Promise<void> {
+    resetSelection();
     folderGeneration++;
     searchGeneration++;
     searchChanges = null;
@@ -765,9 +818,11 @@ export const store = createRoot(() => {
    *
    * @param entry The message.
    * @param action The action.
+   * @param bulk Leaves progress and error reporting to the multi-selection operation.
+   * @returns An empty string on success, or the localized error.
    */
-  async function act(entry: Entry, action: MessageAction): Promise<void> {
-    if (!canAct(action)) return;
+  async function act(entry: Entry, action: MessageAction, bulk = false): Promise<string> {
+    if (!canAct(action)) return t('error_unknown_action');
     const moving = action === 'archive' || action === 'trash';
     const provider = state()?.accounts.find(item => item.id === entry.account)?.provider;
     const retainsFolder = folder() && (provider === 'gmail' || provider === 'jmap');
@@ -782,7 +837,7 @@ export const store = createRoot(() => {
       const index = items.findIndex(matches);
       next = items[index + 1] || items[index - 1] || null;
     }
-    if (moving) setBusy(t(action === 'trash' ? 'busy_deleting' : 'busy_archiving'));
+    if (moving && !bulk) setBusy(t(action === 'trash' ? 'busy_deleting' : 'busy_archiving'));
     try {
       let value = await request<PublicState>({
         type: 'ACT',
@@ -834,14 +889,48 @@ export const store = createRoot(() => {
         if (hits)
           setResults(leaving ? hits.filter(hit => !matches(hit)) : hits.map(hit => (matches(hit) ? update(hit) : hit)));
         if (isSelected()) {
-          if (leaving) select(next);
+          if (leaving) select(bulk ? null : next);
           else setRetained(item => update(item && matches(item) ? item : entry));
         }
       });
+      return '';
     } catch (error) {
-      fail(error);
+      if (!bulk) fail(error);
+      return errorMessage(error);
     } finally {
-      if (moving) setBusy('');
+      if (moving && !bulk) setBusy('');
+    }
+  }
+
+  /** Uses the existing provider-specific trash action; only confirmed moves leave the selection. */
+  async function trashChecked(): Promise<void> {
+    if (busy() || !canAct('trash')) return;
+    const pending = checkedEntries();
+    if (!pending.length) return;
+    const errors = new Map<string, string>();
+    setBulkError('');
+    try {
+      for (const [index, entry] of pending.entries()) {
+        if (errors.has(entry.account)) continue;
+        setBusy(t('bulk_progress', index + 1, pending.length));
+        const error = await act(entry, 'trash', true);
+        if (error) errors.set(entry.account, error);
+        else
+          setChecked(previous => {
+            const next = new Set(previous);
+            next.delete(`${entry.account}/${entry.message.id}`);
+            return next;
+          });
+      }
+      if (!errors.size) resetSelection();
+      else
+        setBulkError(
+          [...errors]
+            .map(([id, error]) => `${state()?.accounts.find(account => account.id === id)?.email || id}: ${error}`)
+            .join(' · '),
+        );
+    } finally {
+      setBusy('');
     }
   }
 
@@ -879,6 +968,7 @@ export const store = createRoot(() => {
 
   /** Runs a server search across all accounts; an empty query returns to the Inbox. */
   async function search(text: string): Promise<void> {
+    if (text !== query()) resetSelection();
     const generation = ++searchGeneration;
     setQuery(text);
     setSearchError('');
@@ -970,7 +1060,10 @@ export const store = createRoot(() => {
     chooseFolder,
     loadFolder,
     filter,
-    setFilter,
+    setFilter: (value: Filter) => {
+      resetSelection();
+      setFilter(value);
+    },
     selected,
     current,
     threadVersion,
@@ -983,6 +1076,15 @@ export const store = createRoot(() => {
     searchPages,
     refreshing,
     busy,
+    selecting,
+    selectable,
+    checkedEntries,
+    bulkError,
+    isChecked,
+    toggleSelecting,
+    toggleChecked,
+    checkAll,
+    trashChecked,
     toast,
     replying,
     setReplying,

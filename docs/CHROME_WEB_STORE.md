@@ -1,30 +1,43 @@
-# Подготовка первого релиза в Chrome Web Store
+# Chrome Web Store release preparation
 
-Сборка: **0.0.40**. Это подготовка материалов; загрузка в магазин, отправка на проверку и публикация ещё не выполнены. Проверка требований: 15 октября 2026 года.
+Build **0.0.41** is uploaded to the [Chrome Web Store draft](https://chrome.google.com/webstore/devconsole/f3cf73d3-37ce-4ab4-88a4-5cb1fce26075/bkddpiocidbcpklaoooaabfpgknijamg/edit/package?hl=en). The Package tab confirmed version 0.0.41, 13 languages, draft status and no published version. Review submission and publication have not been performed. Last checked: 16 October 2026.
 
-## Готовые материалы
+Local patch **0.0.42** contains the English sandbox data and moves fixture initialization inside `createFixtures`, so the long mock email is fully excluded from release bundles. It passed `npm run verify` (212 tests) and ZIP verification; SHA-256 is `2af12dc873bf5577f492827b969ecfac65f012cf2f93c0fc53a88c99ab1afd56`. It has not been uploaded. The exact uploaded 0.0.41 archive was restored and matches the recorded checksum. After the maintainer accepted the English fixtures, the obsolete fixture expectations were updated and the complete browser suite passed all 94 tests. A new English-preview regression covers interface locale, subject, body, attachment name and custom folders. The strengthened release check rejects the previous module-level fixture initialization in both Chromium and Safari client/options bundles.
 
-- Пакет: `dist/mailchecker-0.0.40.zip`, контрольная сумма: `dist/mailchecker-0.0.40.sha256`. Manifest находится в корне ZIP; исходники, sandbox, ключи и dev-зависимости в пакет не входят.
-- Иконка: `src/icons/icon128.png`.
-- Изображения карточки: `docs/store/`, реальные экраны sandbox на вымышленных данных. Скриншоты 1280×800, промо 440×280. Они показывают интерфейс, а не подтверждают работу живых почтовых интеграций.
-- Описание EN/RU, разрешения, данные и инструкция проверяющему — ниже.
-- Политика: [PRIVACY.md](../PRIVACY.md), включая IndexedDB, серверный поиск и Limited Use. Политику ещё нужно разместить по публичному URL.
+## Prepared materials
 
-Размеры и состав материалов сверены с [подготовкой расширения](https://developer.chrome.com/docs/webstore/prepare) и [требованиями к изображениям](https://developer.chrome.com/docs/webstore/images). Описание manifest должно укладываться в 132 символа; скриншоты — 1280×800 или 640×400, малое промо — 440×280.
+- Package: `dist/mailchecker-0.0.41.zip`, SHA-256 `99c41f6a5589eddfb9807bd40a149559cbabd5ac90945bc69bd727b6e9efe9e2`. Its 31 entries contain the runtime and public policy, without source, sandbox or development dependencies. The packager omits the development-only manifest `key`; unpacked builds retain it.
+- Icon: `src/icons/icon128.png`.
+- Store images: [store/](store/README.md), captured again with English interface text and English fictional mail. Three screenshots are 1280×800; the promo is 440×280. They demonstrate the interface, not successful live mail integrations.
+- Public policy: [PRIVACY.md](https://github.com/ziqq/mailchecker/blob/main/PRIVACY.md). Anonymous HTTP 200 and an exact byte match with the ZIP policy were verified. Only this document was pushed, in [commit b7e8549](https://github.com/ziqq/mailchecker/commit/b7e8549b5d8f250ba2edf5ffc173eccb613bea20); the other local commits remain unpushed. GitHub still has the 0.0.13 runtime.
 
-## Что осталось до отправки
+Chrome requires a manifest description of at most 132 characters, screenshots of 1280×800 or 640×400 and a small promo of 440×280. See the official [preparation guide](https://developer.chrome.com/docs/webstore/prepare) and [image requirements](https://developer.chrome.com/docs/webstore/images).
 
-1. Опубликовать политику конфиденциальности и указать её доступный без входа URL. Репозиторий `ziqq/mailchecker` сейчас приватный, поэтому ссылка на его `PRIVACY.md` не подходит посетителям магазина. Подготовка релиза не меняет видимость репозитория.
-2. Создать либо найти черновик mailchecker в кабинете Chrome Web Store, сверить фактический ID с unpacked ID `fbojnpjcjilajbfjfhipjkldidjmmolo` и использовать ID магазина в OAuth redirect URI. Наличие `key` в manifest не заменяет проверку назначенного магазином ID.
-3. Определить готовность OAuth: в текущем `oauth/config.ts` Google и Microsoft Client ID пустые. Кнопки этих подключений отключены. Для публичного релиза с Gmail API и Microsoft Graph нужны зарегистрированные public client ID, настроенные redirect URI, применимая проверка Google и живые проверки входа/обновления токена. Секрет приложения в расширение не добавляется. Подробности — [OAUTH.md](OAUTH.md).
-4. Проверить установленную сборку на реальных подключённых ящиках: поиск вне кеша, пустую выдачу, продолжение, повтор после ошибки, истёкший вход и правильный адрес. Новые адаптеры Яндекса и Mail.ru пока проверены синтетически и по веб-клиентам; работа их HTTP-поиска из установленного расширения ещё не подтверждена. Private webmail endpoints могут измениться.
-5. Перенести материалы в карточку, заполнить Privacy practices, контакт поддержки и инструкции доступа. Убедиться в доступности аккаунта разработчика и двухэтапной проверки. [Поля конфиденциальности](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy) должны соответствовать коду и опубликованной политике.
-6. Для автоматической отправки настроить `CWS_EXTENSION_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN` в GitHub Actions. На момент проверки имена секретов в этом репозитории отсутствуют. Publisher ID в workflow требуется сверить с кабинетом владельца. Значения секретов не помещать в документы или исходники.
-7. После приёмки выполнить релиз с неизменяемым тегом. Существующий workflow публикует GitHub Release и, при наличии CWS-секретов, отправляет пакет в магазин. Не запускать его только ради пробной сборки. Сначала готовится карточка; отправка на проверку — отдельный шаг после проверки материалов.
+## Verified draft and OAuth state
 
-Google относит `gmail.modify` к restricted scopes и требует OAuth verification. Условие дополнительной security assessment зависит, в частности, от хранения/передачи restricted-данных через серверы; у mailchecker нет собственного сервера. Решение по применимым требованиям принимается в процессе проверки Google. Это отдельный процесс от Chrome Web Store review. [Официальные требования Gmail](https://developers.google.com/workspace/gmail/api/auth/scopes).
+The draft item ID is `bkddpiocidbcpklaoooaabfpgknijamg`; publisher ID is `f3cf73d3-37ce-4ab4-88a4-5cb1fce26075`. The public store key is recorded and cryptographically checked in [OAUTH.md](OAUTH.md#verified-store-identity). The current unpacked ID is still `fbojnpjcjilajbfjfhipjkldidjmmolo`. Its development key has not been replaced. Changing it requires a new patch build and a check of existing account/cache behavior.
 
-## Карточка EN — черновик для текущей конфигурации
+The first store upload rejected the manifest `key`. After correcting the packager, the upload succeeded; CRC, exact runtime bytes and deterministic repackaging were checked. The latest full `npm run verify` passed all 212 tests, formatting, ESLint, TypeScript, repository checks, build and packaging. This does not establish live OAuth behavior.
+
+The English detailed description below, homepage and support URL were saved in the draft. The Communication category was selected; the same English description was entered for the Russian listing locale and Save draft was clicked. The icon and the previous first global screenshot were uploaded. **The newly captured English screenshots have not yet replaced that old upload.** Remaining screenshots, promo and Privacy practices still require completion. Chrome restricts scripted access to its extension gallery, so these fields need native browser interaction.
+
+Google Cloud setup now uses the separate **mailchecker** project `mailchecker-511814` (number `1014715555178`), created by the maintainer. This supersedes the earlier choice of the shared `github` project. Codetree settings were not changed. The maintainer completed the initial User Data Policy acceptance; Google confirmed creation of the consent configuration. A Chrome Extension client named `mailchecker Chrome Web Store` was created for the store item ID, with app ownership verified. Its public client ID is recorded in [OAUTH.md](OAUTH.md#selected-google-cloud-project).
+
+Branding links point to the GitHub repository and public policy. The declared scope is only `https://www.googleapis.com/auth/gmail.modify`. Gmail API shows **API Enabled**. Audience is **External / Testing**, with two verified test users: `a.a.ustinoff@gmail.com` and `anthonyustinoff@gmail.com`. No mailbox consent or live token test has been performed. The existing implicit-flow runtime has not been replaced or wired to this Chrome Extension client. Microsoft registration is still pending: Entra Settings → All directories shows No directories found for the current account. An available tenant with app-registration permission is required.
+
+## Remaining release work
+
+1. Implement and accept the correct Google token flow, preserving multiple Gmail accounts and address checks. A Chrome Extension client must not be inserted into the legacy implicit implementation. Verify acquisition, cancellation, expiration, 401 recovery and worker restart. Test actual supported Chromium browsers; Chrome Identity availability must not be assumed everywhere.
+2. Register Microsoft Entra public-client access with the final extension ID, SPA redirect and delegated Graph permissions, as documented in [OAUTH.md](OAUTH.md). Never create or embed a client secret in the extension.
+3. Resolve applicable Google verification requirements before public OAuth access. `gmail.modify` is a restricted scope. GitHub links accepted in the Testing configuration do not prove ownership of `github.com` or successful brand verification. Google OAuth verification is separate from Chrome Web Store review. See [Gmail scopes](https://developers.google.com/workspace/gmail/api/auth/scopes) and [brand verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/brand-verification).
+4. Replace the old screenshot with the English capture, upload the other prepared images and complete Privacy practices and reviewer instructions. Recheck every saved field after refresh. All manually entered descriptions, disclosures and reviewer text must be English in every listing locale. Summaries imported from the current ZIP remain localized by its manifest messages.
+5. Verify the installed build against dedicated live test mailboxes: history search outside the cache, empty results, pagination, retry after failure, expired sign-in and the correct account. Yandex and Mail.ru search adapters have synthetic and web-client evidence; their HTTP searches from the installed extension still need live verification. Private webmail endpoints can change.
+6. For CI upload, configure `CWS_EXTENSION_ID`, `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET` and `CWS_REFRESH_TOKEN` in GitHub Actions for this publisher. Secret values must not appear in documentation, source or chat. Existing GitHub secrets cannot be read back.
+7. Bump the patch version for the next handed-over extension build, update the listing to match the final ZIP and run the required checks. A release workflow can create a GitHub Release and submit to the store when secrets exist; do not invoke it as a trial build. Review submission and publication require a separate final step.
+
+Do not promise integrated search for browser-sign-in Gmail, IMAP/iCloud support, every action for every provider or a completed Safari release. Update the description only after the final configuration is verified.
+
+## Listing draft for the uploaded configuration
 
 **Name:** mailchecker
 
@@ -35,6 +48,7 @@ Google относит `gmail.modify` к restricted scopes и требует OAut
 mailchecker brings your mailboxes into the browser toolbar. Open a message in the popup, or switch to a full tab when you need more room.
 
 - One inbox for connected accounts, with mailbox colours, unread counts and notifications.
+- Move individual messages or a selected group of loaded messages to Trash; failed actions remain selected for retry.
 - Conversations, folders, pinned mail and filters for notifications and newsletters.
 - HTML mail in an isolated reader. Remote images stay blocked until you choose to show them.
 - A local cache opens mail you have already loaded. It does not download your entire history.
@@ -45,36 +59,19 @@ This build connects Gmail, Yandex Mail and Mail.ru through an existing browser s
 
 mailchecker has no backend, advertising or analytics. Mail requests go directly to the connected provider. Loaded mail is stored locally in the browser profile; the cache can be cleared in Settings. The extension does not encrypt the browser profile.
 
-## Карточка RU — черновик для текущей конфигурации
+**Homepage:** https://github.com/ziqq/mailchecker
 
-**Название:** mailchecker
+**Support:** https://github.com/ziqq/mailchecker/issues
 
-**Короткое описание:** Почта в панели браузера: общие входящие, безопасное чтение, папки и уведомления. Без своего сервера.
+**Privacy policy:** https://github.com/ziqq/mailchecker/blob/main/PRIVACY.md
 
-**Подробное описание:**
+## Privacy practices
 
-mailchecker собирает подключённые ящики в панели браузера. Письмо можно прочитать во всплывающем окне или открыть клиент в отдельной вкладке.
-
-- Общие входящие, цвета ящиков, счётчики и уведомления.
-- Переписки, папки, закреплённые письма и фильтры уведомлений и рассылок.
-- Изолированный просмотр HTML. Внешние картинки загружаются только по вашему действию.
-- Локальный кеш уже загруженных писем. Вся история заранее не скачивается.
-- Серверный поиск с загрузкой следующих страниц и повтором ошибок отдельных ящиков.
-- Светлая и тёмная темы, компактное окно и 13 языков интерфейса.
-
-В этой сборке Gmail, Яндекс Почта и Mail.ru подключаются через существующий вход в браузере, JMAP — по API-токену. Для поиска Gmail требуется отдельное подключение Gmail API: браузерное подключение не поддерживает встроенный поиск истории. Вход через Google API и Microsoft API требует настроенных OAuth Client ID и в этой сборке отключён. Набор действий зависит от провайдера; неподдерживаемый ответ открывается в веб-почте.
-
-У mailchecker нет своего сервера, рекламы и аналитики. Запросы идут напрямую в подключённую почту. Загруженные письма хранятся в профиле браузера, кеш очищается в настройках. Расширение не шифрует профиль браузера.
-
-Перед отправкой карточку нужно сверить с финальным ZIP: если OAuth будет настроен, обновить описание после живой проверки. Не обещать поиск браузерного Gmail, поддержку IMAP/iCloud, все действия для любого провайдера или готовый Safari-релиз.
-
-## Privacy practices — подготовленные ответы
-
-**Single purpose (EN):** Read and manage the user's connected email accounts from the browser toolbar and full-tab mail client.
+**Single purpose:** Read and manage the user's connected email accounts from the browser toolbar and full-tab mail client.
 
 **Remote code:** No. Scripts, SolidJS, fonts and styles are bundled. Provider JSON/HTML is data; email HTML is sanitized and displayed in a script-free sandbox.
 
-| Разрешение                           | Обоснование для формы EN                                                                                                                                                                                                                         |
+| Permission                           | Justification for the form                                                                                                                                                                                                                       |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `storage`                            | Store local preferences, connected accounts and the latest mailbox state. Credentials stay in the extension worker.                                                                                                                              |
 | `alarms`                             | Schedule periodic checks for new mail at the interval chosen in Settings.                                                                                                                                                                        |
@@ -84,11 +81,11 @@ mailchecker собирает подключённые ящики в панели
 | Gmail/Graph/Microsoft/Fastmail hosts | Send authenticated requests directly to the connected mail provider and refresh Microsoft tokens.                                                                                                                                                |
 | `https://*/*` (optional)             | Let the user connect a JMAP server on their own HTTPS domain. The extension requests the specific origin in Settings; it does not request every origin at installation. The same optional declaration covers explicitly connected webmail hosts. |
 
-Декларация данных должна учитывать локальную обработку и кеш, а не только отправку на сервер разработчика. Подготовленные категории: **Personally identifiable information** (адреса, имена корреспондентов), **Authentication information** (OAuth/API-токены и разрешённый Gmail action cookie), **Personal communications** (метаданные, текст писем, названия вложений). Почтовые ссылки используются для открытия писем; расширение не собирает историю посещений, геолокацию, здоровье, финансовые данные для отдельной обработки или действия пользователя вне почтового клиента. Если форма определяет категорию шире, сверить её формулировку с текущим кодом и политикой перед подтверждением.
+Data disclosure must account for local processing and caching, not only transmission to a developer server. Prepared categories are **Personally identifiable information** (addresses and correspondent names), **Authentication information** (OAuth/API tokens and the permitted Gmail action cookie), and **Personal communications** (message metadata, bodies and attachment names). Mail links open messages; the extension does not collect browsing history, location, health information, financial information for separate processing or activity outside the mail client. Compare the exact form definitions with the final code and public policy before certification.
 
-Подтверждения об отсутствии продажи данных, рекламы и использования вне единой цели соответствуют текущей реализации. Не отмечать декларации автоматически без проверки финального пакета и формы.
+The current implementation does not sell data, use advertising or process information outside its single purpose. Verify the final package and form before accepting any binding declarations. See the official [Privacy practices guide](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy).
 
-## Инструкция проверяющему — EN
+## Reviewer instructions
 
 1. Install the submitted ZIP as an unpacked extension in a separate test profile, or install the review build. Click the toolbar icon and open Settings.
 2. To test JMAP, enter a test mailbox's HTTPS session URL and API token and grant only that origin. Use a dedicated test mailbox, not personal credentials in the review notes.
@@ -97,4 +94,4 @@ mailchecker собирает подключённые ящики в панели
 5. Clear the mail cache in Settings and remove the test mailbox. Account removal clears its local credentials and cached mail, but does not revoke a provider grant.
 6. Google and Microsoft API connection buttons are disabled in this package because their public client IDs are not configured. The sandbox is a developer preview and is not part of the submitted package.
 
-Если проверяющему нужны доступы, предоставить отдельные тестовые аккаунты через закрытые поля кабинета. Секреты и реальные письма не добавлять в Git.
+If reviewer credentials are required, provide dedicated test accounts through the dashboard's private reviewer fields. Never add secrets or real mail to Git.

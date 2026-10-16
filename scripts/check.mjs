@@ -110,6 +110,13 @@ for (const target of ['chromium', 'safari']) {
     ];
     const client = await readFile(join(outdir, 'client.js'), 'utf8');
     expect(!client.includes('createFixtures'), `${target}: sandbox fixtures must not ship.`);
+    for (const name of ['client.js', 'options.js']) {
+      const bundle = name === 'client.js' ? client : await readFile(join(outdir, name), 'utf8');
+      expect(
+        !/sandbox\/fixtures|This is a paragraph in a long plain-text email\./.test(bundle),
+        `${target}/${name}: long sandbox email initialization must not ship.`,
+      );
+    }
     expect(
       !client.includes(JSON.stringify(messages.ru.reader_empty.message).slice(1, -1)),
       `${target}: the sandbox messages must not ship.`,

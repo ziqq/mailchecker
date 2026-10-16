@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · непрочитаних: $1 · скриньок із помилкою: $2"
   },
+  "bulk_progress": {
+    "message": "Переміщення до кошика: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Вибрано: $1"
+  },
   "busy_archiving": {
     "message": "Архівуємо…"
   },
@@ -691,6 +697,15 @@
   },
   "section_pinned": {
     "message": "Закріплені"
+  },
+  "select_loaded": {
+    "message": "Вибрати всі завантажені листи"
+  },
+  "select_message": {
+    "message": "Вибрати $1: $2"
+  },
+  "select_messages": {
+    "message": "Вибрати листи"
   },
   "service_mailru": {
     "message": "Mail.ru"

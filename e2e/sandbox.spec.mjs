@@ -47,7 +47,7 @@ for (const layout of LAYOUTS) {
 
       await page.locator('.row[data-id="g1"]').click();
       const reader = page.getByRole('region', {name: 'Письмо'});
-      await expect(reader.getByText('Re: Поездка в Казань — билеты и гостиница').first()).toBeVisible();
+      await expect(reader.getByText('Re: Trip to Kazan — tickets and hotel').first()).toBeVisible();
       await expect(reader.locator('iframe.mail-frame').last()).toBeVisible();
       await expectNoHorizontalScroll(page);
 
@@ -77,6 +77,26 @@ test.describe('wide tab', () => {
       await expect(boxes.getByText(email)).toBeVisible();
   });
 
+  test('English previews keep mock mail, attachments and custom folders in English', async ({page}) => {
+    const errors = watchErrors(page);
+    await page.goto('app.html?lang=en');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await page.locator('.row[data-id="g1"]').click();
+    const reader = page.getByRole('region', {name: 'Message', exact: true});
+    await expect(reader.getByText('Re: Trip to Kazan — tickets and hotel').first()).toBeVisible();
+    await expect(reader.locator('.attachment-name').first()).toHaveText(
+      'Contract_2026_final_version_with_legal_review.pdf',
+    );
+    await expect(page.frameLocator('iframe.mail-frame').last().locator('body')).toContainText(
+      'Great, I will book the hotel',
+    );
+    await page.getByRole('button', {name: 'Folders: Inbox', exact: true}).click();
+    await expect(page.getByRole('menuitemradio', {name: /Projects/}).first()).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/[А-Яа-яЁё]/);
+    await expectNoHorizontalScroll(page);
+    expect(errors).toEqual([]);
+  });
+
   test('archives with the keyboard', async ({page}) => {
     await page.goto('app.html');
     await page.locator('.row[data-id="g1"]').click();
@@ -89,7 +109,7 @@ test.describe('wide tab', () => {
   test('searches archived mail across accounts', async ({page}) => {
     await page.goto('app.html');
     await page.keyboard.press('/');
-    await page.keyboard.type('Казань');
+    await page.keyboard.type('Kazan');
     await page.keyboard.press('Enter');
     await expect(page.getByText('Результаты поиска')).toBeVisible();
     await expect(page.locator('.row')).toHaveCount(2);
@@ -103,7 +123,7 @@ test.describe('wide tab', () => {
 
   test('signs in again after an expired session', async ({page}) => {
     await page.goto('app.html');
-    const notice = page.getByRole('alert').filter({hasText: 'Сеанс истёк'});
+    const notice = page.getByRole('alert').filter({hasText: 'Your session has expired'});
     await expect(notice).toBeVisible();
     await notice.getByRole('button', {name: 'Войти'}).click();
     await expect(notice).toHaveCount(0);
@@ -419,7 +439,7 @@ test.describe('settings regressions', () => {
     const account = page.locator('#accounts .account').filter({hasText: 'anton@yandex.ru'});
     await account.getByRole('button', {name: 'Войти заново'}).click();
     await expect(page.locator('html')).toHaveAttribute('data-opened-webmail', 'https://mail.yandex.ru/');
-    await expect(page.locator('#status')).toHaveText('Войдите в «Яндекс Почта» в этом браузере и повторите.');
+    await expect(page.locator('#status')).toHaveText('Войдите в «Yandex Mail» в этом браузере и повторите.');
     await expect(account.getByRole('button', {name: 'Войти заново'})).toBeVisible();
   });
 });
@@ -480,7 +500,7 @@ test.describe('browser sign-in recovery', () => {
       await area.getByRole('button', {name: settings ? 'Войти заново' : 'Войти', exact: true}).click();
       await expect(page.locator('html')).toHaveAttribute('data-opened-webmail', 'https://mail.yandex.ru/');
       if (settings)
-        await expect(page.locator('#status')).toHaveText('Войдите в «Яндекс Почта» в этом браузере и повторите.');
+        await expect(page.locator('#status')).toHaveText('Войдите в «Yandex Mail» в этом браузере и повторите.');
       await page.evaluate(() => {
         window.dispatchEvent(new Event('focus'));
         document.dispatchEvent(new Event('visibilitychange'));
@@ -561,7 +581,7 @@ test.describe('wide folder audit regressions', () => {
     await page.goto('app.html');
     await page.getByRole('link', {name: /^anton@gmail.com /}).click();
     await page.getByRole('button', {name: 'Папки: Входящие', exact: true}).click();
-    await page.getByRole('menuitemradio', {name: 'Проекты 55 писем', exact: true}).click();
+    await page.getByRole('menuitemradio', {name: 'Projects 55 писем', exact: true}).click();
     const row = page.locator('.row[data-id="gmail-project-0"]');
     await row.click();
     await page.getByRole('region', {name: 'Письмо'}).getByRole('button', {name: 'В архив', exact: true}).click();
@@ -578,18 +598,18 @@ test.describe('wide folder audit regressions', () => {
     await page.goto('app.html');
     await page.getByRole('link', {name: /^anton@gmail.com /}).click();
     await page.getByRole('button', {name: 'Папки: Входящие', exact: true}).click();
-    await page.getByRole('menuitemradio', {name: 'Проекты 55 писем', exact: true}).click();
+    await page.getByRole('menuitemradio', {name: 'Projects 55 писем', exact: true}).click();
     await expect(page.getByRole('button', {name: 'Загрузить ещё', exact: true})).toBeVisible();
     const search = page.getByRole('searchbox');
-    await search.fill('Казань');
+    await search.fill('Kazan');
     await search.press('Enter');
     await expect(page.getByText('Результаты поиска', {exact: true})).toBeVisible();
     await expect(page.getByRole('button', {name: 'Загрузить ещё', exact: true})).toHaveCount(0);
     await search.fill('');
     await search.press('Enter');
-    await page.getByRole('button', {name: 'Папки: Проекты', exact: true}).click();
+    await page.getByRole('button', {name: 'Папки: Projects', exact: true}).click();
     await page.getByRole('menuitemradio', {name: 'Корзина 1 письмо', exact: true}).click();
-    await search.fill('Казань');
+    await search.fill('Kazan');
     await search.press('Enter');
     await expect(page.getByText('Результаты поиска', {exact: true})).toBeVisible();
     await page.locator('.row[data-id="g1"]').click();

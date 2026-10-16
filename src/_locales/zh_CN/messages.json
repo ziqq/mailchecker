@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · 未读：$1 · 出错的邮箱：$2"
   },
+  "bulk_progress": {
+    "message": "正在移至垃圾箱：$1/$2"
+  },
+  "bulk_selected": {
+    "message": "已选择：$1"
+  },
   "busy_archiving": {
     "message": "正在归档…"
   },
@@ -664,6 +670,15 @@
   },
   "section_pinned": {
     "message": "已置顶"
+  },
+  "select_loaded": {
+    "message": "选择所有已加载的邮件"
+  },
+  "select_message": {
+    "message": "选择 $1：$2"
+  },
+  "select_messages": {
+    "message": "选择邮件"
   },
   "service_mailru": {
     "message": "Mail.ru"

@@ -131,7 +131,7 @@ function update(account: string, messages: MailMessage[]): void {
 
 /** Returns a known account ID or throws. */
 function account(id: string): string {
-  if (!current().mailboxes[id]) throw new Error('Ящик не найден.');
+  if (!current().mailboxes[id]) throw new Error(t('error_account_missing'));
   return id;
 }
 
@@ -141,13 +141,15 @@ function act(id: string, message: string, action: string): void {
   const messages = mailboxes[account(id)].messages;
   const target =
     messages.find(item => item.id === message) ||
+    (archive[id] || []).find(item => item.id === message) ||
     Object.values(folderMessages[id])
       .flat()
       .find(item => item.id === message);
-  if (!target) throw new Error('Письмо не найдено.');
+  if (!target) throw new Error(t('error_bad_message'));
   if (action === 'archive' || action === 'trash') {
     const destination = action === 'archive' ? 'archive' : 'trash';
     if (action === 'archive') archive[id] = [{...target, unread: false}, ...(archive[id] || [])];
+    else archive[id] = (archive[id] || []).filter(item => item.id !== message);
     const labels = ['gmail', 'jmap'].includes(accounts.find(account => account.id === id)!.provider);
     for (const key of Object.keys(folderMessages[id]))
       if (
@@ -170,7 +172,7 @@ function act(id: string, message: string, action: string): void {
     pin: {pinned: true},
     unpin: {pinned: false},
   };
-  if (!flags[action]) throw new Error('Неизвестное действие.');
+  if (!flags[action]) throw new Error(t('error_unknown_action'));
   for (const key of Object.keys(folderMessages[id]))
     folderMessages[id][key] = folderMessages[id][key].map(item =>
       item.id === message ? {...item, ...flags[action]} : item,
@@ -214,7 +216,7 @@ function thread(id: string, message: string, key: string): ThreadMessage[] {
   const item = [...mailboxes[id].messages, ...(archive[id] || []), ...Object.values(folderMessages[id]).flat()].find(
     entry => entry.id === message,
   );
-  if (!item) throw new Error('Письмо не найдено.');
+  if (!item) throw new Error(t('error_bad_message'));
   if (item.unread) {
     if (mailboxes[id].messages.includes(item)) act(id, message, 'read');
     else {
@@ -239,7 +241,7 @@ function thread(id: string, message: string, key: string): ThreadMessage[] {
       html: '',
       text: item.snippet,
       unread: false,
-      attachments: item.attachments ? [{name: 'Вложение.pdf', size: 120_000, type: 'application/pdf'}] : [],
+      attachments: item.attachments ? [{name: 'Attachment.pdf', size: 120_000, type: 'application/pdf'}] : [],
     },
   ];
 }
@@ -339,6 +341,14 @@ function answer(message: Request): unknown {
       return {messages, next: offset + messages.length < items.length ? String(offset + messages.length) : ''};
     }
     case 'ACT':
+      if (
+        message.action === 'trash' &&
+        message.account === 'yandex' &&
+        new URLSearchParams(location.search).get('trash') === 'partial'
+      )
+        throw new Error(
+          t('error_account_mismatch', current().accounts.find(account => account.id === 'yandex')!.email),
+        );
       act(message.account, message.message, message.action);
       return state();
     case 'THREAD':
@@ -348,7 +358,7 @@ function answer(message: Request): unknown {
         throw new Error(t('error_unreachable', t('service_server')));
       return message.pages ? searchPage(message.query, message.pages) : search(message.query);
     case 'REPLY':
-      if (!message.text.trim()) throw new Error('Напишите ответ.');
+      if (!message.text.trim()) throw new Error(t('error_reply_text'));
       return true;
     case 'PREFERENCES': {
       const sandbox = current();
@@ -385,7 +395,7 @@ function answer(message: Request): unknown {
       window.open('app.html', '_blank', 'noopener');
       return true;
     default:
-      throw new Error('В песочнице это действие недоступно.');
+      throw new Error(t('error_request_denied'));
   }
 }
 
@@ -412,6 +422,6 @@ export async function handle(message: Request): Promise<Reply> {
       throw new Error(t('folder_unsupported'));
     return {ok: true, value: structuredClone(answer(message))};
   } catch (error) {
-    return {ok: false, error: error instanceof Error ? error.message : 'Неизвестная ошибка.'};
+    return {ok: false, error: error instanceof Error ? error.message : t('error_unknown')};
   }
 }

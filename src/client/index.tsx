@@ -28,9 +28,21 @@ declare const __SANDBOX__: boolean;
 
 /** Keyboard shortcuts; ignored while typing. */
 function onKey(event: KeyboardEvent): void {
+  if (store.busy()) {
+    event.preventDefault();
+    return;
+  }
   const target = event.target;
   if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]')) return;
   if (event.ctrlKey || event.metaKey || event.altKey) return;
+  if (store.selecting()) {
+    if (event.key === 'Escape') store.toggleSelecting();
+    else if (event.key === '#' || event.key === 'Delete') store.trashChecked();
+    else if (event.key === '/') document.getElementById('search')?.focus();
+    else return;
+    event.preventDefault();
+    return;
+  }
   const entry = store.current();
   switch (event.key) {
     case 'j':

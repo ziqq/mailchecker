@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.42
+
+- **CHANGED**: English sandbox email fixtures, attachments, custom folders and preview navigation; English Chrome Web Store screenshots and submission documentation
+- **FIXED**: sandbox long-message generation is excluded from release bundles instead of running at module import
+
+## 0.0.41
+
+- **ADDED**: move-to-Trash action in message rows and explicit multi-selection for deleting loaded messages across mailboxes, folders and search results
+- **ADDED**: bulk deletion progress and per-mailbox errors; failed messages remain selected for retry, and each provider keeps its existing verified Trash action
+- **FIXED**: Chrome Web Store ZIPs omit the development-only manifest key while preserving the stable ID in unpacked builds
+
 ## 0.0.40
 
 - **ADDED**: provider, worker, store and responsive-browser regression tests for server search pagination, partial failures, retries, cursor isolation and action/query races

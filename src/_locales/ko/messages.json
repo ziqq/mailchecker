@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · 읽지 않음: $1 · 오류가 있는 메일함: $2"
   },
+  "bulk_progress": {
+    "message": "휴지통으로 이동 중: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "선택됨: $1"
+  },
   "busy_archiving": {
     "message": "보관하는 중…"
   },
@@ -664,6 +670,15 @@
   },
   "section_pinned": {
     "message": "고정됨"
+  },
+  "select_loaded": {
+    "message": "불러온 모든 메일 선택"
+  },
+  "select_message": {
+    "message": "$1: $2 선택"
+  },
+  "select_messages": {
+    "message": "메일 선택"
   },
   "service_mailru": {
     "message": "Mail.ru"
