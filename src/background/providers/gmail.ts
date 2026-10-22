@@ -227,9 +227,9 @@ export const gmail: Provider = {
 
   address,
 
-  renew: account => oauth.google({loginHint: account.email, interactive: false}),
+  renew: account => oauth.google({credentials: account.credentials, interactive: false}),
 
-  signIn: account => oauth.google({loginHint: account.email, interactive: true}),
+  signIn: account => oauth.google({credentials: account.credentials, interactive: true}),
 
   async inbox(account, limit) {
     const [label, messages] = await Promise.all([

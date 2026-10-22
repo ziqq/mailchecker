@@ -1,6 +1,6 @@
 # Chrome Web Store images
 
-Prepared on 16 October 2026 from the **0.0.41** sandbox in Chromium. All interface text and fictional email data are in English. Screenshots use the bundled Inter fonts at scale 1.
+Prepared on 16 October 2026 from the sandbox in Chromium. All interface text and fictional email data are in English. Screenshots use the bundled Inter fonts at scale 1. These are the prepared English assets for the current **0.0.48** candidate, not new captures of that build or evidence of an upload to the store.
 
 | File                                   | Size     | Content                                                       |
 | -------------------------------------- | -------- | ------------------------------------------------------------- |
@@ -14,4 +14,6 @@ Screenshots use `app.html?theme=dark&palette=neutral&lang=en` and `app.html?them
 
 For the store captures, a separate temporary copy of those fixtures includes only browser-sign-in Gmail, JMAP, Yandex Mail and Mail.ru. It excludes the future iCloud adapter and unconfigured Microsoft OAuth, and shows Mail.ru with a healthy session. Gmail is marked as a browser connection with replies delegated to webmail. These changes are made before state creation in that isolated build; the repository keeps all six provider fixtures and its error scenarios. No DOM or image retouching is used.
 
-The promo uses the existing project artwork and contains only the English brand name. Screenshots demonstrate the interface, not successful live sign-in or server requests. Compare them against the final release configuration before submission. See [CHROME_WEB_STORE.md](../CHROME_WEB_STORE.md) for listing text, disclosures and outstanding release work.
+The promo uses the existing project artwork and contains only the English brand name. Screenshots demonstrate the interface, not successful live sign-in or server requests. Current Gmail API account selection and the refresh-button fix are not demonstrated by these captures. The maintainer separately confirmed two real Google API accounts working together and after an extension reload on 22 October.
+
+The last confirmed store package is 0.0.41. Only the icon and an older first global screenshot were confirmed uploaded; replacement with these English screenshots, the remaining gallery images and the promo must still be verified in the dashboard. Compare all images with the final release configuration before submission. See [CHROME_WEB_STORE.md](../CHROME_WEB_STORE.md) for the 0.0.48 listing text, disclosures and outstanding release work.

@@ -288,7 +288,7 @@ function renderAccounts({accounts, mailboxes}: PublicState): void {
             {
               class: 'round ghost danger',
               type: 'button',
-              title: t('action_delete'),
+              title: t('action_delete_account', account.email),
               'aria-label': t('action_delete_account', account.email),
               onclick: (event: Event) => {
                 if (confirm(t('confirm_delete_account', account.email)))

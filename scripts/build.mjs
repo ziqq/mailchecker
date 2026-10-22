@@ -89,6 +89,7 @@ export const targets = {
       const {optional_permissions: optional = [], permissions, ...rest} = manifest;
       delete rest.key;
       delete rest.minimum_chrome_version;
+      delete rest.oauth2;
       const kept = optional.filter(name => name !== 'identity');
       return {
         ...rest,

@@ -3,21 +3,30 @@
  * Copyright (C) 2026 Anton Ustinoff
  * https://github.com/ziqq/mailchecker/blob/main/LICENSE
  *
- * OAuth sign-in through `chrome.identity.launchWebAuthFlow`.
+ * Google sign-in through Chrome Identity and Microsoft web OAuth with PKCE.
  *
- * - Google: implicit flow; a new access token is obtained silently with
- *   `prompt=none` while the browser's Google session is alive.
+ * - Google: Chrome owns token expiration; stored account IDs bind silent
+ *   renewal to the chosen mailbox rather than the profile's default account.
  * - Microsoft: authorization code with SHA-256 PKCE and refresh tokens.
  *
- * Every flow sends a random `state` and accepts only the exact callback
- * URL for its provider. No client secret is shipped.
+ * Google account selection verifies a signed OpenID identity before requesting
+ * native Gmail access. Web flows check state and the exact callback URL.
+ * No client secret is shipped.
  *
  * @module background/oauth/flow
  */
 import type {Credentials} from '../../shared/types';
 import {AuthError, HTTPError, requestJSON} from '../http';
-import {hasIdentity, supportsIdentity} from '../platform';
+import {
+  forgetGoogleToken,
+  googleAuthToken,
+  hasGoogleIdentity,
+  hasIdentity,
+  supportsIdentity,
+  webAuthFlow,
+} from '../platform';
 import {oauthConfig as config} from './config';
+import {googleSubject} from './google-identity';
 import {t} from '../../shared/i18n';
 
 /** OAuth providers. */
@@ -25,6 +34,9 @@ export type OAuthProvider = 'google' | 'microsoft';
 
 /** Gmail scope: read, mark read, move to Trash and send replies. */
 export const GOOGLE_SCOPE = 'https://www.googleapis.com/auth/gmail.modify';
+
+/** Retrieves the stable Google account ID needed to renew multiple mailboxes independently. */
+export const GOOGLE_IDENTITY_SCOPE = 'https://www.googleapis.com/auth/userinfo.email';
 
 /** Microsoft Graph scopes; `offline_access` returns a refresh token, `Mail.Send` sends replies. */
 export const MICROSOFT_SCOPE = 'offline_access openid email User.Read Mail.ReadWrite Mail.Send';
@@ -34,10 +46,14 @@ const MICROSOFT = 'https://login.microsoftonline.com/common/oauth2/v2.0';
 
 /** Returns whether a provider has a client ID in this build. */
 export function available(provider: OAuthProvider): boolean {
-  return supportsIdentity() && /^[\w.-]{8,256}$/.test(config[provider]);
+  return (
+    supportsIdentity() &&
+    /^[\w.-]{8,256}$/.test(config[provider]) &&
+    (provider !== 'google' || /^[\w.-]{8,256}$/.test(config.googleSelection))
+  );
 }
 
-/** Returns the callback URL registered for a provider: `https://<extension-id>.chromiumapp.org/<provider>`. */
+/** Returns the exact registered web callback, including Google's identity-only account selector. */
 export function redirectURI(provider: OAuthProvider): string {
   if (hasIdentity()) return chrome.identity.getRedirectURL(provider);
   return supportsIdentity() ? `https://${chrome.runtime.id}.chromiumapp.org/${provider}` : '';
@@ -45,7 +61,7 @@ export function redirectURI(provider: OAuthProvider): string {
 
 /** Returns the client ID or throws a user-facing error. */
 function clientID(provider: OAuthProvider): string {
-  if (!hasIdentity()) throw new Error(t('error_oauth_safari'));
+  if (!(provider === 'google' ? hasGoogleIdentity() : hasIdentity())) throw new Error(t('error_oauth_safari'));
   if (!available(provider)) throw new Error(t('error_oauth_unconfigured'));
   return config[provider];
 }
@@ -72,14 +88,38 @@ const random = (bytes = 32): string => base64url(crypto.getRandomValues(new Uint
 async function launch(url: URL, provider: OAuthProvider, interactive: boolean): Promise<URL> {
   let result: URL;
   try {
-    const callback = await chrome.identity.launchWebAuthFlow({url: url.toString(), interactive});
-    result = new URL(callback || '');
+    result = new URL(await webAuthFlow(url.toString(), interactive));
   } catch {
     if (!interactive) throw new AuthError();
     throw new Error(t('error_oauth_cancelled'));
   }
-  if (result.origin + result.pathname !== redirectURI(provider)) throw new Error(t('error_oauth_redirect'));
+  if (result.origin + result.pathname !== redirectURI(provider) || result.username || result.password)
+    throw new Error(t('error_oauth_redirect'));
   return result;
+}
+
+/** Selects a Google identity without requesting Gmail access or relying on Chrome's default account. */
+async function selectGoogleAccount(): Promise<string> {
+  if (!hasIdentity()) throw new Error(t('error_oauth_safari'));
+  const state = random(32);
+  const nonce = random(32);
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.search = new URLSearchParams({
+    client_id: config.googleSelection,
+    redirect_uri: redirectURI('google'),
+    response_type: 'id_token',
+    scope: 'openid email',
+    prompt: 'select_account',
+    state,
+    nonce,
+  }).toString();
+  const callback = await launch(url, 'google', true);
+  const result = new URLSearchParams(callback.hash.slice(1));
+  if (callback.search || result.getAll('state').length !== 1 || result.get('state') !== state)
+    throw new Error(t('error_oauth_state', 'Google'));
+  if (result.has('error')) throw new Error(t('error_oauth_denied', 'Google'));
+  if (result.getAll('id_token').length !== 1) throw new Error(t('error_oauth_token'));
+  return googleSubject(result.get('id_token') || '', config.googleSelection, nonce);
 }
 
 /** Validates a bearer token value. */
@@ -92,36 +132,38 @@ function token(value: unknown): string {
 /**
  * Signs in to Google.
  *
- * @param options.loginHint The account address to preselect.
+ * @param options.credentials Existing mailbox credentials for account-specific renewal.
  * @param options.interactive `false` for a silent renewal.
  */
 export async function google({
-  loginHint,
+  credentials,
   interactive,
 }: {
-  loginHint?: string;
+  credentials?: Credentials;
   interactive: boolean;
 }): Promise<Credentials> {
-  const state = random(16);
-  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  url.search = new URLSearchParams({
-    client_id: clientID('google'),
-    response_type: 'token',
-    redirect_uri: redirectURI('google'),
-    scope: GOOGLE_SCOPE,
-    state,
-    include_granted_scopes: 'true',
-    prompt: interactive ? 'select_account' : 'none',
-    ...(loginHint ? {login_hint: loginHint} : {}),
-  }).toString();
-  const result = new URLSearchParams((await launch(url, 'google', interactive)).hash.slice(1));
-  if (result.get('state') !== state) throw new Error(t('error_oauth_state', 'Google'));
-  if (result.get('error')) {
+  clientID('google');
+  let accountID = credentials?.googleAccountID;
+  if (!interactive && !accountID) throw new AuthError();
+  if (interactive && !accountID) accountID = await selectGoogleAccount();
+  let result: chrome.identity.GetAuthTokenResult;
+  try {
+    if (!interactive && credentials?.token) await forgetGoogleToken(credentials.token);
+    result = await googleAuthToken(interactive, accountID);
+  } catch {
     if (!interactive) throw new AuthError();
-    throw new Error(t('error_oauth_denied', 'Google'));
+    throw new Error(t('error_oauth_cancelled'));
   }
-  const expiresIn = Number(result.get('expires_in')) || 3600;
-  return {token: token(result.get('access_token')), expiresAt: Date.now() + (expiresIn - 60) * 1000};
+  const accessToken = token(result.token);
+  if (![GOOGLE_SCOPE, GOOGLE_IDENTITY_SCOPE].every(scope => result.grantedScopes?.includes(scope)))
+    throw new Error(t('error_oauth_denied', 'Google'));
+  const profile = await requestJSON<{id?: unknown}>('https://www.googleapis.com/oauth2/v2/userinfo', {
+    token: accessToken,
+    service: 'Google',
+  });
+  if (typeof profile?.id !== 'string' || !/^[\w-]{1,255}$/.test(profile.id)) throw new Error(t('error_oauth_token'));
+  if (accountID && accountID !== profile.id) throw new AuthError();
+  return {token: accessToken, googleAccountID: profile.id};
 }
 
 /**

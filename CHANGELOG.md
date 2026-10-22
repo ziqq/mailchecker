@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.0.48
+
+- **FIXED**: the refresh button keeps its position while checking mail; its loading state no longer inherits full-window progress overlay styles
+
+## 0.0.47
+
+- **FIXED**: primary and secondary mailbox connection buttons share the same visible border so their filled and outlined edges align
+
+## 0.0.46
+
+- **FIXED**: overlapping automatic and individual mailbox checks compare notification candidates with the latest serialized baseline, preventing duplicate alerts for the same newly listed mail
+
+## 0.0.45
+
+- **FIXED**: Gmail connection methods use equal-width buttons, with matching stacked controls on narrow Settings layouts
+
+## 0.0.44
+
+- **ADDED**: Google account selection through a separate OpenID client before account-specific native Gmail authorization
+- **FIXED**: account selection verifies Google's signature, issuer, audience, state, nonce and expiration instead of clearing every mailbox's native token cache
+- **FIXED**: disconnecting a Gmail mailbox removes only its own native cached token along with its local credentials and mail cache
+
+## 0.0.43
+
+- **CHANGED**: Google API sign-in uses Chrome-managed OAuth tokens and the Chrome Web Store identity; stable Google account IDs bind token renewal to the connected mailbox
+- **FIXED**: rejected Google tokens are removed individually from Chrome's cache before one account-specific retry
+
 ## 0.0.42
 
 - **CHANGED**: English sandbox email fixtures, attachments, custom folders and preview navigation; English Chrome Web Store screenshots and submission documentation

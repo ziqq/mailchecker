@@ -109,7 +109,7 @@ export function RefreshButton(props: {class?: string}) {
   return (
     <button
       class={props.class || 'round ghost'}
-      classList={{busy: store.refreshing()}}
+      classList={{refreshing: store.refreshing()}}
       type="button"
       title={t('action_check_now')}
       aria-label={t('action_check_now')}

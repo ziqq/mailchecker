@@ -17,6 +17,7 @@ import type {Account, AccountInput, Credentials, ProviderID, PublicState, Store}
 import {clearCache, invalidateCache} from './cache';
 import {AuthError} from './http';
 import * as oauth from './oauth/flow';
+import {forgetGoogleToken} from './platform';
 import {gmail} from './providers/gmail';
 import {gmailWeb} from './providers/gmailweb';
 import {jmap} from './providers/jmap';
@@ -120,19 +121,23 @@ export async function setAccountColor(id: string, color: string): Promise<void> 
 }
 
 /**
- * Removes an account and its last check result.
+ * Disconnects one account, its credentials, cached mail and native Google token cache entry.
  *
  * Provider-side grants stay until revoked in the provider's account settings.
  */
 export async function removeAccount(id: string): Promise<void> {
   renewals.delete(id);
   invalidateCache(id);
+  let googleToken = '';
   await writeStore(({accounts = [], mailboxes = {}}) => {
+    const removed = accounts.find(account => account.id === id);
+    if (removed?.provider === 'gmail' && removed.credentials.googleAccountID) googleToken = removed.credentials.token;
     const rest = {...mailboxes};
     delete rest[id];
     return {accounts: accounts.filter(account => account.id !== id), mailboxes: rest};
   });
   await clearCache(id);
+  if (googleToken) await forgetGoogleToken(googleToken).catch(() => {});
 }
 
 /**
@@ -188,7 +193,7 @@ export async function withAccount<T>(
     try {
       return await callback(module, account);
     } catch (error) {
-      if (!(error instanceof AuthError) || !expires) throw error;
+      if (!(error instanceof AuthError) || (!expires && !account.credentials.googleAccountID)) throw error;
       account = await renew(account);
     }
   }

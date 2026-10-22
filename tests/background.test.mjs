@@ -12,6 +12,7 @@ import {createContext, runInContext} from 'node:vm';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {build} from 'esbuild';
+import {googleKey, googleToken} from './helpers/google.mjs';
 
 /** Repository root. */
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,10 +29,11 @@ const worker = (
     plugins: [
       {
         name: 'test-oauth-config',
-        /** Supplies test client IDs instead of the empty published ones. */
+        /** Supplies synthetic client IDs instead of registered production IDs. */
         setup(builder) {
           builder.onLoad({filter: /oauth[\\/]config\.ts$/}, () => ({
-            contents: "export const oauthConfig = {google: 'test-google-id', microsoft: 'test-microsoft-id'};",
+            contents:
+              "export const oauthConfig = {google: 'test-google-id', googleSelection: 'test-selection-id', microsoft: 'test-microsoft-id'};",
             loader: 'ts',
           }));
         },
@@ -41,6 +43,10 @@ const worker = (
 ).outputFiles[0].text;
 
 const EXTENSION = 'chrome-extension://test/';
+const GOOGLE_SCOPES = [
+  'https://www.googleapis.com/auth/gmail.modify',
+  'https://www.googleapis.com/auth/userinfo.email',
+];
 
 /** Creates an event with `addListener` and `fire`. */
 function event() {
@@ -57,9 +63,11 @@ const json = (value, status = 200) =>
  *
  * @param {Object} [options]
  * @param {boolean} [options.identity=true] Whether the identity permission is granted.
+ * @param {Object} [options.local] Persisted storage restored into a fresh worker.
  */
-function startWorker({identity = true} = {}) {
-  const stores = {local: {}, session: {}};
+function startWorker({identity = true, local = {}} = {}) {
+  const stores = {local: structuredClone(local), session: {}};
+  const identityCalls = {web: [], native: [], removed: [], cleared: 0};
   const calls = [];
   const notifications = [];
   const tabs = [];
@@ -119,6 +127,14 @@ function startWorker({identity = true} = {}) {
     assert.equal(init.credentials, 'omit');
     assert.equal(init.redirect, 'error');
     const auth = init.headers?.Authorization;
+    if (url.href === 'https://www.googleapis.com/oauth2/v3/certs') {
+      assert.equal(auth, undefined, 'the public key request must not send a bearer token');
+      return json({keys: [googleKey]});
+    }
+    if (url.href === 'https://www.googleapis.com/oauth2/v2/userinfo') {
+      assert.equal(auth, 'Bearer google-token');
+      return json({id: 'google-account'});
+    }
     if (url.host === 'gmail.googleapis.com') {
       assert.equal(auth, 'Bearer google-token');
       const path = url.pathname.replace('/gmail/v1/users/me', '');
@@ -254,11 +270,32 @@ function startWorker({identity = true} = {}) {
     // Chromium has no `chrome.identity` until the optional permission is granted.
     identity: identity && {
       getRedirectURL: path => `https://test.chromiumapp.org/${path}`,
-      async launchWebAuthFlow({url}) {
-        const request = new URL(url);
+      async getAuthToken(options) {
+        identityCalls.native.push(structuredClone(options));
+        assert.equal(options.enableGranularPermissions, true);
+        assert.equal(options.account?.id, 'google-account');
+        return {token: 'google-token', grantedScopes: GOOGLE_SCOPES};
+      },
+      async removeCachedAuthToken({token}) {
+        identityCalls.removed.push(token);
+      },
+      async clearAllCachedAuthTokens() {
+        identityCalls.cleared++;
+        throw Error('A mailbox operation must not clear every Google account');
+      },
+      async launchWebAuthFlow(options) {
+        identityCalls.web.push(structuredClone(options));
+        const request = new URL(options.url);
         const state = request.searchParams.get('state');
-        if (request.host === 'accounts.google.com')
-          return `https://test.chromiumapp.org/google#access_token=google-token&expires_in=3600&state=${state}`;
+        if (request.host === 'accounts.google.com') {
+          assert.equal(options.interactive, true);
+          assert.equal(request.searchParams.get('client_id'), 'test-selection-id');
+          assert.equal(request.searchParams.get('prompt'), 'select_account');
+          assert.equal(request.searchParams.get('response_type'), 'id_token');
+          assert.equal(request.searchParams.get('scope'), 'openid email');
+          const idToken = await googleToken({nonce: request.searchParams.get('nonce')});
+          return `https://test.chromiumapp.org/google#${new URLSearchParams({id_token: idToken, state})}`;
+        }
         assert.equal(request.searchParams.get('code_challenge_method'), 'S256');
         return `https://test.chromiumapp.org/microsoft?code=CODE&state=${state}`;
       },
@@ -295,7 +332,309 @@ function startWorker({identity = true} = {}) {
     assert.ok(reply.ok, reply.error);
     return reply.value;
   };
-  return {stores, calls, notifications, tabs, badge, server, send, ok, context, chrome};
+  return {stores, calls, identityCalls, notifications, tabs, badge, server, send, ok, context, chrome};
+}
+
+/** Starts isolated Gmail servers whose native tokens resolve to two distinct mailbox identities. */
+function multipleGmailWorker(local = {}) {
+  const w = startWorker({local});
+  const google = {
+    selected: 'first-google',
+    accounts: new Map([
+      ['first-google', {token: 'first-token', email: 'first@example.test', messages: ['first-message']}],
+      ['second-google', {token: 'second-token', email: 'second@example.test', messages: ['second-message']}],
+    ]),
+    tokens: new Map([
+      ['first-token', 'first-google'],
+      ['second-token', 'second-google'],
+    ]),
+    rejected: new Set(),
+    requests: [],
+  };
+  const fetch = w.context.fetch;
+  w.chrome.identity.launchWebAuthFlow = async options => {
+    w.identityCalls.web.push(structuredClone(options));
+    const request = new URL(options.url);
+    assert.equal(options.interactive, true);
+    assert.equal(request.searchParams.get('client_id'), 'test-selection-id');
+    assert.equal(request.searchParams.get('prompt'), 'select_account');
+    assert.equal(request.searchParams.get('response_type'), 'id_token');
+    assert.equal(request.searchParams.get('scope'), 'openid email');
+    const idToken = await googleToken({subject: google.selected, nonce: request.searchParams.get('nonce')});
+    return `https://test.chromiumapp.org/google#${new URLSearchParams({
+      id_token: idToken,
+      state: request.searchParams.get('state'),
+    })}`;
+  };
+  w.chrome.identity.getAuthToken = async options => {
+    w.identityCalls.native.push(structuredClone(options));
+    assert.equal(options.enableGranularPermissions, true);
+    const account = google.accounts.get(options.account?.id);
+    assert.ok(account, 'native Gmail access must target the verified Google identity');
+    return {token: account.token, grantedScopes: GOOGLE_SCOPES};
+  };
+  w.context.fetch = async (input, init) => {
+    const url = new URL(input);
+    if (url.host !== 'gmail.googleapis.com' && url.pathname !== '/oauth2/v2/userinfo') return fetch(input, init);
+    assert.equal(init.credentials, 'omit');
+    assert.equal(init.redirect, 'error');
+    const token = init.headers.Authorization?.replace(/^Bearer /, '');
+    const subject = google.tokens.get(token);
+    assert.ok(subject, 'provider requests must carry a token issued to a known Google identity');
+    if (url.pathname === '/oauth2/v2/userinfo') return json({id: subject});
+    const account = google.accounts.get(subject);
+    const path = url.pathname.replace('/gmail/v1/users/me', '');
+    google.requests.push({subject, token, path});
+    if (google.rejected.has(token)) return json({}, 401);
+    if (path === '/profile') return json({emailAddress: account.email});
+    if (path === '/labels/INBOX') return json({messagesUnread: account.messages.length});
+    if (path === '/messages') return json({messages: account.messages.map(id => ({id}))});
+    const id = path.match(/^\/messages\/([^/]+)$/)?.[1];
+    assert.ok(account.messages.includes(id), 'message metadata must be fetched from its own mailbox');
+    return json({
+      id,
+      threadId: `t-${id}`,
+      labelIds: ['INBOX', 'UNREAD'],
+      snippet: account.email,
+      internalDate: String(Date.now()),
+      payload: {
+        headers: [
+          {name: 'Subject', value: id},
+          {name: 'From', value: account.email},
+        ],
+      },
+    });
+  };
+  return {...w, google};
+}
+
+/** Connects both synthetic Google identities, retaining their public account IDs. */
+async function connectBothGmail(w) {
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  w.google.selected = 'second-google';
+  const {state} = await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  return state.accounts;
+}
+
+test('signed Google selection connects two independent mailboxes and keeps credentials out of public results', async () => {
+  const w = multipleGmailWorker();
+  const [first, second] = await connectBothGmail(w);
+  assert.equal(first.email, 'first@example.test');
+  assert.equal(second.email, 'second@example.test');
+  assert.notEqual(first.id, second.id);
+  assert.deepEqual(
+    w.identityCalls.native.map(call => call.account.id),
+    ['first-google', 'second-google'],
+  );
+  assert.ok(w.identityCalls.native.every(call => call.interactive));
+  assert.equal(w.identityCalls.cleared, 0);
+  w.google.requests.length = 0;
+  const state = await w.ok({type: 'CHECK'}, 'popup');
+  assert.equal(state.accounts.length, 2);
+  assert.deepEqual(
+    Array.from(state.mailboxes[first.id].messages, message => message.id),
+    ['first-message'],
+  );
+  assert.deepEqual(
+    Array.from(state.mailboxes[second.id].messages, message => message.id),
+    ['second-message'],
+  );
+  assert.ok(w.google.requests.some(call => call.subject === 'first-google' && call.token === 'first-token'));
+  assert.ok(w.google.requests.some(call => call.subject === 'second-google' && call.token === 'second-token'));
+  const hits = await w.ok({type: 'SEARCH', query: 'message'}, 'app');
+  assert.deepEqual(
+    Array.from(hits, hit => [hit.account, hit.message.id]).sort(),
+    [
+      [first.id, 'first-message'],
+      [second.id, 'second-message'],
+    ].sort(),
+  );
+  for (const account of [first, second]) {
+    await w.ok({type: 'OPEN', account: account.id}, 'app');
+    assert.ok(w.tabs.at(-1).includes(`authuser=${encodeURIComponent(account.email)}`));
+  }
+  const publicResults = JSON.stringify({state, hits});
+  for (const privateValue of [
+    'credentials',
+    'googleAccountID',
+    'first-google',
+    'second-google',
+    'first-token',
+    'second-token',
+  ])
+    assert.equal(publicResults.includes(privateValue), false, privateValue);
+});
+
+test('concurrent Gmail 401s renew only the rejected identity once without disturbing the other mailbox', async () => {
+  const w = multipleGmailWorker();
+  const [first, second] = await connectBothGmail(w);
+  const otherCredentials = structuredClone(w.stores.local.accounts[1].credentials);
+  w.google.rejected.add('first-token');
+  w.google.accounts.get('first-google').token = 'renewed-first-token';
+  w.google.tokens.set('renewed-first-token', 'first-google');
+  const native = w.chrome.identity.getAuthToken;
+  const gate = deferred();
+  const renewalStarted = deferred();
+  const checkStarted = deferred();
+  const fetch = w.context.fetch;
+  w.context.fetch = (input, init) => {
+    if (new URL(input).pathname.endsWith('/labels/INBOX') && init.headers.Authorization === 'Bearer first-token')
+      checkStarted.resolve();
+    return fetch(input, init);
+  };
+  w.chrome.identity.getAuthToken = async options => {
+    assert.equal(options.interactive, false);
+    renewalStarted.resolve();
+    await gate.promise;
+    return native(options);
+  };
+  w.google.requests.length = 0;
+  const search = w.ok({type: 'SEARCH', query: 'message'}, 'app');
+  await renewalStarted.promise;
+  const check = w.ok({type: 'CHECK'}, 'popup');
+  await checkStarted.promise;
+  gate.resolve();
+  const [hits, state] = await Promise.all([search, check]);
+  assert.equal(hits.length, 2);
+  assert.equal(state.mailboxes[first.id].error, '');
+  assert.equal(state.mailboxes[second.id].error, '');
+  assert.equal(w.identityCalls.native.length, 3);
+  assert.deepEqual(w.identityCalls.native.at(-1), {
+    interactive: false,
+    enableGranularPermissions: true,
+    account: {id: 'first-google'},
+  });
+  assert.deepEqual(w.identityCalls.removed, ['first-token']);
+  assert.equal(w.identityCalls.web.length, 2, 'renewal must not reopen account selection');
+  assert.equal(w.identityCalls.cleared, 0);
+  assert.equal(w.stores.local.accounts[0].credentials.token, 'renewed-first-token');
+  assert.deepEqual(w.stores.local.accounts[1].credentials, otherCredentials);
+});
+
+for (const failure of ['cancelled', 'wrong identity']) {
+  test(`a ${failure} silent Gmail renewal preserves both credentials and checks the other mailbox`, async () => {
+    const w = multipleGmailWorker();
+    const [first, second] = await connectBothGmail(w);
+    const accounts = structuredClone(w.stores.local.accounts);
+    w.google.rejected.add('first-token');
+    const attempts = [];
+    w.chrome.identity.getAuthToken = async options => {
+      attempts.push(structuredClone(options));
+      if (failure === 'cancelled') throw Error('Interaction required');
+      return {token: 'second-token', grantedScopes: GOOGLE_SCOPES};
+    };
+    const state = await w.ok({type: 'CHECK'}, 'popup');
+    assert.deepEqual(attempts, [{interactive: false, enableGranularPermissions: true, account: {id: 'first-google'}}]);
+    assert.equal(state.mailboxes[first.id].reauth, true);
+    assert.equal(state.mailboxes[first.id].unread, 1, 'the last known unread count survives failed renewal');
+    assert.equal(state.mailboxes[second.id].error, '');
+    assert.equal(state.mailboxes[second.id].reauth, false);
+    assert.deepEqual(w.stores.local.accounts, accounts);
+    assert.deepEqual(w.identityCalls.removed, ['first-token']);
+    assert.equal(w.identityCalls.web.length, 2, 'a background check must not open a consent window');
+    assert.equal(w.identityCalls.cleared, 0);
+  });
+}
+
+test('both Gmail credentials survive a fresh worker and one disconnect preserves the other mailbox', async () => {
+  const w = multipleGmailWorker();
+  const [first, second] = await connectBothGmail(w);
+  const restarted = multipleGmailWorker(w.stores.local);
+  restarted.chrome.identity.launchWebAuthFlow = async () => {
+    throw Error('Restart must not prompt for selection');
+  };
+  await restarted.ok({type: 'CHECK'}, 'popup');
+  assert.equal(restarted.identityCalls.native.length, 0, 'stored credentials work without another consent');
+  assert.equal(restarted.notifications.length, 0, 'a worker restart preserves the notification baseline');
+  assert.equal((await restarted.ok({type: 'STATE'}, 'popup')).accounts.length, 2);
+  const otherCredentials = structuredClone(restarted.stores.local.accounts[1].credentials);
+  const state = await restarted.ok({type: 'REMOVE_ACCOUNT', account: first.id});
+  assert.equal(state.accounts.length, 1);
+  assert.equal(state.accounts[0].id, second.id);
+  assert.equal(state.mailboxes[first.id], undefined);
+  assert.deepEqual(restarted.identityCalls.removed, ['first-token']);
+  assert.equal(restarted.identityCalls.cleared, 0);
+  assert.deepEqual(restarted.stores.local.accounts[0].credentials, otherCredentials);
+  restarted.google.requests.length = 0;
+  await restarted.ok({type: 'CHECK'}, 'popup');
+  assert.ok(restarted.google.requests.length > 0);
+  assert.ok(restarted.google.requests.every(call => call.subject === 'second-google'));
+  assert.ok(!restarted.calls.some(call => call.url.includes('revoke')), 'disconnect does not revoke provider grants');
+});
+
+for (const failure of ['selection cancelled', 'native cancelled', 'wrong native identity', 'missing scope']) {
+  test(`Google ${failure} leaves both connected accounts intact`, async () => {
+    const w = multipleGmailWorker();
+    await connectBothGmail(w);
+    const accounts = structuredClone(w.stores.local.accounts);
+    const nativeCalls = w.identityCalls.native.length;
+    if (failure === 'selection cancelled')
+      w.chrome.identity.launchWebAuthFlow = async () => {
+        throw Error('The user did not approve access');
+      };
+    else if (failure === 'native cancelled')
+      w.chrome.identity.getAuthToken = async () => {
+        throw Error('The user did not approve access');
+      };
+    else
+      w.chrome.identity.getAuthToken = async () => ({
+        token: failure === 'wrong native identity' ? 'first-token' : 'second-token',
+        grantedScopes: failure === 'missing scope' ? [GOOGLE_SCOPES[1]] : GOOGLE_SCOPES,
+      });
+    w.google.requests.length = 0;
+    const result = await w.send({type: 'ADD_ACCOUNT', provider: 'gmail'});
+    assert.equal(result.ok, false);
+    assert.deepEqual(w.stores.local.accounts, accounts);
+    assert.deepEqual(w.google.requests, [], 'invalid consent must not read a Gmail mailbox');
+    assert.deepEqual(w.identityCalls.removed, []);
+    assert.equal(w.identityCalls.cleared, 0);
+    if (failure === 'selection cancelled') assert.equal(w.identityCalls.native.length, nativeCalls);
+    for (const secret of ['first-token', 'second-token', 'first-google', 'second-google'])
+      assert.equal(JSON.stringify(result).includes(secret), false);
+  });
+}
+
+for (const failure of [
+  'wrong state',
+  'duplicate state',
+  'duplicate token',
+  'missing token',
+  'wrong origin',
+  'wrong path',
+  'callback credentials',
+  'query pollution',
+  'provider denial',
+]) {
+  test(`Google selection rejects ${failure} before native Gmail access`, async () => {
+    const w = multipleGmailWorker();
+    await connectBothGmail(w);
+    const accounts = structuredClone(w.stores.local.accounts);
+    const nativeCalls = w.identityCalls.native.length;
+    const select = w.chrome.identity.launchWebAuthFlow;
+    w.chrome.identity.launchWebAuthFlow = async options => {
+      const callback = new URL(await select(options));
+      const fragment = new URLSearchParams(callback.hash.slice(1));
+      if (failure === 'wrong state') fragment.set('state', 'wrong-state');
+      if (failure === 'duplicate state') fragment.append('state', fragment.get('state'));
+      if (failure === 'duplicate token') fragment.append('id_token', fragment.get('id_token'));
+      if (failure === 'missing token') fragment.delete('id_token');
+      if (failure === 'wrong origin') callback.hostname = 'attacker.example';
+      if (failure === 'wrong path') callback.pathname = '/microsoft';
+      if (failure === 'callback credentials') callback.username = 'attacker';
+      if (failure === 'query pollution') callback.search = '?state=another-state';
+      if (failure === 'provider denial') fragment.set('error', 'access_denied');
+      callback.hash = fragment.toString();
+      return callback.href;
+    };
+    w.google.requests.length = 0;
+    const result = await w.send({type: 'ADD_ACCOUNT', provider: 'gmail'});
+    assert.equal(result.ok, false);
+    assert.equal(w.identityCalls.native.length, nativeCalls);
+    assert.deepEqual(w.google.requests, []);
+    assert.deepEqual(w.stores.local.accounts, accounts);
+    assert.equal(w.identityCalls.cleared, 0);
+    assert.equal(JSON.stringify(result).includes('id_token'), false);
+  });
 }
 
 test('connects all three providers and counts unread mail', async () => {
@@ -324,6 +663,51 @@ test('notifies only about messages that are new since the last check', async () 
   assert.equal(w.notifications[0].title, 'Bob');
   assert.equal(w.notifications[0].message, 'Subject m3');
 });
+
+for (const firstToFinish of ['CHECK', 'SIGN_IN']) {
+  for (const hasBaseline of [true, false]) {
+    test(`overlapping CHECK and SIGN_IN claim notifications once (${firstToFinish} first, baseline ${hasBaseline})`, async () => {
+      const w = startWorker();
+      await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+      const account = w.stores.local.accounts[0].id;
+      w.stores.local.mailboxes[account].notified = hasBaseline;
+      w.server.gmail.push('m3');
+      const fetch = w.context.fetch;
+      const gates = [deferred(), deferred()];
+      const started = [deferred(), deferred()];
+      let requests = 0;
+      w.context.fetch = async (input, init) => {
+        const url = new URL(input);
+        if (url.pathname.endsWith('/messages') && url.searchParams.get('q') === 'in:inbox') {
+          const index = requests++;
+          const response = await fetch(input, init);
+          started[index].resolve();
+          await gates[index].promise;
+          return response;
+        }
+        return fetch(input, init);
+      };
+      const checking = w.ok({type: 'CHECK'}, 'popup');
+      await started[0].promise;
+      const signing = w.ok({type: 'SIGN_IN', account}, 'options');
+      await started[1].promise;
+      const first = firstToFinish === 'CHECK' ? 0 : 1;
+      gates[first].resolve();
+      await (first === 0 ? checking : signing);
+      gates[1 - first].resolve();
+      await Promise.all([checking, signing]);
+      assert.equal(w.notifications.length, hasBaseline ? 1 : 0);
+      assert.equal(w.stores.local.mailboxes[account].notified, true);
+      w.context.fetch = fetch;
+      await w.ok({type: 'CHECK'}, 'popup');
+      assert.equal(w.notifications.length, hasBaseline ? 1 : 0, 'the overlapping checks committed their baseline');
+      w.server.gmail.push('m4');
+      await w.ok({type: 'CHECK'}, 'popup');
+      assert.equal(w.notifications.length, hasBaseline ? 2 : 1, 'later new mail still notifies');
+      assert.equal(w.notifications.at(-1).message, 'Subject m4');
+    });
+  }
+}
 
 test('message actions update the provider, the list and the badge', async () => {
   const w = startWorker();
@@ -494,17 +878,14 @@ for (const provider of ['gmail', 'outlook']) {
       const token = account.credentials.token;
       const original = w.context.fetch;
       let wrongMailboxReads = 0;
-      w.chrome.identity.launchWebAuthFlow = async ({url}) => {
-        const state = new URL(url).searchParams.get('state');
-        return provider === 'gmail'
-          ? `https://test.chromiumapp.org/google#access_token=other-token&expires_in=3600&state=${state}`
-          : `https://test.chromiumapp.org/microsoft?code=CODE&state=${state}`;
-      };
+      if (provider === 'gmail')
+        w.chrome.identity.getAuthToken = async () => ({token: 'other-token', grantedScopes: GOOGLE_SCOPES});
       w.context.fetch = async (input, init) => {
         const url = new URL(input);
         if (url.host === 'login.microsoftonline.com')
           return json({access_token: 'other-token', refresh_token: 'other-refresh', expires_in: 3600});
         if (init.headers?.Authorization === 'Bearer other-token') {
+          if (url.pathname.endsWith('/userinfo')) return json({id: 'google-account'});
           if (url.pathname.endsWith('/profile')) return json({emailAddress: 'other@example.test'});
           if (url.pathname.endsWith('/me')) return json({mail: 'other@example.test'});
           wrongMailboxReads++;

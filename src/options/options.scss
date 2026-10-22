@@ -182,6 +182,14 @@ main {
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 6px;
+    > .btn.primary {
+      border-color: var(--border);
+    }
+    &:has(> .btn + .btn) {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+    }
   }
 }
 
@@ -420,6 +428,9 @@ main {
       flex-basis: 100%;
       justify-content: flex-start;
       padding-left: 48px;
+      &:has(> .btn + .btn) {
+        grid-auto-flow: row;
+      }
     }
   }
   .section {

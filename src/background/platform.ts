@@ -21,6 +21,31 @@ export const target: 'chromium' | 'safari' = typeof __TARGET__ === 'string' ? __
 /** Whether the browser can run an OAuth window for the extension right now. */
 export const hasIdentity = (): boolean => typeof chrome.identity?.launchWebAuthFlow === 'function';
 
+/** Whether Chrome can issue and manage Google OAuth tokens in this browser. */
+export const hasGoogleIdentity = (): boolean => typeof chrome.identity?.getAuthToken === 'function';
+
+/** Gets a Google token from Chrome's cache or its user-initiated consent window. */
+export async function googleAuthToken(
+  interactive: boolean,
+  accountID?: string,
+): Promise<chrome.identity.GetAuthTokenResult> {
+  return chrome.identity.getAuthToken({
+    interactive,
+    enableGranularPermissions: true,
+    ...(accountID ? {account: {id: accountID}} : {}),
+  });
+}
+
+/** Removes only a rejected Google access token, preserving other mailbox preferences. */
+export async function forgetGoogleToken(token: string): Promise<void> {
+  await chrome.identity.removeCachedAuthToken({token});
+}
+
+/** Opens a user-initiated OAuth window; flows validate the exact returned callback themselves. */
+export async function webAuthFlow(url: string, interactive: boolean): Promise<string> {
+  return (await chrome.identity.launchWebAuthFlow({url, interactive})) || '';
+}
+
 /**
  * Whether OAuth sign-in can work in this browser.
  *

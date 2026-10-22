@@ -42,7 +42,9 @@ export interface Preferences {
 export interface Credentials {
   token: string;
   refreshToken?: string;
-  /** Expiry in milliseconds since the epoch; absent for non-expiring tokens. */
+  /** Stable Google account ID for account-specific Chrome token renewal; worker-only. */
+  googleAccountID?: string;
+  /** Expiry in milliseconds since the epoch; absent when expiration is managed externally. */
   expiresAt?: number;
 }
 

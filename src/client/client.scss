@@ -170,7 +170,7 @@ html[data-narrow='true'] body {
 .topbar-actions {
   justify-content: flex-end;
 }
-.round.busy .icon {
+.round.refreshing .icon {
   animation: spin 0.9s linear infinite;
 }
 

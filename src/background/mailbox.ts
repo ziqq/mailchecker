@@ -125,6 +125,7 @@ export async function checkAccount(id: string): Promise<void> {
     };
   }
   let account: Account | undefined;
+  let fresh: MailMessage[] = [];
   await writeStore(({accounts = [], mailboxes = {}}) => {
     account = accounts.find(item => item.id === id);
     // A check cannot restore mail changed by an action while its provider snapshot was in flight.
@@ -140,16 +141,18 @@ export async function checkAccount(id: string): Promise<void> {
         messages: [...result.messages, ...read].sort((a, b) => b.date - a.date).slice(0, settings.limit),
       };
     }
+    // Claim new mail against the latest stored baseline, including overlapping account checks.
+    const current = mailboxes[id];
+    if (current?.notified && !result.error && settings.notifications) {
+      const known = new Set(current.messages.map(item => item.id));
+      fresh = result.messages.filter(
+        item => item.unread && !known.has(item.id) && (item.date <= 0 || item.date > Date.now() - NOTIFY_WINDOW),
+      );
+    }
     return {mailboxes: {...mailboxes, [id]: result}};
   });
   if (account && !result.error) await cacheView(ticket, 'inbox', '', result.messages);
-  if (account && previous?.notified && !result.error && settings.notifications) {
-    const known = new Set(previous.messages.map(item => item.id));
-    const fresh = result.messages.filter(
-      item => item.unread && !known.has(item.id) && (item.date <= 0 || item.date > Date.now() - NOTIFY_WINDOW),
-    );
-    await notify(account, fresh);
-  }
+  if (account) await notify(account, fresh);
 }
 
 /** Graphite badge colours for the neutral palette. */
