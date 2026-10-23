@@ -21,15 +21,19 @@
     <link rel="alternate" hreflang="en" href="https://ziqq.github.io/mailchecker/" />
     <link rel="alternate" hreflang="ru" href="https://ziqq.github.io/mailchecker/ru/" />
     <link rel="stylesheet" href="styles.css" />
+    <script src="site.js"></script>
   </head>
   <body>
     <header class="site-header">
-      <a class="wordmark" href="./" aria-label="mailchecker homepage">mailchecker.</a>
+      <a class="wordmark" href="./?lang=en" aria-label="mailchecker homepage">mailchecker.</a>
       <nav aria-label="Main navigation">
-        <a href="privacy.html">Privacy</a>
+        <a href="privacy.html?lang=en">Privacy</a>
         <a href="https://github.com/ziqq/mailchecker/issues">Support</a>
         <a href="https://github.com/ziqq/mailchecker">GitHub</a>
-        <a href="ru/" lang="ru" hreflang="ru">Русский</a>
+        <select id="site-language" class="locale-picker" aria-label="Language">
+          <option value="en" selected>English</option>
+          <option value="ru">Русский</option>
+        </select>
       </nav>
     </header>
     <main>
@@ -90,12 +94,12 @@
           Message HTML is sanitized and displayed in an isolated reader. Remote images remain blocked until you choose
           to show them. You can clear the mail cache or disconnect an account in Settings.
         </p>
-        <a href="privacy.html">Read the privacy policy →</a>
+        <a href="privacy.html?lang=en">Read the privacy policy →</a>
       </section>
     </main>
     <footer>
       <p>Developed by Anton Ustinoff. Open source under GPL v3.</p>
-      <p><a href="mailto:a.a.ustinoff@gmail.com">Contact</a> · <a href="privacy.html">Privacy policy</a></p>
+      <p><a href="mailto:a.a.ustinoff@gmail.com">Contact</a> · <a href="privacy.html?lang=en">Privacy policy</a></p>
     </footer>
   </body>
 </html>

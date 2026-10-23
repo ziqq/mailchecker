@@ -20,6 +20,7 @@
     <link rel="alternate" hreflang="en" href="https://ziqq.github.io/mailchecker/" />
     <link rel="alternate" hreflang="ru" href="https://ziqq.github.io/mailchecker/ru/" />
     <link rel="stylesheet" href="../styles.css" />
+    <script src="../site.js"></script>
   </head>
   <body>
     <header class="site-header">
@@ -28,7 +29,10 @@
         <a href="privacy.html">Конфиденциальность</a>
         <a href="https://github.com/ziqq/mailchecker/issues">Поддержка</a>
         <a href="https://github.com/ziqq/mailchecker">GitHub</a>
-        <a href="../" lang="en" hreflang="en">English</a>
+        <select id="site-language" class="locale-picker" aria-label="Язык">
+          <option value="en">English</option>
+          <option value="ru" selected>Русский</option>
+        </select>
       </nav>
     </header>
     <main>
@@ -51,15 +55,15 @@
       </section>
       <figure class="preview">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="../store/inbox-dark.jpg" />
+          <source media="(prefers-color-scheme: dark)" srcset="../store/inbox-dark-ru.jpg" />
           <img
-            src="../store/reader-light.jpg"
+            src="../store/reader-light-ru.jpg"
             alt="Предпросмотр mailchecker с вымышленными письмами"
             width="1280"
             height="800"
           />
         </picture>
-        <figcaption>Пример интерфейса на английском с вымышленной почтой. Скриншот следует теме браузера.</figcaption>
+        <figcaption>Пример интерфейса с вымышленной почтой. Скриншот следует теме браузера.</figcaption>
       </figure>
       <section class="features" aria-label="Возможности">
         <article>

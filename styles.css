@@ -103,6 +103,29 @@ nav {
   font-size: 14px;
 }
 
+.locale-picker {
+  max-width: 100%;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.locale-picker:focus-visible {
+  outline: 3px solid #4f8cff;
+  outline-offset: 3px;
+}
+
+.site-preference {
+  max-width: 800px;
+  margin: 0 auto 48px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .hero {
   max-width: 760px;
   padding: 76px 0 44px;
