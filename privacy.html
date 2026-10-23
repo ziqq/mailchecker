@@ -1,0 +1,147 @@
+<!doctype html>
+<!--
+  https://github.com/ziqq/mailchecker
+  Copyright (C) 2026 Anton Ustinoff
+  https://github.com/ziqq/mailchecker/blob/main/LICENSE
+
+  The public HTML mirror of PRIVACY.md for Google OAuth verification.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="How mailchecker handles mailbox data, local storage, provider requests and permissions."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>Privacy policy — mailchecker</title>
+    <link rel="canonical" href="https://ziqq.github.io/mailchecker/privacy.html" />
+    <link rel="alternate" hreflang="en" href="https://ziqq.github.io/mailchecker/privacy.html" />
+    <link rel="alternate" hreflang="ru" href="https://ziqq.github.io/mailchecker/ru/privacy.html" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="./" aria-label="mailchecker homepage">mailchecker.</a>
+      <nav aria-label="Main navigation">
+        <a href="./">Home</a>
+        <a href="https://github.com/ziqq/mailchecker/issues">Support</a>
+        <a href="https://github.com/ziqq/mailchecker">GitHub</a>
+        <a href="ru/privacy.html" lang="ru" hreflang="ru">Русский</a>
+      </nav>
+    </header>
+    <main class="policy">
+      <h1>Privacy</h1>
+      <p>Last updated: 22 October 2026.</p>
+      <p>
+        mailchecker has no backend, analytics, advertising or telemetry. Requests go directly from the browser to the
+        mail provider the user connected.
+      </p>
+      <h2>Local data</h2>
+      <p>
+        <code>chrome.storage.local</code> contains preferences, connected accounts with their access/refresh tokens,
+        stable Google account identifiers for native token renewal, or JMAP API tokens (mailboxes read through the
+        browser&#x27;s sign-in store no credentials), and the last check result per account: the Inbox unread count and
+        up to 50 latest Inbox messages (sender, subject, a 300-character preview, date, read/pinned flags, category and
+        webmail link). Worker-owned IndexedDB additionally caches mail actually loaded: message metadata, opened
+        HTML/plain-text bodies, attachment names and view membership for Inbox, folders, conversations and server
+        search. It does not download attachments or remote images automatically. This cache is bounded by an estimated
+        50 MiB, 5,000 messages, 1,000 views and 30 days without access. Browser quota or eviction can reduce
+        availability. Settings → Mail cache clears it without removing accounts or preferences. This data belongs to the
+        browser profile and is not encrypted by the extension; protect the profile and device accordingly.
+      </p>
+      <p>
+        Local storage access is set to <code>TRUSTED_CONTEXTS</code>. The popup and Settings receive a public state
+        without credentials. Session storage keeps at most 100 recent notification URLs, with a bounded index. Clicking
+        or dismissing a notification removes its URL; older records are evicted, and browser restart clears session
+        storage. Records from older versions are pruned when the index is first loaded.
+      </p>
+      <p>
+        Removing an account deletes its credentials, check result and IndexedDB cache, and invalidates pending cache
+        writes. It does not revoke provider-side grants; use the Google or Microsoft account security page, or delete
+        the JMAP API token in the mail service. Uninstalling removes all extension data.
+      </p>
+      <h2>Network requests</h2>
+      <ul>
+        <li>
+          Gmail / Google Workspace: <code>https://gmail.googleapis.com</code>; Google account identity through
+          <code>https://www.googleapis.com/oauth2/v2/userinfo</code> and public signature-verification keys from
+          <code>https://www.googleapis.com/oauth2/v3/certs</code>; sign-in and account selection through Chrome Identity
+          and <code>https://accounts.google.com</code>. Identity tokens used for account selection are validated in the
+          worker and are not stored.
+        </li>
+        <li>
+          Outlook / Microsoft 365: <code>https://graph.microsoft.com</code>; sign-in and token refresh through
+          <code>https://login.microsoftonline.com</code>.
+        </li>
+        <li>
+          JMAP: the session URL entered in Settings and its API URL on the same origin, after the user grants that
+          origin.
+        </li>
+        <li>
+          Through the browser&#x27;s sign-in, after the user grants the site in Settings: Gmail
+          <code>https://mail.google.com</code> (the unread feed, the print view of an opened message and its actions),
+          Yandex Mail <code>https://mail.yandex.ru</code> (lite folders, server search, message pages and its delete
+          form), Mail.ru <code>https://e.mail.ru</code> (the webmail API: folders, server search, messages, read marks
+          and moving to the trash) and <code>https://auth.mail.ru</code> (issues the webmail session cookie from the
+          Mail.ru sign-in).
+        </li>
+      </ul>
+      <p>
+        API requests send no cookies, refuse redirects and time out after 25 seconds. Requests through the
+        browser&#x27;s sign-in send the browser&#x27;s own cookies, and only to the hosts above; they follow the
+        site&#x27;s redirects and treat a redirect away from it as signed out. Responses are read with size limits.
+      </p>
+      <p>
+        Message bodies are shown in a sandboxed frame without scripts. Remote images, including tracking pixels, are not
+        loaded until the user chooses to show them for that conversation. Blocking these requests prevents image-based
+        open tracking; the connected mail service still receives the requests needed to load mail and acknowledge read
+        state.
+      </p>
+      <h2>Permissions</h2>
+      <ul>
+        <li>
+          <code>storage</code>, <code>alarms</code>, <code>notifications</code>: settings and results, periodic checks,
+          new-mail notifications.
+        </li>
+        <li>
+          <code>identity</code> (optional, requested on the first Google or Microsoft connection): the OAuth sign-in
+          window.
+        </li>
+        <li>
+          <code>cookies</code> (optional, requested when Gmail is connected through the browser): reads only
+          Gmail&#x27;s <code>GMAIL_AT</code> action cookie on <code>mail.google.com</code> to archive, trash, mark read
+          and star from the extension, as Gmail&#x27;s own web client does. No other cookie is read.
+        </li>
+        <li>
+          Host permissions for the Gmail, Google account identity, Graph, Microsoft login and Fastmail APIs; any other
+          JMAP origin and the webmail sites read through the browser&#x27;s sign-in are optional and requested in
+          Settings.
+        </li>
+      </ul>
+      <h2>Limited use</h2>
+      <p>
+        Information received from Google APIs is used only for the user-facing mail features described here. This use
+        complies with the
+        <a href="https://developers.google.com/terms/api-services-user-data-policy"
+          >Google API Services User Data Policy</a
+        >
+        and its Limited Use requirements. mailchecker does not sell mail data, use it for advertising or transfer it to
+        a developer-operated server.
+      </p>
+      <h2>Contact</h2>
+      <p>
+        mailchecker is developed by Anton Ustinoff. For privacy questions, contact
+        <a href="mailto:a.a.ustinoff@gmail.com">a.a.ustinoff@gmail.com</a>. Do not include mailbox passwords, access
+        tokens or private email content in a support request.
+      </p>
+    </main>
+    <footer>
+      <p>Developed by Anton Ustinoff. Open source under GPL v3.</p>
+      <p>
+        <a href="./">Home</a> · <a href="https://github.com/ziqq/mailchecker/blob/main/PRIVACY.md">Policy source</a>
+      </p>
+    </footer>
+  </body>
+</html>

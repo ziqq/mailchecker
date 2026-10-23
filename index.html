@@ -1,0 +1,101 @@
+<!doctype html>
+<!--
+  https://github.com/ziqq/mailchecker
+  Copyright (C) 2026 Anton Ustinoff
+  https://github.com/ziqq/mailchecker/blob/main/LICENSE
+
+  The public mailchecker homepage for GitHub Pages and Google OAuth verification.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="google-site-verification" content="3rLsCvBPm3hABKecrX1aiWqaKLcYplCRQlwj-aogufY" />
+    <meta
+      name="description"
+      content="mailchecker is a browser mail client with a unified inbox, folders, safe reading and notifications. No backend, advertising or analytics."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>mailchecker — Mail in your browser</title>
+    <link rel="canonical" href="https://ziqq.github.io/mailchecker/" />
+    <link rel="alternate" hreflang="en" href="https://ziqq.github.io/mailchecker/" />
+    <link rel="alternate" hreflang="ru" href="https://ziqq.github.io/mailchecker/ru/" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="./" aria-label="mailchecker homepage">mailchecker.</a>
+      <nav aria-label="Main navigation">
+        <a href="privacy.html">Privacy</a>
+        <a href="https://github.com/ziqq/mailchecker/issues">Support</a>
+        <a href="https://github.com/ziqq/mailchecker">GitHub</a>
+        <a href="ru/" lang="ru" hreflang="ru">Русский</a>
+      </nav>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="intro">
+        <p class="eyebrow">Mail in your browser</p>
+        <h1 id="intro">All your mail.<br />One place.</h1>
+        <p class="lead">
+          Read and manage connected mailboxes from the browser toolbar, or open a full tab when you need more room.
+        </p>
+        <p>
+          Connect Gmail, Yandex Mail and Mail.ru through an existing browser sign-in, or connect a JMAP mailbox with its
+          API token. Gmail also supports a separate Google API connection for each account.
+        </p>
+        <p class="notice">
+          The first Chrome Web Store release and public Google OAuth verification are in preparation. Google API sign-in
+          currently requires an approved test account. Outlook / Microsoft 365 is not available in this build.
+        </p>
+        <a class="button" href="https://github.com/ziqq/mailchecker">View the project</a>
+      </section>
+      <figure class="preview">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="store/inbox-dark.jpg" />
+          <img src="store/reader-light.jpg" alt="mailchecker preview with fictional mail" width="1280" height="800" />
+        </picture>
+        <figcaption>English preview with fictional mail. The screenshot follows your browser theme.</figcaption>
+      </figure>
+      <section class="features" aria-label="Mail features">
+        <article>
+          <h2>One inbox</h2>
+          <p>Connected accounts, folders, unread counts, pinned mail and new-mail notifications in one client.</p>
+        </article>
+        <article>
+          <h2>Read and manage</h2>
+          <p>Open conversations, change read state, archive mail or move selected messages to Trash.</p>
+        </article>
+        <article>
+          <h2>Find your mail</h2>
+          <p>
+            Search server history with supported connections. Gmail history search requires the Google API connection;
+            browser-sign-in Gmail does not support integrated history search.
+          </p>
+        </article>
+      </section>
+      <section class="data-use" aria-labelledby="data-heading">
+        <p class="eyebrow">Your data</p>
+        <h2 id="data-heading">Direct to your mail provider.</h2>
+        <p>
+          mailchecker has no backend, advertising, analytics or telemetry. Requests go directly from your browser to the
+          provider you connect. Preferences, credentials and loaded mail stay in your browser profile. The local cache
+          opens mail you have already loaded; it does not download your entire history or encrypt your browser profile.
+        </p>
+        <p>
+          Google access lets you read and search Gmail, browse folders, change message state, move mail to Trash and
+          send replies. Each Gmail account is authorized separately. Available actions depend on the provider;
+          unsupported replies open webmail.
+        </p>
+        <p>
+          Message HTML is sanitized and displayed in an isolated reader. Remote images remain blocked until you choose
+          to show them. You can clear the mail cache or disconnect an account in Settings.
+        </p>
+        <a href="privacy.html">Read the privacy policy →</a>
+      </section>
+    </main>
+    <footer>
+      <p>Developed by Anton Ustinoff. Open source under GPL v3.</p>
+      <p><a href="mailto:a.a.ustinoff@gmail.com">Contact</a> · <a href="privacy.html">Privacy policy</a></p>
+    </footer>
+  </body>
+</html>
