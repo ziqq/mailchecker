@@ -72,6 +72,32 @@ test('merges accounts newest first and filters by account', () => {
   );
 });
 
+test('loaded-mail search matches every plain word across metadata without changing the source order', () => {
+  const messages = [
+    message('old', {from: 'MARIA <maria@example.test>', subject: 'Trip', snippet: 'Tickets for Kazan', date: 1}),
+    message('new', {from: 'Maria', subject: 'KAZAN tickets', snippet: 'Preview', date: 3}),
+    message('other', {from: 'Another sender', subject: 'Kazan', snippet: 'Tickets', date: 2}),
+  ];
+  assert.deepEqual(
+    inbox.searchLoaded(messages, '  maria\n KAZAN\t tickets ').map(item => item.id),
+    ['new', 'old'],
+  );
+  assert.deepEqual(
+    messages.map(item => item.id),
+    ['old', 'new', 'other'],
+  );
+  assert.deepEqual(
+    inbox.searchLoaded(messages, 'preview').map(item => item.id),
+    ['new'],
+  );
+  assert.deepEqual(
+    inbox.searchLoaded(messages, 'maria@example.test').map(item => item.id),
+    ['old'],
+  );
+  for (const query of ['', ' \t\n ', 'absent', 'from:maria', 'in:archive'])
+    assert.deepEqual(inbox.searchLoaded(messages, query), []);
+});
+
 test('stacks repeated notifications from the same sender and subject', () => {
   const ci = id =>
     message(id, {from: 'CI <notifications@github.com>', subject: 'Run failed', category: 'notifications'});

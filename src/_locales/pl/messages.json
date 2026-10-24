@@ -678,10 +678,10 @@
     "message": "„$1”"
   },
   "search_webmail_only": {
-    "message": "Rozszerzenie nie obsługuje jeszcze wyszukiwania w tych skrzynkach: $1. Użyj wyszukiwania w poczcie internetowej."
+    "message": "Tylko wczytani nadawcy, tematy i podglądy dla: $1. Pełna historia wymaga Gmail API lub poczty w przeglądarce; operatory wyszukiwania nie są tu obsługiwane."
   },
   "search_webmail_title": {
-    "message": "Szukaj w poczcie internetowej"
+    "message": "Brak wyników we wczytanej poczcie"
   },
   "section_inbox": {
     "message": "Pozostałe"

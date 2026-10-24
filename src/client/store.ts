@@ -966,7 +966,7 @@ export const store = createRoot(() => {
     });
   }
 
-  /** Runs a server search across all accounts; an empty query returns to the Inbox. */
+  /** Searches every account, with loaded-mail fallback where server search is unavailable. */
   async function search(text: string): Promise<void> {
     if (text !== query()) resetSelection();
     const generation = ++searchGeneration;

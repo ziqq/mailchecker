@@ -651,10 +651,10 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "다음 메일함의 검색은 아직 지원되지 않습니다: $1. 웹메일에서 검색하세요."
+    "message": "다음 계정은 불러온 보낸 사람, 제목, 미리보기만 검색합니다: $1. 전체 기록은 Gmail API 또는 웹메일에서 검색하세요. 여기서는 검색 연산자를 지원하지 않습니다."
   },
   "search_webmail_title": {
-    "message": "웹메일에서 검색"
+    "message": "불러온 메일에 검색 결과 없음"
   },
   "section_inbox": {
     "message": "기타"

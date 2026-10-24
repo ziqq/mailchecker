@@ -113,6 +113,8 @@ export interface SearchAccountPage extends SearchCursor {
   error: string;
   unsupported?: boolean;
   limited?: boolean;
+  /** Plain-text matching of loaded metadata, without a provider history request. */
+  local?: boolean;
 }
 
 /** A bounded global page; successful accounts survive another account's failure. */

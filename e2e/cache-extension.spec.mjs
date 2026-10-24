@@ -163,6 +163,46 @@ test('MV3 cache survives restart, revalidates without replacing mail, and isolat
     await app.goto(base + 'app.html');
     await app.locator('.row[data-id="m"]').click();
     await visibleBody(app);
+
+    // The same broker must retain API history search and use IndexedDB only for a browser connection.
+    const apiSearch = await request(app, {type: 'SEARCH', query: 'Cache regression', pages: []});
+    expect(apiSearch.value.hits.map(hit => hit.message.id)).toEqual(['m']);
+    expect(apiSearch.value.pages[0].local).toBeUndefined();
+    const originalState = await worker.evaluate(() => globalThis.chrome.storage.local.get(['accounts', 'mailboxes']));
+    await worker.evaluate(async () => {
+      const {accounts, mailboxes} = await globalThis.chrome.storage.local.get(['accounts', 'mailboxes']);
+      accounts[0].settings.browser = true;
+      mailboxes.A.messages = [];
+      globalThis.searchFetch = globalThis.fetch;
+      globalThis.searchNetworkCalls = 0;
+      globalThis.fetch = async () => {
+        globalThis.searchNetworkCalls++;
+        throw Error('Loaded search must not use the network');
+      };
+      await globalThis.chrome.storage.local.set({accounts, mailboxes});
+    });
+    const cachedSearch = await request(app, {type: 'SEARCH', query: 'Cache regression', pages: []});
+    expect(cachedSearch.value.pages[0].local).toBe(true);
+    expect(cachedSearch.value.hits.map(hit => hit.message.id)).toEqual(['m']);
+    await worker.evaluate(async message => {
+      const {mailboxes} = await globalThis.chrome.storage.local.get('mailboxes');
+      mailboxes.A.messages = [
+        {...message, subject: 'Fresh Inbox metadata'},
+        {...message, id: 'inbox-only', subject: 'Cache regression'},
+      ];
+      await globalThis.chrome.storage.local.set({mailboxes});
+    }, message);
+    const fresh = await request(app, {type: 'SEARCH', query: 'Fresh', pages: []});
+    expect(fresh.value.hits.map(hit => hit.message.id)).toEqual(['m']);
+    const merged = await request(app, {type: 'SEARCH', query: 'Sender', pages: []});
+    expect(merged.value.hits.map(hit => hit.message.id).sort()).toEqual(['inbox-only', 'm']);
+    const obsolete = await request(app, {type: 'SEARCH', query: 'Cache regression', pages: []});
+    expect(obsolete.value.hits.map(hit => hit.message.id)).toEqual(['inbox-only']);
+    expect(await worker.evaluate(() => globalThis.searchNetworkCalls)).toBe(0);
+    await worker.evaluate(async state => {
+      globalThis.fetch = globalThis.searchFetch;
+      await globalThis.chrome.storage.local.set(state);
+    }, originalState);
     await context.close();
 
     context = await launch();

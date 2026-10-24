@@ -13,7 +13,8 @@
  *
  * @module background/mailbox
  */
-import {cacheAction, cacheTicket, cacheView, invalidateCache} from './cache';
+import {cacheAction, cachedMessages, cacheTicket, cacheView, invalidateCache} from './cache';
+import {searchLoaded} from '../shared/inbox';
 import {senderName} from '../shared/format';
 import {accents, preferences} from '../shared/preferences';
 import type {
@@ -442,7 +443,7 @@ export async function search(query: string): Promise<SearchHit[]> {
 export async function searchPage(query: string, input: unknown): Promise<SearchPage> {
   const text = query.trim().slice(0, 200);
   if (!Array.isArray(input) || input.length > 20) throw new Error(t('error_bad_message'));
-  const {accounts = []} = await readStore();
+  const {accounts = [], mailboxes = {}} = await readStore();
   const seen = new Set<string>();
   const cursors = input.map(value => {
     if (
@@ -465,9 +466,30 @@ export async function searchPage(query: string, input: unknown): Promise<SearchP
     requested.map(async ({account: id, cursor}) => {
       const account = accounts.find(account => account.id === id)!;
       const ticket = cacheTicket(id);
-      if (!adapter(account).searchPage)
-        return {hits: [], page: {account: id, cursor: '', error: '', unsupported: true}};
       try {
+        if (!adapter(account).searchPage) {
+          if (!/^(?:|[1-9]\d{0,4})$/.test(cursor)) throw new Error(t('error_bad_message'));
+          const stored = await cachedMessages(id);
+          const messages = searchLoaded(
+            [
+              ...new Map(
+                [...stored, ...(mailboxes[id]?.messages || [])].map(message => [message.id, message]),
+              ).values(),
+            ],
+            text,
+          );
+          const offset = Number(cursor || 0);
+          const hits = messages.slice(offset, offset + 20).map(message => ({account: id, message}));
+          return {
+            hits,
+            page: {
+              account: id,
+              cursor: offset + 20 < messages.length ? String(offset + 20) : '',
+              error: '',
+              local: true,
+            },
+          };
+        }
         const value = await withAccount(id, (module, current) => module.searchPage!(current, text, 20, cursor));
         const messages = value.messages.slice(0, 20).map(item => normalize(item));
         const next = String(value.next || '');

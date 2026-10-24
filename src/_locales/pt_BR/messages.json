@@ -669,10 +669,10 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "A extensão ainda não oferece pesquisa nestas caixas: $1. Use a pesquisa do webmail."
+    "message": "Apenas remetente, assunto e prévia já carregados de: $1. O histórico completo requer Gmail API ou webmail; operadores de pesquisa não são aceitos aqui."
   },
   "search_webmail_title": {
-    "message": "Pesquisar no webmail"
+    "message": "Nenhum resultado nas mensagens carregadas"
   },
   "section_inbox": {
     "message": "Todo o resto"

@@ -660,10 +660,10 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "Bu uzantı şu posta kutularında aramayı henüz desteklemiyor: $1. Web postasındaki aramayı kullanın."
+    "message": "Yalnızca yüklenmiş gönderen, konu ve önizlemelerde arama: $1. Tüm geçmiş için Gmail API veya web postasını kullanın; arama operatörleri burada desteklenmez."
   },
   "search_webmail_title": {
-    "message": "Web postasında ara"
+    "message": "Yüklenmiş postalarda sonuç yok"
   },
   "section_inbox": {
     "message": "Diğerleri"

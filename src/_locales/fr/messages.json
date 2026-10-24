@@ -669,10 +669,10 @@
     "message": "« $1 »"
   },
   "search_webmail_only": {
-    "message": "La recherche dans ces boîtes n’est pas encore prise en charge : $1. Utilisez la recherche du webmail."
+    "message": "Recherche uniquement dans les expéditeurs, objets et aperçus chargés de : $1. Pour tout l’historique, utilisez Gmail API ou le webmail ; les opérateurs ne sont pas pris en charge ici."
   },
   "search_webmail_title": {
-    "message": "Rechercher dans le webmail"
+    "message": "Aucun résultat dans les messages chargés"
   },
   "section_inbox": {
     "message": "Autres"

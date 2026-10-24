@@ -660,10 +660,10 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "Search is not yet supported in this extension for these mailboxes: $1. Use search in webmail."
+    "message": "Loaded sender, subject and preview only for: $1. Full history requires Gmail API or webmail; search operators are not supported here."
   },
   "search_webmail_title": {
-    "message": "Search in webmail"
+    "message": "No matches in loaded mail"
   },
   "section_inbox": {
     "message": "Everything else"

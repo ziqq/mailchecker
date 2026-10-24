@@ -275,6 +275,30 @@ export function cachedThread(account: string, id: string, message: string): Prom
   });
 }
 
+/** Reads unexpired list metadata for one account without retaining cached bodies in memory. */
+export function cachedMessages(account: string): Promise<MailMessage[]> {
+  const ticket = cacheTicket(account);
+  return task(
+    [] as MailMessage[],
+    transaction =>
+      new Promise((resolve, reject) => {
+        const messages: MailMessage[] = [];
+        const request = transaction.objectStore('messages').index('account').openCursor(account);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor || messages.length >= MAX_MESSAGES || !current(ticket)) {
+            resolve(current(ticket) ? messages : []);
+            return;
+          }
+          const record = cursor.value as CachedMessage;
+          if (record.metadata && record.access >= Date.now() - MAX_AGE) messages.push(record.metadata);
+          cursor.continue();
+        };
+      }),
+  );
+}
+
 /** Reconciles confirmed flags, or invalidates moved/replied views atomically. */
 export function cacheAction(account: string, id: string, action?: MessageAction): Promise<void> {
   return task(undefined, async transaction => {
@@ -288,6 +312,11 @@ export function cacheAction(account: string, id: string, action?: MessageAction)
       record.bytes = bytes(record);
       store.put(record);
       return;
+    }
+    if (record?.metadata && (action === 'archive' || action === 'trash')) {
+      delete record.metadata;
+      record.bytes = bytes(record);
+      store.put(record);
     }
     const views = transaction.objectStore('views');
     const request = views.index('account').openCursor(account);

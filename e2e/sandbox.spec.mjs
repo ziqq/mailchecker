@@ -558,16 +558,23 @@ for (const layout of [
       await expectNoHorizontalScroll(page);
     });
 
-    test('unsupported browser-session search explains exclusion without claiming no matches', async ({page}) => {
+    test('browser Gmail searches loaded mail and scopes empty results without claiming a history search', async ({
+      page,
+    }) => {
       const separator = layout.path.includes('?') ? '&' : '?';
-      await page.goto(`${layout.path}${separator}search=webmail`);
-      await page.getByRole('searchbox').fill('absent query');
-      await page.getByRole('searchbox').press('Enter');
-      await expect(page.getByRole('heading', {name: 'Поиск в веб-почте.', exact: true})).toBeVisible();
+      await page.goto(`${layout.path}${separator}search=loaded`);
+      const search = page.getByRole('searchbox');
+      await search.fill('CONTRACT review');
+      await search.press('Enter');
+      await expect(page.locator('.row')).toHaveCount(1);
+      await expect(page.locator('.row')).toContainText('Contract for review');
       const notice = page.getByRole('status');
-      await expect(notice).toContainText('В расширении пока нет поиска');
-      await expect(notice).toContainText('anton@yandex.ru');
-      await expect(notice).toContainText('anton@mail.ru');
+      await expect(notice).toContainText('поиск только по сохранённым');
+      await expect(notice).toContainText('anton@gmail.com');
+      await search.fill('absent query');
+      await search.press('Enter');
+      await expect(page.getByRole('heading', {name: 'В загруженных письмах не найдено.', exact: true})).toBeVisible();
+      await expect(page.locator('.row')).toHaveCount(0);
       await expect(page.getByRole('heading', {name: 'Ничего не нашлось.', exact: true})).toHaveCount(0);
       await expectNoHorizontalScroll(page);
     });
@@ -576,6 +583,33 @@ for (const layout of [
 
 test.describe('wide folder audit regressions', () => {
   test.use({viewport: {width: 1440, height: 900}});
+
+  test('browser Gmail searches only opened folder pages and deduplicates loaded Inbox messages', async ({page}) => {
+    await page.goto('app.html?search=loaded&lang=en');
+    const search = page.getByRole('searchbox');
+    await search.fill('next month');
+    await search.press('Enter');
+    await expect(page.getByRole('heading', {name: 'No matches in loaded mail.', exact: true})).toBeVisible();
+    await search.fill('');
+    await search.press('Enter');
+    await page.getByRole('button', {name: 'Folders: Inbox', exact: true}).click();
+    await page.getByRole('menuitemradio', {name: 'Archive 1 message', exact: true}).click();
+    await expect(page.locator('.row[data-id="g-old"]')).toBeVisible();
+    await search.fill('next month');
+    await search.press('Enter');
+    await expect(page.locator('.row')).toHaveCount(1);
+    await expect(page.locator('.row[data-id="g-old"]')).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('Loaded sender, subject and preview only');
+    await search.fill('');
+    await search.press('Enter');
+    await page.getByRole('button', {name: 'Folders: Archive', exact: true}).click();
+    await page.getByRole('menuitemradio', {name: /^Inbox /}).click();
+    await expect(page.locator('.row[data-id="g6"]')).toBeVisible();
+    await search.fill('contract');
+    await search.press('Enter');
+    await expect(page.locator('.row')).toHaveCount(1);
+    await expectNoHorizontalScroll(page);
+  });
 
   test('Gmail archive keeps a custom-folder row before and after refresh', async ({page}) => {
     await page.goto('app.html');

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.49
+
+- **ADDED**: browser-connected Gmail searches loaded sender, subject and preview metadata from the bounded local cache, with paginated results and an explicit scope notice; server history search stays available through Gmail API
+- **ADDED**: loaded-mail search regressions for metadata matching, pagination, account isolation, native IndexedDB persistence, current Inbox precedence and responsive scope notices; Gmail API keeps server search and reports server failures
+
 ## 0.0.48
 
 - **FIXED**: the refresh button keeps its position while checking mail; its loading state no longer inherits full-window progress overlay styles

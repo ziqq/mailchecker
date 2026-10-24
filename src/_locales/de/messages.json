@@ -660,10 +660,10 @@
     "message": "„$1“"
   },
   "search_webmail_only": {
-    "message": "Die Suche wird für diese Postfächer in der Erweiterung noch nicht unterstützt: $1. Verwenden Sie die Webmail-Suche."
+    "message": "Nur geladene Absender, Betreffzeilen und Vorschauen für: $1. Der gesamte Verlauf ist über Gmail API oder Webmail verfügbar; Suchoperatoren werden hier nicht unterstützt."
   },
   "search_webmail_title": {
-    "message": "In Webmail suchen"
+    "message": "Keine Treffer in geladenen E-Mails"
   },
   "section_inbox": {
     "message": "Sonstige"

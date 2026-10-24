@@ -1592,7 +1592,7 @@ test('paged search rejects repeated and oversized provider continuations without
   }
 });
 
-test('browser Gmail is explicitly unsupported while Yandex and Mail.ru advertise server search', async () => {
+test('browser Gmail uses loaded-mail matching while Yandex and Mail.ru advertise server search', async () => {
   const w = startWorker();
   await w.ok({type: 'STATE'}, 'popup');
   w.stores.local.accounts = ['gmail', 'yandex', 'mailru'].map(provider => ({
@@ -1608,7 +1608,87 @@ test('browser Gmail is explicitly unsupported while Yandex and Mail.ru advertise
   assert.equal(state.accounts.find(account => account.id === 'mailru').search, true);
   const before = w.calls.length;
   const reply = await w.ok({type: 'SEARCH', query: 'needle', pages: [{account: 'gmail', cursor: ''}]}, 'popup');
-  assert.equal(reply.pages[0].unsupported, true);
+  assert.equal(reply.pages[0].local, true);
+  assert.equal(reply.pages[0].unsupported, undefined);
   assert.equal(reply.hits.length, 0);
   assert.equal(w.calls.length, before);
+});
+
+test('loaded-mail search paginates stored Inbox metadata without HTTP and keeps accounts isolated', async () => {
+  const messages = Array.from({length: 45}, (_, index) => ({
+    id: `loaded-${index}`,
+    thread: `loaded-${index}`,
+    from: 'Sender <sender@example.test>',
+    subject: `Loaded needle ${index}`,
+    snippet: 'Local preview',
+    date: 1000 - index,
+    link: '',
+    unread: true,
+    pinned: false,
+    category: 'people',
+    attachments: false,
+  }));
+  const local = {
+    accounts: ['A', 'B'].map(id => ({
+      id,
+      provider: 'gmail',
+      email: `${id.toLowerCase()}@example.test`,
+      settings: {browser: true},
+      credentials: {},
+    })),
+    mailboxes: {
+      A: {messages, unread: 45, checkedAt: 1, error: ''},
+      B: {messages: [{...messages[0], subject: 'Private other mailbox'}], unread: 1, checkedAt: 1, error: ''},
+    },
+  };
+  const w = startWorker({local});
+  await w.ok({type: 'STATE'}, 'popup');
+  const before = w.calls.length;
+  const ids = [];
+  let cursor = '';
+  for (const size of [20, 20, 5]) {
+    const page = await w.ok({type: 'SEARCH', query: '  NEEDLE sender  ', pages: [{account: 'A', cursor}]}, 'popup');
+    assert.equal(page.pages[0].local, true);
+    assert.equal(page.hits.length, size);
+    assert.ok(page.hits.every(hit => hit.account === 'A'));
+    ids.push(...page.hits.map(hit => hit.message.id));
+    cursor = page.pages[0].cursor;
+  }
+  assert.equal(cursor, '');
+  assert.equal(new Set(ids).size, 45);
+  for (const query of ['Local preview', 'a@example.test', 'from:sender', 'Private', 'absent']) {
+    const page = await w.ok({type: 'SEARCH', query, pages: [{account: 'A', cursor: ''}]}, 'popup');
+    assert.equal(page.hits.length, query === 'Local preview' ? 20 : 0);
+  }
+  const both = await w.ok({type: 'SEARCH', query: 'sender', pages: []}, 'popup');
+  assert.ok(both.hits.some(hit => hit.account === 'A' && hit.message.id === 'loaded-0'));
+  assert.ok(both.hits.some(hit => hit.account === 'B' && hit.message.id === 'loaded-0'));
+  for (const value of ['-1', '1.5', '01', 'https://example.test/', '100000']) {
+    const page = await w.ok({type: 'SEARCH', query: 'needle', pages: [{account: 'A', cursor: value}]}, 'popup');
+    assert.equal(page.hits.length, 0);
+    assert.ok(page.pages[0].error);
+  }
+  assert.equal(w.calls.length, before);
+  const restarted = startWorker({local: w.stores.local});
+  const page = await restarted.ok({type: 'SEARCH', query: 'needle', pages: []}, 'app');
+  assert.equal(page.hits.length, 20);
+  assert.equal(page.pages.find(page => page.account === 'A').cursor, '20');
+});
+
+test('Gmail API keeps server search and does not silently replace server failures with loaded mail', async () => {
+  const w = startWorker();
+  await w.ok({type: 'ADD_ACCOUNT', provider: 'gmail'});
+  const account = w.stores.local.accounts[0].id;
+  const reply = await w.ok({type: 'SEARCH', query: 'from:sender', pages: [{account, cursor: ''}]}, 'popup');
+  assert.ok(reply.hits.length);
+  assert.equal(reply.pages[0].local, undefined);
+  assert.ok(w.calls.some(call => new URL(call.url).searchParams.get('q') === 'from:sender'));
+  const original = w.context.fetch;
+  w.context.fetch = async (input, init) =>
+    new URL(input).host === 'gmail.googleapis.com' ? Promise.reject(Error('Synthetic offline')) : original(input, init);
+  const failed = await w.ok({type: 'SEARCH', query: 'Subject', pages: [{account, cursor: ''}]}, 'popup');
+  assert.ok(w.stores.local.mailboxes[account].messages.some(message => message.subject.includes('Subject')));
+  assert.equal(failed.hits.length, 0);
+  assert.ok(failed.pages[0].error);
+  assert.equal(failed.pages[0].local, undefined);
 });

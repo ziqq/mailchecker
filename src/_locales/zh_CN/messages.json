@@ -651,10 +651,10 @@
     "message": "“$1”"
   },
   "search_webmail_only": {
-    "message": "扩展程序尚不支持搜索这些邮箱：$1。请在网页版邮箱中搜索。"
+    "message": "以下邮箱仅搜索已加载的发件人、主题和摘要：$1。完整历史记录需通过 Gmail API 或网页版邮箱搜索；此处不支持搜索运算符。"
   },
   "search_webmail_title": {
-    "message": "在网页版邮箱中搜索"
+    "message": "已加载邮件中无匹配结果"
   },
   "section_inbox": {
     "message": "其他"

@@ -283,7 +283,7 @@ export function MessageList() {
   const total = () => store.unread().all;
   const searchUnavailable = () =>
     accounts().filter(account => account.search === false || (account.search === undefined && account.browser));
-  const webmailSearchOnly = () => accounts().length > 0 && searchUnavailable().length === accounts().length;
+  const loadedSearchOnly = () => accounts().length > 0 && searchUnavailable().length === accounts().length;
   return (
     <section class="list-pane" aria-label={t('label_messages')}>
       <header class="list-head">
@@ -502,13 +502,13 @@ export function MessageList() {
             <div class="empty small">
               <h2>
                 {store.results()
-                  ? t(webmailSearchOnly() ? 'search_webmail_title' : 'search_empty')
+                  ? t(loadedSearchOnly() ? 'search_webmail_title' : 'search_empty')
                   : store.folder()
                     ? t('folder_empty')
                     : t('inbox_empty')}
                 <span class="dot">.</span>
               </h2>
-              <Show when={(store.results() && !webmailSearchOnly()) || (!store.results() && !store.folder())}>
+              <Show when={(store.results() && !loadedSearchOnly()) || (!store.results() && !store.folder())}>
                 <p>{store.results() ? t('search_empty_text') : t('inbox_empty_text')}</p>
               </Show>
             </div>

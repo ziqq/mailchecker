@@ -125,6 +125,58 @@ test('bodies survive worker/page restart and are deduplicated across views', asy
   expect((await call('cachedThread', 'A', 'T', 'm')).messages[0].html).toBe('<p>Saved body</p>');
 });
 
+test('loaded-mail metadata survives restart, excludes bodies and expired records, and reconciles actions', async ({
+  page,
+}) => {
+  let call = await start(page);
+  const metadata = {
+    id: 'm',
+    thread: 'T',
+    from: 'Sender <sender@example.test>',
+    subject: 'Loaded search metadata',
+    snippet: 'Saved preview',
+    date: 1,
+    unread: true,
+    pinned: false,
+    category: 'people',
+    attachments: false,
+    link: '',
+  };
+  await call('cacheView', await call('cacheTicket', 'A'), 'folder', 'F', [metadata]);
+  await call('cacheView', await call('cacheTicket', 'A'), 'thread', 'T', [body]);
+  await call('cacheView', await call('cacheTicket', 'A'), 'thread', 'body-only', [{...body, id: 'body-only'}]);
+  await call('cacheView', await call('cacheTicket', 'B'), 'folder', 'F', [{...metadata, subject: 'Other account'}]);
+  expect(await call('cachedMessages', 'A')).toEqual([metadata]);
+  call = await start(page);
+  expect(await call('cachedMessages', 'A')).toEqual([metadata]);
+  await records(page, [
+    {
+      store: 'messages',
+      value: {
+        account: 'A',
+        id: 'expired',
+        metadata: {...metadata, id: 'expired'},
+        access: Date.now() - 31 * 24 * 60 * 60 * 1000,
+        bytes: 500,
+      },
+    },
+  ]);
+  expect(await call('cachedMessages', 'A')).toEqual([metadata]);
+  await call('cacheAction', 'A', 'm', 'read');
+  await call('cacheAction', 'A', 'm', 'pin');
+  expect(await call('cachedMessages', 'A')).toEqual([{...metadata, unread: false, pinned: true}]);
+  for (const action of ['archive', 'trash']) {
+    await call('cacheView', await call('cacheTicket', 'A'), 'folder', 'F', [metadata]);
+    await call('cacheAction', 'A', 'm', action);
+    expect(await call('cachedMessages', 'A')).toEqual([]);
+  }
+  expect((await call('cachedMessages', 'B'))[0].subject).toBe('Other account');
+  await call('clearCache', 'B');
+  expect(await call('cachedMessages', 'B')).toEqual([]);
+  call = await start(page, true);
+  expect(await call('cachedMessages', 'A')).toEqual([]);
+});
+
 test('confirmed flags reject older writes and moves/replies invalidate referenced views', async ({page}) => {
   const call = await start(page);
   const old = await call('cacheTicket', 'A');

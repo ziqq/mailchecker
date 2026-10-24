@@ -669,10 +669,10 @@
     "message": "«$1»"
   },
   "search_webmail_only": {
-    "message": "La ricerca in queste caselle non è ancora supportata: $1. Usa la ricerca della webmail."
+    "message": "Solo mittente, oggetto e anteprima già caricati per: $1. Per tutta la cronologia usa Gmail API o la posta web; qui gli operatori di ricerca non sono supportati."
   },
   "search_webmail_title": {
-    "message": "Cerca nella webmail"
+    "message": "Nessun risultato nei messaggi caricati"
   },
   "section_inbox": {
     "message": "Tutto il resto"

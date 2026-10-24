@@ -13,7 +13,7 @@
  * @module sandbox/worker
  */
 import {preferences} from '../shared/preferences';
-import {ACCOUNT_COLORS} from '../shared/inbox';
+import {ACCOUNT_COLORS, searchLoaded} from '../shared/inbox';
 import type {
   MailMessage,
   Preferences,
@@ -36,6 +36,8 @@ let data: (Fixtures & {preferences: Preferences}) | null = null;
 let pendingBrowserSignIn = '';
 /** One simulated per-account search failure before a successful retry. */
 const failedSearches = new Set<string>();
+/** Folder metadata actually opened in the sandbox, mirroring the worker's loaded-mail cache. */
+const loadedMessages = new Map<string, Map<string, MailMessage>>();
 
 /** Returns the sandbox data, creating it on first use. */
 function current(): Fixtures & {preferences: Preferences} {
@@ -99,6 +101,10 @@ function current(): Fixtures & {preferences: Preferences} {
       }
     }
     if (query.get('search') === 'webmail') data.accounts = data.accounts.filter(account => account.browser);
+    if (query.get('search') === 'loaded')
+      data.accounts = data.accounts
+        .filter(account => account.id === 'gmail')
+        .map(account => ({...account, browser: true, search: false, reply: false}));
   }
   return data;
 }
@@ -249,23 +255,20 @@ function thread(id: string, message: string, key: string): ThreadMessage[] {
 /** Searches Inbox and archived mail of every account by sender, subject and snippet. */
 function search(query: string, sessions = false): SearchHit[] {
   const {accounts, mailboxes, archive, folderMessages} = current();
-  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   return accounts
     .filter(account => sessions || !account.browser)
     .flatMap(({id}) =>
-      [
-        ...new Map(
-          [...mailboxes[id].messages, ...(archive[id] || []), ...Object.values(folderMessages[id]).flat()].map(item => [
-            item.id,
-            item,
-          ]),
-        ).values(),
-      ].map(message => ({account: id, message})),
+      searchLoaded(
+        [
+          ...new Map(
+            [...mailboxes[id].messages, ...(archive[id] || []), ...Object.values(folderMessages[id]).flat()].map(
+              item => [item.id, item],
+            ),
+          ).values(),
+        ],
+        query,
+      ).map(message => ({account: id, message})),
     )
-    .filter(({message}) => {
-      const haystack = `${message.from} ${message.subject} ${message.snippet}`.toLowerCase();
-      return words.every(word => haystack.includes(word));
-    })
     .sort((a, b) => b.message.date - a.message.date);
 }
 
@@ -277,23 +280,31 @@ function searchPage(query: string, pages: {account: string; cursor: string}[]): 
   const value: SearchPage = {hits: [], pages: []};
   for (const target of targets) {
     const account = accounts.find(account => account.id === target.account)!;
-    if (account.search === false || (account.search === undefined && account.browser)) {
-      value.pages.push({...target, cursor: '', error: '', unsupported: true});
-      continue;
-    }
+    const local = account.search === false || (account.search === undefined && account.browser);
     if (new URLSearchParams(location.search).get('searchError') === account.id && !failedSearches.has(account.id)) {
       failedSearches.add(account.id);
       value.pages.push({...target, error: t('error_unreachable', t('service_server'))});
       continue;
     }
     const offset = Number(target.cursor || 0);
-    const all = hits.filter(hit => hit.account === target.account);
+    const all = local
+      ? searchLoaded(
+          [
+            ...new Map([
+              ...(loadedMessages.get(account.id) || new Map()),
+              ...current().mailboxes[account.id].messages.map(message => [message.id, message] as const),
+            ]).values(),
+          ],
+          query,
+        ).map(message => ({account: account.id, message}))
+      : hits.filter(hit => hit.account === target.account);
     const messages = all.slice(offset, offset + 20);
     value.hits.push(...messages);
     value.pages.push({
       account: target.account,
       cursor: offset + messages.length < all.length ? String(offset + messages.length) : '',
       error: '',
+      ...(local ? {local: true} : {}),
     });
   }
   return value;
@@ -305,6 +316,7 @@ function answer(message: Request): unknown {
     case 'CACHED_THREAD':
       return null;
     case 'CLEAR_CACHE':
+      loadedMessages.clear();
       return true;
     case 'STATE':
       return state();
@@ -338,6 +350,9 @@ function answer(message: Request): unknown {
       if (!items) throw new Error(t('error_bad_message'));
       const offset = Number(message.cursor || 0);
       const messages = items.slice(offset, offset + 50).map(item => ({...item, folder: message.folder}));
+      const loaded = loadedMessages.get(id) || new Map<string, MailMessage>();
+      for (const item of messages) loaded.set(item.id, item);
+      loadedMessages.set(id, loaded);
       return {messages, next: offset + messages.length < items.length ? String(offset + messages.length) : ''};
     }
     case 'ACT':
@@ -350,6 +365,8 @@ function answer(message: Request): unknown {
           t('error_account_mismatch', current().accounts.find(account => account.id === 'yandex')!.email),
         );
       act(message.account, message.message, message.action);
+      if (message.action === 'archive' || message.action === 'trash')
+        loadedMessages.get(message.account)?.delete(message.message);
       return state();
     case 'THREAD':
       return thread(message.account, message.message, message.thread);
