@@ -269,12 +269,24 @@ footer {
     align-items: flex-start;
     flex-direction: column;
     justify-content: center;
-    gap: 10px;
-    padding: 20px 0;
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  nav {
+    gap: 12px;
   }
 
   .hero {
-    padding-top: 44px;
+    padding: 24px 0 28px;
+  }
+
+  .hero .eyebrow {
+    margin-top: 0;
+  }
+
+  .hero h1 {
+    margin: 14px 0 18px;
   }
 
   .lead {
