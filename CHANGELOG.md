@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.50
+
+- **FIXED**: the Settings accent palette keeps its full width beside the description and wraps only when it exceeds the available row width
+
 ## 0.0.49
 
 - **ADDED**: browser-connected Gmail searches loaded sender, subject and preview metadata from the bounded local cache, with paginated results and an explicit scope notice; server history search stays available through Gmail API
