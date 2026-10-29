@@ -80,7 +80,9 @@ export function AccountSwitcher() {
           >
             {icon('inbox')}
             <span>{t('all_mailboxes')}</span>
-            <span class="menu-count">{store.unread().all || ''}</span>
+            <span class="menu-count">
+              {accounts().reduce((sum, item) => sum + (store.state()?.mailboxes[item.id]?.unread || 0), 0) || ''}
+            </span>
           </button>
           <For each={accounts()}>
             {account => (
@@ -107,7 +109,7 @@ export function RefreshButton(props: {class?: string}) {
   return (
     <button
       class={props.class || 'round ghost'}
-      classList={{busy: store.refreshing()}}
+      classList={{refreshing: store.refreshing()}}
       type="button"
       title={t('action_check_now')}
       aria-label={t('action_check_now')}

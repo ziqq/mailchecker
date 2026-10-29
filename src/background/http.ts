@@ -21,6 +21,24 @@ const TIMEOUT = 25000;
 /** Default response limit: 4 MiB is far above a page of message metadata. */
 const LIMIT = 4 * 1024 * 1024;
 
+/** Worker-wide slots cover the fetch and bounded body read across all accounts and providers. */
+const MAX_REQUESTS = 8;
+let activeRequests = 0;
+const pendingRequests: (() => void)[] = [];
+
+/** Waits for a FIFO request slot; the network timeout starts when fetch actually begins. */
+async function acquireRequest(): Promise<void> {
+  if (activeRequests < MAX_REQUESTS) activeRequests++;
+  else await new Promise<void>(resolve => pendingRequests.push(resolve));
+}
+
+/** Hands the occupied slot to the next waiter, including after fetch or body failures. */
+function releaseRequest(): void {
+  const next = pendingRequests.shift();
+  if (next) next();
+  else activeRequests--;
+}
+
 /** Webmail hosts that session requests may send the browser's cookies to. */
 export const SESSION_HOSTS: readonly string[] = Object.freeze([
   'mail.google.com',
@@ -47,6 +65,23 @@ export class HTTPError extends Error {
   ) {
     super(message);
   }
+}
+
+/** Distinguishes explicit API quota/permission errors from rejected credentials, including batch replies. */
+export function isAuthFailure(status: number, text = ''): boolean {
+  if (status === 401) return true;
+  if (status !== 403) return false;
+  try {
+    const value = JSON.parse(text) as {error?: {code?: unknown; errors?: {reason?: unknown}[]}};
+    const error = value?.error;
+    const reasons = Array.isArray(error?.errors) ? error.errors.map(item => item?.reason) : [];
+    if (typeof error?.code === 'string') reasons.push(error.code);
+    const known = reasons.filter(reason => typeof reason === 'string' && reason);
+    if (known.length) return known.some(reason => reason === 'authError' || reason === 'InvalidAuthenticationToken');
+  } catch {
+    // Legacy servers can reject a token with an empty or non-JSON 403 response.
+  }
+  return true;
 }
 
 /**
@@ -92,12 +127,14 @@ export async function responseText(response: Response, limit = LIMIT): Promise<s
 /** Options for [requestJSON]. */
 export interface RequestOptions {
   method?: string;
-  /** A bearer token; a 401/403 reply then raises [AuthError]. */
+  /** A bearer token; rejected credentials raise [AuthError], while explicit quota/permission errors do not. */
   token?: string;
   /** A body serialized as JSON. */
   json?: unknown;
   /** A body sent as `application/x-www-form-urlencoded`. */
   form?: Record<string, string>;
+  /** A pre-serialized MIME request; still uses the same credential, timeout and response-size limits. */
+  multipart?: {boundary: string; body: string};
   /** The service name used in error messages. */
   service?: string;
   /**
@@ -112,7 +149,7 @@ export interface RequestOptions {
 /** Sends a bounded request and returns the response with its text body. */
 async function send(
   url: string,
-  {method = 'GET', token, json, form, service = t('service_server'), session = false}: RequestOptions,
+  {method = 'GET', token, json, form, multipart, service = t('service_server'), session = false}: RequestOptions,
   accept: string,
 ): Promise<{response: Response; text: string}> {
   const target = new URL(url);
@@ -129,37 +166,48 @@ async function send(
   } else if (form) {
     headers['Content-Type'] = 'application/x-www-form-urlencoded';
     body = new URLSearchParams(form).toString();
+  } else if (multipart) {
+    if (!/^[a-z0-9_-]{1,70}$/i.test(multipart.boundary)) throw new Error(t('error_bad_message'));
+    headers['Content-Type'] = `multipart/mixed; boundary=${multipart.boundary}`;
+    body = multipart.body;
   }
-  let response: Response;
+  await acquireRequest();
   try {
-    response = await fetch(url, {
-      method,
-      headers,
-      body,
-      credentials: session ? 'include' : 'omit',
-      redirect: session ? 'follow' : 'error',
-      signal: AbortSignal.timeout(TIMEOUT),
-    });
-  } catch (error) {
-    if ((error as Error)?.name === 'TimeoutError')
-      throw new Error(session ? t('error_webmail_timeout', service) : t('error_timeout', service), {
-        cause: error,
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body,
+        credentials: session ? 'include' : 'omit',
+        redirect: session ? 'follow' : 'error',
+        signal: AbortSignal.timeout(TIMEOUT),
       });
-    // A session request redirected to a sign-in host (no host permission there) fails like a network error.
-    if (session) throw new AuthError(t('error_session_or_network', service));
-    throw new Error(t('error_unreachable', service), {cause: error});
+    } catch (error) {
+      if ((error as Error)?.name === 'TimeoutError')
+        throw new Error(session ? t('error_webmail_timeout', service) : t('error_timeout', service), {
+          cause: error,
+        });
+      // A session request redirected to a sign-in host (no host permission there) fails like a network error.
+      if (session) throw new AuthError(t('error_session_or_network', service));
+      throw new Error(t('error_unreachable', service), {cause: error});
+    }
+    const signedOut = session && !SESSION_HOSTS.includes(new URL(response.url || url).hostname);
+    // Webmail answers too frequent requests with 403/429 (Yandex: «Доступ к сервису временно запрещён»).
+    if (session && !signedOut && (response.status === 403 || response.status === 429)) {
+      await response.body?.cancel().catch(() => {});
+      throw new Error(t('error_rate_limited', service));
+    }
+    if (signedOut || ((token || session) && response.status === 401)) {
+      await response.body?.cancel().catch(() => {});
+      throw new AuthError(session ? t('error_sign_in_webmail', service) : undefined);
+    }
+    const text = await responseText(response);
+    if (token && isAuthFailure(response.status, text)) throw new AuthError();
+    return {response, text};
+  } finally {
+    releaseRequest();
   }
-  const signedOut = session && !SESSION_HOSTS.includes(new URL(response.url || url).hostname);
-  // Webmail answers too frequent requests with 403/429 (Yandex: «Доступ к сервису временно запрещён»).
-  if (session && !signedOut && (response.status === 403 || response.status === 429)) {
-    await response.body?.cancel().catch(() => {});
-    throw new Error(t('error_rate_limited', service));
-  }
-  if (signedOut || ((token || session) && (response.status === 401 || response.status === 403))) {
-    await response.body?.cancel().catch(() => {});
-    throw new AuthError(session ? t('error_sign_in_webmail', service) : undefined);
-  }
-  return {response, text: await responseText(response)};
 }
 
 /**
@@ -189,7 +237,7 @@ export async function requestText(url: string, options: RequestOptions = {}): Pr
  * @param url The absolute HTTPS URL.
  * @param options Method, credentials, session and body.
  * @returns The parsed body, or `null` for an empty reply.
- * @throws {AuthError} On 401 or 403 when a token was sent, or a signed-out session.
+ * @throws {AuthError} When credentials are rejected, or a session is signed out.
  * @throws {HTTPError} On other failures.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

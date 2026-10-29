@@ -85,6 +85,22 @@ export async function request<R = unknown>(message: Request): Promise<R> {
   return reply.value;
 }
 
+/** Runs once when the user returns to this visible page; returns a function that cancels the listener. */
+export function afterReturn(action: () => void): () => void {
+  const cancel = () => {
+    window.removeEventListener('focus', resume);
+    document.removeEventListener('visibilitychange', resume);
+  };
+  const resume = () => {
+    if (document.visibilityState === 'hidden') return;
+    cancel();
+    action();
+  };
+  window.addEventListener('focus', resume);
+  document.addEventListener('visibilitychange', resume);
+  return cancel;
+}
+
 /**
  * Returns a required element by ID.
  *

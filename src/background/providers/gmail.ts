@@ -7,8 +7,8 @@
  *
  * @module background/providers/gmail
  */
-import type {Account, Credentials, MailMessage, MessageAction} from '../../shared/types';
-import {requestJSON, type RequestOptions} from '../http';
+import type {Account, Credentials, FolderPage, MailFolder, MailMessage, MessageAction} from '../../shared/types';
+import {AuthError, isAuthFailure, requestJSON, requestText, type RequestOptions} from '../http';
 import * as oauth from '../oauth/flow';
 import {
   bareAddress,
@@ -24,8 +24,56 @@ import {
 } from './message';
 import {t} from '../../shared/i18n';
 
+/** Gmail's virtual Archive: received mail outside Inbox, Sent, Drafts, Spam and Trash. */
+const ARCHIVE_QUERY = '-in:inbox -in:sent -in:drafts -in:spam -in:trash';
+
 /** Gmail API base for the signed-in user. */
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
+
+/** Reads folder counters in Gmail's recommended batches of at most 50 operations. */
+async function folderCounts(account: Account, paths: string[]): Promise<(Record<string, unknown> | undefined)[]> {
+  const results: (Record<string, unknown> | undefined)[] = Array(paths.length).fill(undefined);
+  for (let offset = 0; offset < paths.length; offset += 50) {
+    const group = paths.slice(offset, offset + 50);
+    const boundary = 'mailchecker_batch';
+    const body =
+      group
+        .map(
+          (path, index) =>
+            `--${boundary}\r\nContent-Type: application/http\r\nContent-ID: <${index}@mailchecker>\r\n\r\nGET /gmail/v1/users/me${path} HTTP/1.1\r\n\r\n`,
+        )
+        .join('') + `--${boundary}--\r\n`;
+    try {
+      const reply = await requestText('https://gmail.googleapis.com/batch/gmail/v1', {
+        token: account.credentials.token,
+        service: 'Gmail',
+        method: 'POST',
+        multipart: {boundary, body},
+      });
+      const marker = /^--([^\r\n]{1,200})\r?$/m.exec(reply)?.[1];
+      if (!marker) continue;
+      for (const part of reply.split(`--${marker}`).slice(1, group.length + 1)) {
+        const id = /Content-ID:\s*<response-(\d+)@mailchecker>/i.exec(part)?.[1];
+        const status = Number(/HTTP\/1\.[01]\s+(\d{3})/.exec(part)?.[1]);
+        const start = part.indexOf('{');
+        if (isAuthFailure(status, start < 0 ? '' : part.slice(start).trim())) throw new AuthError();
+        if (id == null || Number(id) >= group.length || status !== 200) continue;
+        if (start < 0) continue;
+        try {
+          const value: unknown = JSON.parse(part.slice(start).trim());
+          if (value && typeof value === 'object' && !Array.isArray(value))
+            results[offset + Number(id)] = value as Record<string, unknown>;
+        } catch {
+          // A malformed individual counter must not hide the other folder names or counts.
+        }
+      }
+    } catch (error) {
+      if (error instanceof AuthError) throw error;
+      // Keep names usable when a batch fails; absent counters remain unknown rather than zero.
+    }
+  }
+  return results;
+}
 
 /** A MIME part as returned with `format=full` or `format=metadata`. */
 interface GmailPart {
@@ -64,6 +112,14 @@ const METADATA = ['From', 'Subject', 'Date', 'List-Unsubscribe', 'Precedence']
 const call = <T>(credentials: Credentials, path: string, options: RequestOptions = {}) =>
   requestJSON<T>(API + path, {...options, token: credentials.token, service: 'Gmail'});
 
+/** Returns the mailbox address authenticated by [credentials]. */
+async function address(credentials: Credentials): Promise<string> {
+  const profile = await call<{emailAddress?: unknown}>(credentials, '/profile');
+  if (typeof profile?.emailAddress !== 'string' || !profile.emailAddress.trim())
+    throw new Error(t('error_no_address', 'Gmail'));
+  return profile.emailAddress;
+}
+
 /** Returns headers of a part by lower-case name. */
 const headersOf = (part?: GmailPart): Record<string, string> =>
   Object.fromEntries((part?.headers || []).map(h => [String(h.name).toLowerCase(), String(h.value)]));
@@ -80,21 +136,29 @@ function decodeBody(data: string, contentType = ''): string {
   }
 }
 
-/** Collects the HTML, plain text and attachments of a MIME tree. */
+/** Collects a MIME tree in depth-first order with explicit depth and work bounds. */
 function walk(
   part: GmailPart | undefined,
   out: {html: string; text: string; attachments: RawThreadMessage['attachments']},
 ) {
-  if (!part) return out;
-  const type = (part.mimeType || '').toLowerCase();
-  if (part.filename && part.body?.attachmentId) {
-    out.attachments!.push({name: part.filename, size: part.body.size, type});
-  } else if (part.body?.data && type === 'text/html' && !out.html) {
-    out.html = decodeBody(part.body.data, headersOf(part)['content-type']);
-  } else if (part.body?.data && type === 'text/plain' && !out.text) {
-    out.text = decodeBody(part.body.data, headersOf(part)['content-type']);
+  const pending = part ? [{part, depth: 0}] : [];
+  let visited = 0;
+  while (pending.length) {
+    const {part, depth} = pending.pop()!;
+    if (++visited > 2000 || depth > 64) throw new Error(t('error_too_large'));
+    if (!part || typeof part !== 'object') continue;
+    const type = typeof part.mimeType === 'string' ? part.mimeType.toLowerCase() : '';
+    if (part.filename && part.body?.attachmentId) {
+      out.attachments!.push({name: part.filename, size: part.body.size, type});
+    } else if (part.body?.data && type === 'text/html' && !out.html) {
+      out.html = decodeBody(part.body.data, headersOf(part)['content-type']);
+    } else if (part.body?.data && type === 'text/plain' && !out.text) {
+      out.text = decodeBody(part.body.data, headersOf(part)['content-type']);
+    }
+    const children = Array.isArray(part.parts) ? part.parts : [];
+    if (visited + pending.length + children.length > 2000) throw new Error(t('error_too_large'));
+    for (let index = children.length - 1; index >= 0; index--) pending.push({part: children[index], depth: depth + 1});
   }
-  for (const child of part.parts || []) walk(child, out);
   return out;
 }
 
@@ -121,15 +185,35 @@ function listMessage(item: GmailMessage): MailMessage {
   });
 }
 
-/** Lists messages matching a Gmail query with metadata. */
-async function list(credentials: Credentials, q: string, limit: number): Promise<MailMessage[]> {
-  const query = new URLSearchParams({q, maxResults: String(limit)});
-  const found = await call<{messages?: {id: string}[]}>(credentials, `/messages?${query}`);
+/** Lists a bounded Gmail page, matching a query or a server label. */
+async function listPage(
+  credentials: Credentials,
+  q: string,
+  limit: number,
+  folder = '',
+  cursor = '',
+): Promise<FolderPage> {
+  const query = new URLSearchParams({maxResults: String(limit)});
+  if (q) query.set('q', q);
+  if (folder) {
+    query.set('includeSpamTrash', String(folder === 'TRASH' || folder === 'SPAM'));
+    if (folder !== 'archive') query.set('labelIds', folder);
+  }
+  if (cursor) query.set('pageToken', cursor);
+  const found = await call<{messages?: {id: string}[]; nextPageToken?: string}>(credentials, `/messages?${query}`);
   const ids = (Array.isArray(found?.messages) ? found.messages : []).slice(0, limit).map(item => String(item.id));
   const details = await Promise.all(
     ids.map(id => call<GmailMessage>(credentials, `/messages/${encodeURIComponent(id)}?format=metadata&${METADATA}`)),
   );
-  return details.map(listMessage);
+  return {
+    messages: details.map(item => ({...listMessage(item), ...(folder ? {folder} : {})})),
+    next: found?.nextPageToken || '',
+  };
+}
+
+/** Lists the first page for Inbox checks and search. */
+async function list(credentials: Credentials, q: string, limit: number): Promise<MailMessage[]> {
+  return (await listPage(credentials, q, limit)).messages;
 }
 
 /** Gmail provider. */
@@ -138,14 +222,14 @@ export const gmail: Provider = {
 
   async connect() {
     const credentials = await oauth.google({interactive: true});
-    const profile = await call<{emailAddress?: unknown}>(credentials, '/profile');
-    if (typeof profile?.emailAddress !== 'string') throw new Error(t('error_no_address', 'Gmail'));
-    return {email: profile.emailAddress, credentials, settings: {}};
+    return {email: await address(credentials), credentials, settings: {}};
   },
 
-  renew: account => oauth.google({loginHint: account.email, interactive: false}),
+  address,
 
-  signIn: account => oauth.google({loginHint: account.email, interactive: true}),
+  renew: account => oauth.google({credentials: account.credentials, interactive: false}),
+
+  signIn: account => oauth.google({credentials: account.credentials, interactive: true}),
 
   async inbox(account, limit) {
     const [label, messages] = await Promise.all([
@@ -153,6 +237,49 @@ export const gmail: Provider = {
       list(account.credentials, 'in:inbox', limit),
     ]);
     return {unread: count(label?.messagesUnread, messages.filter(item => item.unread).length), messages};
+  },
+
+  async folders(account) {
+    const value = await call<{labels?: {id?: string; name?: string; type?: string}[]}>(account.credentials, '/labels');
+    const roles = {INBOX: 'inbox', SENT: 'sent', TRASH: 'trash', SPAM: 'spam', DRAFT: 'drafts'} as const;
+    const system: MailFolder[] = [];
+    const custom: MailFolder[] = [];
+    const seen = new Set<string>();
+    for (const item of Array.isArray(value?.labels) ? value.labels : []) {
+      if (typeof item?.id !== 'string' || !item.id || item.id.length > 512 || seen.has(item.id)) continue;
+      const role = Object.hasOwn(roles, item.id) ? roles[item.id as keyof typeof roles] : undefined;
+      if (!role && (item.type !== 'user' || custom.length >= 199)) continue;
+      seen.add(item.id);
+      (role ? system : custom).push({id: item.id, name: item.name || item.id, role});
+    }
+    // Reserve Archive and prioritize every system role before applying the catalog cap.
+    const labels = [...system, ...custom.slice(0, 199 - system.length)];
+    const counts = await folderCounts(account, [
+      ...labels.map(label => `/labels/${encodeURIComponent(label.id)}?fields=messagesTotal,messagesUnread`),
+      `/messages?${new URLSearchParams({q: ARCHIVE_QUERY, maxResults: '1', fields: 'resultSizeEstimate'})}`,
+    ]);
+    const folders: MailFolder[] = labels.map((label, index) => ({
+      ...label,
+      total: typeof counts[index]?.messagesTotal === 'number' ? (counts[index]!.messagesTotal as number) : undefined,
+      unread: typeof counts[index]?.messagesUnread === 'number' ? (counts[index]!.messagesUnread as number) : undefined,
+    }));
+    const archive = counts[labels.length];
+    // Gmail archives by removing INBOX; it has no Archive label.
+    return [
+      {
+        id: 'archive',
+        name: '',
+        role: 'archive' as const,
+        total: typeof archive?.resultSizeEstimate === 'number' ? archive.resultSizeEstimate : undefined,
+        approximate: true,
+      },
+      ...folders,
+    ];
+  },
+
+  async folder(account, id, limit, cursor) {
+    const q = id === 'archive' ? ARCHIVE_QUERY : '';
+    return listPage(account.credentials, q, limit, id, cursor);
   },
 
   async thread(account, item) {
@@ -186,6 +313,8 @@ export const gmail: Provider = {
   },
 
   search: (account, query, limit) => list(account.credentials, query, limit),
+
+  searchPage: (account, query, limit, cursor) => listPage(account.credentials, query, limit, '', cursor),
 
   // A plain-text RFC 5322 message in the original thread, with `In-Reply-To` and `References`.
   async reply(account, item, text) {

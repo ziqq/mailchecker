@@ -24,6 +24,7 @@ const VIEWS: {filter: Filter; label: string; icon: string}[] = [
 export function Sidebar() {
   const accounts = () => store.state()?.accounts || [];
   const pick = (filter: Filter) => {
+    store.chooseFolder(null);
     store.setFilter(filter);
     store.search('');
   };
@@ -41,7 +42,7 @@ export function Sidebar() {
           {view => (
             <a
               href="#"
-              aria-current={store.filter() === view.filter && !store.results() ? 'page' : undefined}
+              aria-current={!store.folder() && store.filter() === view.filter && !store.results() ? 'page' : undefined}
               onClick={event => {
                 event.preventDefault();
                 pick(view.filter);
@@ -49,7 +50,7 @@ export function Sidebar() {
             >
               {icon(view.icon)}
               <span class="label">{view.label}</span>
-              <span class="count">{store.unread()[view.filter] || ''}</span>
+              <span class="count">{store.inboxUnread()[view.filter] || ''}</span>
             </a>
           )}
         </For>

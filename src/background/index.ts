@@ -12,11 +12,26 @@
  *
  * @module background/index
  */
+import {cachedThread, clearCache} from './cache';
 import {preferences} from '../shared/preferences';
-import type {MessageAction, Preferences, Reply, RequestType} from '../shared/types';
+import type {MailMessage, MessageAction, Preferences, Reply, RequestType} from '../shared/types';
 import {addAccount, publicState, removeAccount, setAccountColor, signIn} from './accounts';
-import {act, checkAccount, checkAll, open, openNotification, reply, search, thread, updateBadge} from './mailbox';
-import {hasNotifications, openApp} from './platform';
+import {
+  act,
+  checkAccount,
+  checkAll,
+  closeNotification,
+  folder,
+  folders,
+  open,
+  openNotification,
+  reply,
+  search,
+  searchPage,
+  thread,
+  updateBadge,
+} from './mailbox';
+import {hasNotifications, onNotificationClosed, openApp} from './platform';
 import {readStore, writeStore} from './storage';
 import {t} from '../shared/i18n';
 
@@ -32,6 +47,9 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'STATE',
     'CHECK',
     'THREAD',
+    'CACHED_THREAD',
+    'FOLDERS',
+    'FOLDER',
     'REPLY',
     'ACT',
     'SEARCH',
@@ -50,6 +68,7 @@ const allowed: Readonly<Record<Page, ReadonlySet<RequestType>>> = Object.freeze(
     'ADD_ACCOUNT',
     'REMOVE_ACCOUNT',
     'ACCOUNT_COLOR',
+    'CLEAR_CACHE',
   ]),
 });
 
@@ -89,6 +108,7 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
   const type = message?.type as RequestType;
   if (!page || typeof type !== 'string' || !allowed[page].has(type)) throw new Error(t('error_request_denied'));
   const account = String(message.account ?? '');
+  const entry = message.entry && typeof message.entry === 'object' ? (message.entry as MailMessage) : undefined;
   switch (type) {
     case 'STATE':
       return publicState(await readStore());
@@ -96,27 +116,51 @@ async function handle(message: Message, sender: chrome.runtime.MessageSender): P
       await checkAll();
       return publicState(await readStore());
     case 'ACT':
-      await act(account, String(message.message ?? ''), message.action as MessageAction);
+      await act(account, String(message.message ?? ''), message.action as MessageAction, entry);
       return publicState(await readStore());
+    case 'CLEAR_CACHE':
+      if (!(await clearCache())) throw new Error(t('error_generic'));
+      return true;
+    case 'CACHED_THREAD': {
+      const id = String(message.message ?? '');
+      const thread = String(message.thread ?? '');
+      if (!id || id.length > 512 || thread.length > 512) throw new Error(t('error_bad_message'));
+      if (!((await readStore()).accounts || []).some(item => item.id === account))
+        throw new Error(t('error_account_missing'));
+      return cachedThread(account, thread || id, id);
+    }
     case 'THREAD':
-      return thread(account, String(message.message ?? ''), String(message.thread ?? ''));
+      return thread(account, String(message.message ?? ''), String(message.thread ?? ''), entry);
+    case 'FOLDERS':
+      return folders(account);
+    case 'FOLDER':
+      return folder(account, String(message.folder ?? ''), String(message.cursor ?? ''));
     case 'REPLY':
-      await reply(account, String(message.message ?? ''), String(message.text ?? ''));
+      await reply(account, String(message.message ?? ''), String(message.text ?? ''), entry);
       return true;
     case 'SEARCH':
-      return search(String(message.query ?? ''));
+      return message.pages === undefined
+        ? search(String(message.query ?? ''))
+        : searchPage(String(message.query ?? ''), message.pages);
     case 'OPEN_APP':
       await openApp();
       return true;
     case 'OPEN':
-      await open(account, message.message == null ? undefined : String(message.message));
+      await open(account, message.message == null ? undefined : String(message.message), entry);
       return true;
     case 'OPTIONS':
       await chrome.runtime.openOptionsPage();
       return true;
     case 'SIGN_IN': {
       const stored = ((await readStore()).accounts || []).find(item => item.id === account);
-      if (!stored?.settings?.browser) await requireIdentity();
+      if (stored?.settings?.browser) {
+        await checkAccount(account);
+        await updateBadge();
+        const state = publicState(await readStore());
+        if (state.mailboxes[account]?.reauth) await open(account);
+        return state;
+      }
+      await requireIdentity();
       await signIn(account);
       await checkAccount(account);
       await updateBadge();
@@ -183,3 +227,6 @@ if (hasNotifications())
   chrome.notifications.onClicked.addListener(id => {
     openNotification(id).catch(() => {});
   });
+onNotificationClosed(id => {
+  closeNotification(id).catch(() => {});
+});

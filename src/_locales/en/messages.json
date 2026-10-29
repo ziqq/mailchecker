@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · unread: $1 · mailboxes with errors: $2"
   },
+  "bulk_progress": {
+    "message": "Moving to Trash: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Selected: $1"
+  },
   "busy_archiving": {
     "message": "Archiving…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "The mailbox changed during sign-in. Try again."
+  },
+  "error_account_mismatch": {
+    "message": "Sign in with the connected mailbox: $1."
   },
   "error_account_missing": {
     "message": "Mailbox not found."
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "Archive"
   },
+  "folder_count_estimated": {
+    "message": "Estimated count: $1"
+  },
+  "folder_count_partial": {
+    "message": "Count for some mailboxes: $1"
+  },
+  "folder_drafts": {
+    "message": "Drafts"
+  },
+  "folder_empty": {
+    "message": "No messages in this folder"
+  },
   "folder_inbox": {
     "message": "Inbox"
   },
+  "folder_loading": {
+    "message": "Loading…"
+  },
+  "folder_more": {
+    "message": "Load more"
+  },
+  "folder_sent": {
+    "message": "Sent"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Trash"
+  },
+  "folder_unsupported": {
+    "message": "Folder browsing is unavailable for this connection. Open webmail."
   },
   "header_cc": {
     "message": "Cc: $1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "Categories"
   },
+  "label_folders": {
+    "message": "Folders"
+  },
   "label_mailboxes": {
     "message": "Mailboxes"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "Pinned"
+  },
+  "label_resize_list": {
+    "message": "Resize message list"
   },
   "label_sections": {
     "message": "Sections"
@@ -617,6 +659,12 @@
   "search_title": {
     "message": "“$1”"
   },
+  "search_webmail_only": {
+    "message": "Loaded sender, subject and preview only for: $1. Full history requires Gmail API or webmail; search operators are not supported here."
+  },
+  "search_webmail_title": {
+    "message": "No matches in loaded mail"
+  },
   "section_inbox": {
     "message": "Everything else"
   },
@@ -631,6 +679,15 @@
   },
   "section_pinned": {
     "message": "Pinned"
+  },
+  "select_loaded": {
+    "message": "Select all loaded messages"
+  },
+  "select_message": {
+    "message": "Select $1: $2"
+  },
+  "select_messages": {
+    "message": "Select messages"
   },
   "service_mailru": {
     "message": "Mail.ru"
@@ -700,5 +757,26 @@
   },
   "welcome_title_2": {
     "message": "At once"
+  },
+  "cache_title": {
+    "message": "Mail cache"
+  },
+  "cache_text": {
+    "message": "Previously opened mail is saved on this device. Clearing the cache keeps accounts and settings."
+  },
+  "cache_clear": {
+    "message": "Clear cache"
+  },
+  "cache_cleared": {
+    "message": "Mail cache cleared."
+  },
+  "cache_refreshing": {
+    "message": "Saved copy. Checking for updates…"
+  },
+  "cache_offline": {
+    "message": "Saved copy. Updates are unavailable."
+  },
+  "search_limit": {
+    "message": "$1: the server search limit has been reached. Refine your query."
   }
 }

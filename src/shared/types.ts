@@ -11,9 +11,8 @@
 /**
  * Provider identifiers.
  *
- * `yandex`, `mailru` and `icloud` are IMAP-only services without an HTTP
- * mail API. They have no adapter yet (see docs/SAFARI.md, IMAP bridge):
- * the worker rejects them, and only the sandbox shows them.
+ * Gmail, Outlook and JMAP use APIs; Yandex and Mail.ru use the browser's
+ * webmail session. iCloud is available only in sandbox fixtures.
  */
 export type ProviderID = 'gmail' | 'outlook' | 'jmap' | 'yandex' | 'mailru' | 'icloud';
 
@@ -43,7 +42,9 @@ export interface Preferences {
 export interface Credentials {
   token: string;
   refreshToken?: string;
-  /** Expiry in milliseconds since the epoch; absent for non-expiring tokens. */
+  /** Stable Google account ID for account-specific Chrome token renewal; worker-only. */
+  googleAccountID?: string;
+  /** Expiry in milliseconds since the epoch; absent when expiration is managed externally. */
   expiresAt?: number;
 }
 
@@ -71,6 +72,57 @@ export interface Account {
 /** Smart Inbox category. */
 export type Category = 'people' | 'notifications' | 'newsletters';
 
+/** Well-known server folder roles, independent of provider names and IDs. */
+export type FolderRole = 'inbox' | 'sent' | 'archive' | 'trash' | 'spam' | 'drafts';
+
+/** A server folder or Gmail label. Custom names are shown as returned by the server. */
+export interface MailFolder {
+  id: string;
+  name: string;
+  role?: FolderRole;
+  parent?: string;
+  /** Total messages, when the server provides it; never the length of a loaded page. */
+  total?: number;
+  /** Unread messages reported by the server. */
+  unread?: number;
+  /** Gmail's virtual Archive uses the provider's result-size estimate. */
+  approximate?: boolean;
+  /** A common total includes only folders whose servers supplied a count, so it is a lower bound. */
+  partial?: boolean;
+}
+
+/** One bounded page of folder messages; an empty cursor means the last page. */
+export interface FolderPage {
+  messages: MailMessage[];
+  next: string;
+}
+
+/** A provider page can stop at a documented service ceiling rather than a complete result set. */
+export interface SearchMessagePage extends FolderPage {
+  limited?: boolean;
+}
+
+/** A continuation belongs to one account and is opaque to the client. */
+export interface SearchCursor {
+  account: string;
+  cursor: string;
+}
+
+/** Success, retry position or unsupported status for one searched account. */
+export interface SearchAccountPage extends SearchCursor {
+  error: string;
+  unsupported?: boolean;
+  limited?: boolean;
+  /** Plain-text matching of loaded metadata, without a provider history request. */
+  local?: boolean;
+}
+
+/** A bounded global page; successful accounts survive another account's failure. */
+export interface SearchPage {
+  hits: SearchHit[];
+  pages: SearchAccountPage[];
+}
+
 /** A bounded Inbox message record for lists. */
 export interface MailMessage {
   id: string;
@@ -78,7 +130,7 @@ export interface MailMessage {
   from: string;
   subject: string;
   snippet: string;
-  /** Received time in milliseconds since the epoch. */
+  /** Received time in milliseconds; nonpositive values preserve server order when the date is unknown. */
   date: number;
   /** HTTPS link to the message in webmail, or empty. */
   link: string;
@@ -87,11 +139,15 @@ export interface MailMessage {
   pinned: boolean;
   category: Category;
   attachments: boolean;
+  /** Server folder context for actions outside the stored Inbox. */
+  folder?: string;
 }
 
 /** Inbox state returned by a provider: the latest messages and the unread count. */
 export interface InboxResult {
   unread: number;
+  /** The unread count is a lower bound because the provider did not return an authoritative total. */
+  unreadPartial?: boolean;
   messages: MailMessage[];
 }
 
@@ -116,6 +172,12 @@ export interface ThreadMessage {
   text: string;
   unread: boolean;
   attachments: Attachment[];
+}
+
+/** Persisted conversation returned before its network revalidation. */
+export interface CachedThread {
+  messages: ThreadMessage[];
+  fetchedAt: number;
 }
 
 /** Message actions available in lists and the reader. */
@@ -149,6 +211,8 @@ export interface PublicAccount {
   browser: boolean;
   /** The chosen colour, or empty for the colour by position. */
   color: string;
+  /** The worker has a server-search adapter for this connection. */
+  search?: boolean;
   /** Replies are written in the extension; otherwise they open in the webmail. */
   reply: boolean;
 }
@@ -171,11 +235,15 @@ export type Request =
   | {type: 'CHECK'}
   | {type: 'OPTIONS'}
   | {type: 'OPEN_APP'}
-  | {type: 'OPEN'; account: string; message?: string}
-  | {type: 'THREAD'; account: string; message: string; thread: string}
-  | {type: 'REPLY'; account: string; message: string; text: string}
-  | {type: 'ACT'; account: string; message: string; action: MessageAction}
-  | {type: 'SEARCH'; query: string}
+  | {type: 'OPEN'; account: string; message?: string; entry?: MailMessage}
+  | {type: 'FOLDERS'; account: string}
+  | {type: 'FOLDER'; account: string; folder: string; cursor?: string}
+  | {type: 'CACHED_THREAD'; account: string; message: string; thread: string}
+  | {type: 'CLEAR_CACHE'}
+  | {type: 'THREAD'; account: string; message: string; thread: string; entry?: MailMessage}
+  | {type: 'REPLY'; account: string; message: string; text: string; entry?: MailMessage}
+  | {type: 'ACT'; account: string; message: string; action: MessageAction; entry?: MailMessage}
+  | {type: 'SEARCH'; query: string; pages?: SearchCursor[]}
   | {type: 'SIGN_IN'; account: string}
   | {type: 'PREFERENCES'; value: Partial<Preferences>}
   | {type: 'ADD_ACCOUNT'; provider: ProviderID; input?: AccountInput; browser?: boolean}

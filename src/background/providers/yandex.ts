@@ -5,7 +5,7 @@
  *
  * Yandex Mail read through the browser's sign-in: the lite web Inbox.
  *
- * Yandex has no HTTP mail API, so the lite Inbox page
+ * This browser-session adapter reads the lite Inbox page
  * (`mail.yandex.ru/lite/inbox`) is parsed: the folder list gives the unread
  * count, message rows give sender, subject, first line, read state and the
  * checkbox the lite toolbar acts on. A message page gives the full text and
@@ -14,14 +14,40 @@
  *
  * @module background/providers/yandex
  */
-import type {Account, InboxResult, MailMessage} from '../../shared/types';
+import type {Account, FolderRole, InboxResult, MailFolder, MailMessage} from '../../shared/types';
 import {AuthError, requestText} from '../http';
 import {categorize, count, message} from './message';
-import {elements, firstAddress, markupText, sessionProvider} from './session';
+import {elements, firstAddress, markupText, sessionProvider, verifyMailbox} from './session';
 import {t} from '../../shared/i18n';
 
 /** The lite web interface. */
 const ORIGIN = 'https://mail.yandex.ru';
+
+/** Folder paths accepted from the lite navigation; never accept a host or arbitrary endpoint. */
+const FOLDER_PATH = /^(inbox|sent|trash|spam|drafts|archive|folder\/\d+)$/;
+
+/** Parses the lite folder navigation, preserving custom IDs and names. */
+export function parseFolders(html: string): MailFolder[] {
+  const [navigation] = elements(html, 'div', classTag('b-folders'), 0, 1);
+  if (!navigation) throw new Error(t('error_unexpected_page', t('service_yandex')));
+  return elements(navigation, 'span', classTag('b-folders__folder')).flatMap(block => {
+    const [anchor] = elements(block, 'a', /href=["']\/lite\//, 0, 1);
+    if (!anchor) return [];
+    const id = /href=["']\/lite\/([^"'?#]+)["']/.exec(anchor)?.[1] || '';
+    if (!FOLDER_PATH.test(id)) return [];
+    const label = /aria-label=["']([^"']+)["']/.exec(anchor)?.[1] || '';
+    const visible = /class=["'][^"']*b-folders__folder__num[^"']*["'][^>]*>\s*([\d,]+)/.exec(block)?.[1];
+    const announced = [...label.matchAll(/,\s*([\d,]+)\s/g)].pop()?.[1];
+    return [
+      {
+        id,
+        name: markupText(anchor),
+        role: id.includes('/') ? undefined : (id as FolderRole),
+        unread: count((visible || announced || '0').replace(/,/g, ''), 0),
+      },
+    ];
+  });
+}
 
 /** Returns the first capture of the first matching pattern, as visible text. */
 const pick = (html: string, patterns: RegExp[]): string => {
@@ -42,10 +68,10 @@ const rows = (html: string): string[] => {
  * Parses the lite Inbox page.
  *
  * @param html The page.
- * @param now The time given to the newest message; rows carry no parseable date, so older rows get earlier times.
+ * @param offset Server-order offset when the page has no machine-readable dates. Nonpositive dates are order only.
  * @throws {AuthError} For the sign-in page.
  */
-export function parseInbox(html: string, now = Date.now()): InboxResult {
+export function parseInbox(html: string, offset = 0): InboxResult {
   if (/type=["']password["']/.test(html)) throw new AuthError(t('error_sign_in_yandex'));
   const folders = /<div class="b-folders">([\s\S]*?)<\/div>/.exec(html)?.[1] || '';
   if (!folders.includes('href="/lite/inbox"')) throw new Error(t('error_unexpected_page', t('service_yandex')));
@@ -95,7 +121,7 @@ export function parseInbox(html: string, now = Date.now()): InboxResult {
         from: row.from,
         subject: row.subject,
         snippet: row.snippet,
-        date: now - index * 60_000,
+        date: -offset - index - 1,
         link: ORIGIN + row.href,
         unread: row.unread,
         category: categorize({from: row.from}),
@@ -110,57 +136,216 @@ export function parseInbox(html: string, now = Date.now()): InboxResult {
 /** Session request options. */
 const OPTIONS = {session: true, service: t('service_yandex')};
 
-/** Reads the lite Inbox page with the browser's Yandex sign-in. */
-const page = (): Promise<string> => requestText(`${ORIGIN}/lite/inbox`, OPTIONS);
+/** Matches one trusted class token in a quoted or unquoted opening tag. */
+function classTag(name: string): RegExp {
+  return new RegExp(
+    `\\bclass\\s*=\\s*(?:"(?:[^"]*\\s)?${name}(?:\\s[^"]*)?"|'(?:[^']*\\s)?${name}(?:\\s[^']*)?'|${name}(?=[\\s>]))`,
+  );
+}
 
-/** Reads the lite Inbox with the browser's Yandex sign-in. */
-const inbox = async (): Promise<InboxResult> => parseInbox(await page());
+/** Reads the mailbox address from the lite page's account header, never from message senders. */
+export function parseOwner(html: string): string {
+  const [account] = elements(html, 'div', classTag('b-head-user'), 0, 1);
+  const [active] = account ? elements(account, 'li', classTag('b-dropdown__visible'), 0, 1) : [];
+  const login = active
+    ? pick(active, [
+        // Yandex formats the first letter in a nested <b>; the accessible name keeps the login intact.
+        /<a\b[^>]*\baria-label=["']([^"']+)["']/,
+        /<a\b[^>]*>([\s\S]*?)<\/a>/,
+      ])
+    : account
+      ? pick(account, [
+          /<a\b[^>]*href=["']https:\/\/passport\.yandex\.(?:ru|com)\/profile\/avatars\/?["'][^>]*>([\s\S]*?)<\/a>/,
+        ])
+      : '';
+  if (/^[\w.-]+$/.test(login)) return `${login.toLowerCase()}@yandex.ru`;
+  const header =
+    login ||
+    pick(html, [
+      /class="[^"]*b-head-user__login[^"]*"[^>]*>([\s\S]*?)<\//,
+      /class="[^"]*b-header__user[^"]*"[^>]*>([\s\S]*?)<\//,
+    ]);
+  return firstAddress(header);
+}
+
+/** Normalizes Yandex's documented dot/dash and public-domain mailbox aliases. */
+function canonicalAddress(address: string): string {
+  const [login, domain] = address.trim().toLowerCase().split('@');
+  const aliases = ['yandex.ru', 'yandex.com', 'yandex.by', 'yandex.kz', 'yandex.com.tr', 'ya.ru'];
+  return domain ? `${login.replace(/\./g, '-')}@${aliases.includes(domain) ? 'yandex.ru' : domain}` : '';
+}
+
+/** Reads a trusted lite folder path and verifies its owner before exposing messages or forms. */
+async function page(email: string, folder = 'inbox', cursor = ''): Promise<string> {
+  return verifiedPage(email, `${ORIGIN}/lite/${folder}${cursor ? `/page_number=${cursor}` : ''}`);
+}
+
+/** Reads an owned lite list page, including server search results. */
+async function verifiedPage(email: string, url: string): Promise<string> {
+  const html = await requestText(url, OPTIONS);
+  parseInbox(html);
+  const owner = parseOwner(html);
+  // Preserve the connected spelling in errors when a documented alias resolves to the same mailbox.
+  verifyMailbox(email, owner && canonicalAddress(email) === canonicalAddress(owner) ? email : owner);
+  return html;
+}
+
+/** Returns the lite client's actual next-page link, never an inferred page number. */
+function nextPageLink(html: string): string {
+  const [pager] = elements(html, 'div', /class=["'][^"']*b-pager/, 0, 1);
+  const [anchor] = pager ? elements(pager, 'a', classTag('b-pager__next'), 0, 1) : [];
+  return anchor ? /href=["']([^"']+)["']/.exec(anchor)?.[1]?.replace(/&amp;/g, '&') || '' : '';
+}
+
+/** Rejects a continuation that changes the lite search endpoint or query. */
+function searchURL(value: string, query: string): string {
+  const url = new URL(value, ORIGIN);
+  if (
+    url.origin !== ORIGIN ||
+    !/^\/lite\/search(?:\/page_number=\d{1,7})?$/.test(url.pathname) ||
+    url.searchParams.get('request') !== query ||
+    url.username ||
+    url.password ||
+    url.hash ||
+    url.href.length > 3000
+  )
+    throw new Error(t('error_bad_message'));
+  return url.href;
+}
 
 /**
- * Returns the body of a lite message page, or an empty string.
+ * Returns the body of a lite message page, rejecting sign-in and unexpected pages.
  *
  * @param html The message page.
  */
 export function parseMessage(html: string): string {
+  if (/type=["']password["']/.test(html)) throw new AuthError(t('error_sign_in_yandex'));
   const [body] = elements(html, 'div', /class="[^"]*b-message-body(?:__content)?[" ]/);
-  return body ? body.slice(body.indexOf('>') + 1, body.lastIndexOf('</div')) : '';
+  if (!body) throw new Error(t('error_unexpected_page', t('service_yandex')));
+  return body.slice(body.indexOf('>') + 1, body.lastIndexOf('</div'));
 }
 
 /** Deletes a listed message with the lite toolbar form, as its «Удалить» button does. */
-async function remove(item: MailMessage): Promise<void> {
+async function remove(account: Account, item: MailMessage): Promise<void> {
+  if (item.folder === 'trash') throw new Error(t('error_in_webmail', t('service_yandex')));
   const [field, value] = item.thread.split('=');
   if (!value || (field !== 'ids' && field !== 'tids')) throw new Error(t('error_delete_in_webmail'));
-  const ckey = /name="_ckey" value="([^"]+)"/.exec(await page())?.[1];
+  const source = item.folder || 'inbox';
+  if (!FOLDER_PATH.test(source)) throw new Error(t('error_bad_message'));
+  const ckey = /name="_ckey" value="([^"]+)"/.exec(await page(account.email, source))?.[1];
   if (!ckey) throw new Error(t('error_unexpected_page', t('service_yandex')));
   await requestText(`${ORIGIN}/lite/messages-action.xml`, {
     ...OPTIONS,
     method: 'POST',
-    form: {delete: 'Удалить', request: '', _ckey: ckey, _handlers: 'do-messages', retpath: '/inbox', [field]: value},
+    form: {
+      delete: 'Удалить',
+      request: '',
+      _ckey: ckey,
+      _handlers: 'do-messages',
+      retpath: `/${source}`,
+      [field]: value,
+    },
   });
+  /** Matches the provider selection, ignoring a thread's changing message count. */
+  const matches = (entry: MailMessage): boolean => {
+    const [movedField, movedValue] = entry.thread.split('=');
+    return (
+      movedField === field &&
+      (field === 'tids' ? movedValue?.split(':')[0] === value.split(':')[0] : movedValue === value)
+    );
+  };
+  // The undocumented action response can be HTTP 200 even when refused. Verify the move on owned folder pages.
+  if (
+    parseInbox(await page(account.email, source)).messages.some(matches) ||
+    !parseInbox(await page(account.email, 'trash')).messages.some(matches)
+  )
+    throw new Error(t('error_delete_in_webmail'));
+}
+
+/** Opens a verified single-message page, which marks that message read in the lite webmail. */
+async function read(account: Account, item: MailMessage): Promise<{html: string}> {
+  if (!item.link.startsWith(`${ORIGIN}/lite/message/`)) throw new Error(t('error_in_webmail', t('service_yandex')));
+  await page(account.email);
+  return {html: parseMessage(await requestText(item.link, OPTIONS))};
 }
 
 /** Yandex Mail through the browser's sign-in. */
 export const yandex = sessionProvider({
   label: t('service_yandex'),
+  bodyMarksRead: true,
   async connect(email) {
     const address = firstAddress(email || '');
     if (!address) throw new Error(t('error_yandex_address'));
-    await inbox();
+    await page(address);
     return address;
   },
-  async inbox(_account: Account, limit: number) {
-    const {unread, messages} = await inbox();
+  async inbox(account: Account, limit: number) {
+    const {unread, messages} = parseInbox(await page(account.email));
     return {unread, messages: messages.slice(0, limit)};
+  },
+  async folders(account) {
+    return parseFolders(await page(account.email));
+  },
+  async folder(account, id, limit, cursor) {
+    const parts = /^(\d{1,7})(?::(\d{1,3}))?$/.exec(cursor || '0');
+    const offset = Number(parts?.[2] || 0);
+    if (!FOLDER_PATH.test(id) || !parts || offset >= 200) throw new Error(t('error_bad_message'));
+    const serverPage = parts[1];
+    const html = await page(account.email, id, Number(serverPage) ? serverPage : '');
+    const value = parseInbox(html, Number(serverPage) * 200);
+    const nextLink = nextPageLink(html);
+    let next = '';
+    if (nextLink) {
+      const url = new URL(nextLink.replace(/&amp;/g, '&'), ORIGIN);
+      const match = /^\/page_number=(\d{1,7})$/.exec(url.pathname.slice(`/lite/${id}`.length));
+      if (url.origin === ORIGIN && url.pathname.startsWith(`/lite/${id}/`) && match) next = match[1];
+    }
+    const messages = value.messages.slice(offset, offset + limit).map(item => ({...item, folder: id}));
+    // Finish the current server page before exposing its next-page link.
+    if (offset + messages.length < value.messages.length) next = `${serverPage}:${offset + messages.length}`;
+    return {messages, next};
+  },
+  async searchPage(account, query, limit, cursor) {
+    let url = `${ORIGIN}/lite/search?${new URLSearchParams({request: query})}`;
+    let offset = 0;
+    let position = 0;
+    if (cursor) {
+      const value = JSON.parse(cursor) as {url: string; offset: number; position: number};
+      if (
+        typeof value.url !== 'string' ||
+        !Number.isSafeInteger(value.offset) ||
+        value.offset < 0 ||
+        value.offset >= 200 ||
+        !Number.isSafeInteger(value.position) ||
+        value.position < value.offset ||
+        value.position > 2_000_000_000
+      )
+        throw new Error(t('error_bad_message'));
+      url = searchURL(value.url, query);
+      offset = value.offset;
+      position = value.position;
+    }
+    const html = await verifiedPage(account.email, url);
+    const value = parseInbox(html, position - offset);
+    const messages = value.messages.slice(offset, offset + limit);
+    const end = offset + messages.length;
+    const link = nextPageLink(html);
+    let next = '';
+    if (end < value.messages.length) next = JSON.stringify({url, offset: end, position: position + messages.length});
+    else if (link) {
+      const target = searchURL(link, query);
+      if (!messages.length || target === url) throw new Error(t('error_unexpected_page', t('service_yandex')));
+      next = JSON.stringify({url: target, offset: 0, position: position + messages.length});
+    }
+    return {messages, next};
   },
   webURL: (_account: Account, item?: MailMessage | null) => item?.link || `${ORIGIN}/`,
   // Opening a message page marks the message read, as in the lite web interface.
-  async body(_account, item) {
-    if (!item.link.startsWith(`${ORIGIN}/lite/message/`)) return {};
-    return {html: parseMessage(await requestText(item.link, OPTIONS))};
-  },
+  body: read,
   // `read` happens when the message page is opened for its body.
   actions: ['trash', 'read'],
-  async act(_account, item, action) {
-    if (action === 'trash') await remove(item);
+  async act(account, item, action) {
+    if (action === 'trash') await remove(account, item);
+    else await read(account, item);
   },
 });

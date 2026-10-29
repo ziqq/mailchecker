@@ -14,14 +14,17 @@
 import {ACCOUNT_COLORS} from '../shared/inbox';
 import {preferences} from '../shared/preferences';
 import type {Account, AccountInput, Credentials, ProviderID, PublicState, Store} from '../shared/types';
+import {clearCache, invalidateCache} from './cache';
 import {AuthError} from './http';
 import * as oauth from './oauth/flow';
+import {forgetGoogleToken} from './platform';
 import {gmail} from './providers/gmail';
 import {gmailWeb} from './providers/gmailweb';
 import {jmap} from './providers/jmap';
 import {mailru} from './providers/mailru';
 import type {Provider} from './providers/message';
 import {outlook} from './providers/outlook';
+import {verifyMailbox} from './providers/session';
 import {readStore, writeStore} from './storage';
 import {yandex} from './providers/yandex';
 import {t} from '../shared/i18n';
@@ -69,6 +72,7 @@ export function publicState(store: Store): PublicState {
       email: account.email,
       browser: account.settings?.browser === true,
       color: account.settings?.color || '',
+      search: typeof adapter(account).searchPage === 'function',
       reply: typeof adapter(account).reply === 'function',
     })),
     mailboxes: store.mailboxes || {},
@@ -117,25 +121,35 @@ export async function setAccountColor(id: string, color: string): Promise<void> 
 }
 
 /**
- * Removes an account and its last check result.
+ * Disconnects one account, its credentials, cached mail and native Google token cache entry.
  *
  * Provider-side grants stay until revoked in the provider's account settings.
  */
 export async function removeAccount(id: string): Promise<void> {
   renewals.delete(id);
+  invalidateCache(id);
+  let googleToken = '';
   await writeStore(({accounts = [], mailboxes = {}}) => {
+    const removed = accounts.find(account => account.id === id);
+    if (removed?.provider === 'gmail' && removed.credentials.googleAccountID) googleToken = removed.credentials.token;
     const rest = {...mailboxes};
     delete rest[id];
     return {accounts: accounts.filter(account => account.id !== id), mailboxes: rest};
   });
+  await clearCache(id);
+  if (googleToken) await forgetGoogleToken(googleToken).catch(() => {});
 }
 
 /**
  * Stores new credentials if the account still has the credentials they replace.
  *
- * @throws When the account was removed or replaced meanwhile.
+ * OAuth credentials must resolve to the connected mailbox before they are saved.
+ *
+ * @throws When the authenticated mailbox differs, or the account was removed or replaced meanwhile.
  */
 async function saveCredentials(account: Account, credentials: Credentials): Promise<Account> {
+  const address = adapter(account).address;
+  if (address) verifyMailbox(account.email, await address(credentials));
   let updated!: Account;
   await writeStore(({accounts = []}) => {
     const current = accounts.find(item => item.id === account.id);
@@ -179,7 +193,7 @@ export async function withAccount<T>(
     try {
       return await callback(module, account);
     } catch (error) {
-      if (!(error instanceof AuthError) || !expires) throw error;
+      if (!(error instanceof AuthError) || (!expires && !account.credentials.googleAccountID)) throw error;
       account = await renew(account);
     }
   }

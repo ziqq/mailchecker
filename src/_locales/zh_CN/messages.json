@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · 未读：$1 · 出错的邮箱：$2"
   },
+  "bulk_progress": {
+    "message": "正在移至垃圾箱：$1/$2"
+  },
+  "bulk_selected": {
+    "message": "已选择：$1"
+  },
   "busy_archiving": {
     "message": "正在归档…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "登录过程中邮箱发生了变化。请重试。"
+  },
+  "error_account_mismatch": {
+    "message": "请使用已连接的邮箱登录：$1。"
   },
   "error_account_missing": {
     "message": "找不到邮箱。"
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "归档"
   },
+  "folder_count_estimated": {
+    "message": "估计数量：$1"
+  },
+  "folder_count_partial": {
+    "message": "部分邮箱的数量：$1"
+  },
+  "folder_drafts": {
+    "message": "草稿"
+  },
+  "folder_empty": {
+    "message": "此文件夹中没有邮件"
+  },
   "folder_inbox": {
     "message": "收件箱"
   },
+  "folder_loading": {
+    "message": "正在加载…"
+  },
+  "folder_more": {
+    "message": "加载更多"
+  },
+  "folder_sent": {
+    "message": "已发送"
+  },
+  "folder_spam": {
+    "message": "垃圾邮件"
+  },
   "folder_trash": {
     "message": "已删除"
+  },
+  "folder_unsupported": {
+    "message": "此连接不支持浏览文件夹。请打开网页版邮箱。"
   },
   "header_cc": {
     "message": "抄送：$1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "类别"
   },
+  "label_folders": {
+    "message": "文件夹"
+  },
   "label_mailboxes": {
     "message": "邮箱"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "已置顶"
+  },
+  "label_resize_list": {
+    "message": "调整邮件列表宽度"
   },
   "label_sections": {
     "message": "分区"
@@ -608,6 +650,12 @@
   "search_title": {
     "message": "“$1”"
   },
+  "search_webmail_only": {
+    "message": "以下邮箱仅搜索已加载的发件人、主题和摘要：$1。完整历史记录需通过 Gmail API 或网页版邮箱搜索；此处不支持搜索运算符。"
+  },
+  "search_webmail_title": {
+    "message": "已加载邮件中无匹配结果"
+  },
   "section_inbox": {
     "message": "其他"
   },
@@ -622,6 +670,15 @@
   },
   "section_pinned": {
     "message": "已置顶"
+  },
+  "select_loaded": {
+    "message": "选择所有已加载的邮件"
+  },
+  "select_message": {
+    "message": "选择 $1：$2"
+  },
+  "select_messages": {
+    "message": "选择邮件"
   },
   "service_mailru": {
     "message": "Mail.ru"
@@ -688,5 +745,26 @@
   },
   "welcome_title_2": {
     "message": "一览无余"
+  },
+  "cache_title": {
+    "message": "邮件缓存"
+  },
+  "cache_text": {
+    "message": "已打开的邮件保存在此设备上。清除缓存会保留账户和设置。"
+  },
+  "cache_clear": {
+    "message": "清除缓存"
+  },
+  "cache_cleared": {
+    "message": "邮件缓存已清除。"
+  },
+  "cache_refreshing": {
+    "message": "已保存的副本。正在检查更新…"
+  },
+  "cache_offline": {
+    "message": "已保存的副本。无法更新。"
+  },
+  "search_limit": {
+    "message": "$1：已达到服务器搜索上限，请缩小搜索范围。"
   }
 }

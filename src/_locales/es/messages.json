@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · no leídos: $1 · buzones con errores: $2"
   },
+  "bulk_progress": {
+    "message": "Moviendo a la papelera: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Seleccionados: $1"
+  },
   "busy_archiving": {
     "message": "Archivando…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "El buzón cambió durante el inicio de sesión. Inténtalo de nuevo."
+  },
+  "error_account_mismatch": {
+    "message": "Inicia sesión con el buzón conectado: $1."
   },
   "error_account_missing": {
     "message": "Buzón no encontrado."
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "Archivo"
   },
+  "folder_count_estimated": {
+    "message": "Recuento estimado: $1"
+  },
+  "folder_count_partial": {
+    "message": "Recuento de algunos buzones: $1"
+  },
+  "folder_drafts": {
+    "message": "Borradores"
+  },
+  "folder_empty": {
+    "message": "No hay mensajes en esta carpeta"
+  },
   "folder_inbox": {
     "message": "Recibidos"
   },
+  "folder_loading": {
+    "message": "Cargando…"
+  },
+  "folder_more": {
+    "message": "Cargar más"
+  },
+  "folder_sent": {
+    "message": "Enviados"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Papelera"
+  },
+  "folder_unsupported": {
+    "message": "Esta conexión no permite consultar carpetas. Abra el correo web."
   },
   "header_cc": {
     "message": "Cc: $1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "Categorías"
   },
+  "label_folders": {
+    "message": "Carpetas"
+  },
   "label_mailboxes": {
     "message": "Buzones"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "Fijados"
+  },
+  "label_resize_list": {
+    "message": "Cambiar el ancho de la lista de mensajes"
   },
   "label_sections": {
     "message": "Secciones"
@@ -626,6 +668,12 @@
   "search_title": {
     "message": "«$1»"
   },
+  "search_webmail_only": {
+    "message": "Solo remitente, asunto y vista previa cargados de: $1. El historial completo requiere Gmail API o el correo web; aquí no se admiten operadores de búsqueda."
+  },
+  "search_webmail_title": {
+    "message": "Sin resultados en el correo cargado"
+  },
   "section_inbox": {
     "message": "Resto"
   },
@@ -640,6 +688,15 @@
   },
   "section_pinned": {
     "message": "Fijados"
+  },
+  "select_loaded": {
+    "message": "Seleccionar todos los mensajes cargados"
+  },
+  "select_message": {
+    "message": "Seleccionar $1: $2"
+  },
+  "select_messages": {
+    "message": "Seleccionar mensajes"
   },
   "service_mailru": {
     "message": "Mail.ru"
@@ -712,5 +769,26 @@
   },
   "welcome_title_2": {
     "message": "De un vistazo"
+  },
+  "cache_title": {
+    "message": "Caché de correo"
+  },
+  "cache_text": {
+    "message": "Los mensajes abiertos se guardan en este dispositivo. Al borrar la caché se conservan las cuentas y los ajustes."
+  },
+  "cache_clear": {
+    "message": "Borrar caché"
+  },
+  "cache_cleared": {
+    "message": "Caché de correo borrada."
+  },
+  "cache_refreshing": {
+    "message": "Copia guardada. Buscando actualizaciones…"
+  },
+  "cache_offline": {
+    "message": "Copia guardada. Actualización no disponible."
+  },
+  "search_limit": {
+    "message": "$1: se alcanzó el límite de búsqueda del servidor. Precisa la consulta."
   }
 }

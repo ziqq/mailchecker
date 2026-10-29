@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · non lus : $1 · boîtes en erreur : $2"
   },
+  "bulk_progress": {
+    "message": "Déplacement vers la corbeille : $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Sélectionnés : $1"
+  },
   "busy_archiving": {
     "message": "Archivage…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "La boîte a changé pendant la connexion. Réessayez."
+  },
+  "error_account_mismatch": {
+    "message": "Connectez-vous avec la boîte mail associée : $1."
   },
   "error_account_missing": {
     "message": "Boîte introuvable."
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "Archives"
   },
+  "folder_count_estimated": {
+    "message": "Nombre estimé : $1"
+  },
+  "folder_count_partial": {
+    "message": "Nombre pour certaines boîtes mail : $1"
+  },
+  "folder_drafts": {
+    "message": "Brouillons"
+  },
+  "folder_empty": {
+    "message": "Aucun message dans ce dossier"
+  },
   "folder_inbox": {
     "message": "Réception"
   },
+  "folder_loading": {
+    "message": "Chargement…"
+  },
+  "folder_more": {
+    "message": "Charger plus"
+  },
+  "folder_sent": {
+    "message": "Envoyés"
+  },
+  "folder_spam": {
+    "message": "Indésirables"
+  },
   "folder_trash": {
     "message": "Corbeille"
+  },
+  "folder_unsupported": {
+    "message": "Cette connexion ne permet pas de consulter les dossiers. Ouvrez le webmail."
   },
   "header_cc": {
     "message": "Cc : $1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "Catégories"
   },
+  "label_folders": {
+    "message": "Dossiers"
+  },
   "label_mailboxes": {
     "message": "Boîtes"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "Épinglés"
+  },
+  "label_resize_list": {
+    "message": "Modifier la largeur de la liste des messages"
   },
   "label_sections": {
     "message": "Sections"
@@ -626,6 +668,12 @@
   "search_title": {
     "message": "« $1 »"
   },
+  "search_webmail_only": {
+    "message": "Recherche uniquement dans les expéditeurs, objets et aperçus chargés de : $1. Pour tout l’historique, utilisez Gmail API ou le webmail ; les opérateurs ne sont pas pris en charge ici."
+  },
+  "search_webmail_title": {
+    "message": "Aucun résultat dans les messages chargés"
+  },
   "section_inbox": {
     "message": "Autres"
   },
@@ -640,6 +688,15 @@
   },
   "section_pinned": {
     "message": "Épinglés"
+  },
+  "select_loaded": {
+    "message": "Sélectionner tous les messages chargés"
+  },
+  "select_message": {
+    "message": "Sélectionner $1 : $2"
+  },
+  "select_messages": {
+    "message": "Sélectionner des messages"
   },
   "service_mailru": {
     "message": "Mail.ru"
@@ -712,5 +769,26 @@
   },
   "welcome_title_2": {
     "message": "En un coup d’œil"
+  },
+  "cache_title": {
+    "message": "Cache des messages"
+  },
+  "cache_text": {
+    "message": "Les messages ouverts sont enregistrés sur cet appareil. Vider le cache conserve les comptes et les réglages."
+  },
+  "cache_clear": {
+    "message": "Vider le cache"
+  },
+  "cache_cleared": {
+    "message": "Cache des messages vidé."
+  },
+  "cache_refreshing": {
+    "message": "Copie enregistrée. Recherche de mises à jour…"
+  },
+  "cache_offline": {
+    "message": "Copie enregistrée. Mise à jour indisponible."
+  },
+  "search_limit": {
+    "message": "$1 : limite de recherche du serveur atteinte. Précisez la requête."
   }
 }

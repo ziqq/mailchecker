@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · 未読：$1 · エラーのあるメールボックス：$2"
   },
+  "bulk_progress": {
+    "message": "ゴミ箱に移動中: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "選択済み: $1"
+  },
   "busy_archiving": {
     "message": "アーカイブしています…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "ログイン中にメールボックスが変わりました。もう一度お試しください。"
+  },
+  "error_account_mismatch": {
+    "message": "接続済みのメールボックスでログインしてください：$1。"
   },
   "error_account_missing": {
     "message": "メールボックスが見つかりません。"
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "アーカイブ"
   },
+  "folder_count_estimated": {
+    "message": "推定件数: $1"
+  },
+  "folder_count_partial": {
+    "message": "一部のメールボックスの件数: $1"
+  },
+  "folder_drafts": {
+    "message": "下書き"
+  },
+  "folder_empty": {
+    "message": "このフォルダーにメールはありません"
+  },
   "folder_inbox": {
     "message": "受信トレイ"
   },
+  "folder_loading": {
+    "message": "読み込み中…"
+  },
+  "folder_more": {
+    "message": "さらに読み込む"
+  },
+  "folder_sent": {
+    "message": "送信済み"
+  },
+  "folder_spam": {
+    "message": "迷惑メール"
+  },
   "folder_trash": {
     "message": "ゴミ箱"
+  },
+  "folder_unsupported": {
+    "message": "この接続ではフォルダーを表示できません。ウェブメールを開いてください。"
   },
   "header_cc": {
     "message": "Cc：$1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "カテゴリ"
   },
+  "label_folders": {
+    "message": "フォルダー"
+  },
   "label_mailboxes": {
     "message": "メールボックス"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "固定済み"
+  },
+  "label_resize_list": {
+    "message": "メッセージ一覧の幅を変更"
   },
   "label_sections": {
     "message": "セクション"
@@ -608,6 +650,12 @@
   "search_title": {
     "message": "「$1」"
   },
+  "search_webmail_only": {
+    "message": "次のメールボックスでは読み込み済みの差出人、件名、プレビューのみを検索します: $1。全履歴は Gmail API またはウェブメールで検索してください。検索演算子は使用できません。"
+  },
+  "search_webmail_title": {
+    "message": "読み込み済みメールに一致なし"
+  },
   "section_inbox": {
     "message": "その他"
   },
@@ -622,6 +670,15 @@
   },
   "section_pinned": {
     "message": "固定済み"
+  },
+  "select_loaded": {
+    "message": "読み込み済みのメールをすべて選択"
+  },
+  "select_message": {
+    "message": "$1: $2 を選択"
+  },
+  "select_messages": {
+    "message": "メールを選択"
   },
   "service_mailru": {
     "message": "Mail.ru"
@@ -688,5 +745,26 @@
   },
   "welcome_title_2": {
     "message": "ひとつの場所で"
+  },
+  "cache_title": {
+    "message": "メールキャッシュ"
+  },
+  "cache_text": {
+    "message": "開いたメールはこの端末に保存されます。キャッシュを消去してもアカウントと設定は保持されます。"
+  },
+  "cache_clear": {
+    "message": "キャッシュを消去"
+  },
+  "cache_cleared": {
+    "message": "メールキャッシュを消去しました。"
+  },
+  "cache_refreshing": {
+    "message": "保存済みコピー。更新を確認中…"
+  },
+  "cache_offline": {
+    "message": "保存済みコピー。更新できません。"
+  },
+  "search_limit": {
+    "message": "$1: サーバー検索の上限に達しました。検索条件を絞り込んでください。"
   }
 }

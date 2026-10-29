@@ -18,6 +18,9 @@ import type {
   MailMessage,
   MessageAction,
   ThreadMessage,
+  MailFolder,
+  FolderPage,
+  SearchMessagePage,
 } from '../../shared/types';
 import {t} from '../../shared/i18n';
 
@@ -32,20 +35,30 @@ export interface Connection {
 export interface Provider {
   /** Display name. */
   readonly label: string;
+  /** The Inbox endpoint lists unread mail only; known read metadata must be retained locally. */
+  readonly unreadOnly?: boolean;
   /** Verifies and creates an account; JMAP uses the form values, browser-session mailboxes the address. */
   connect(input?: AccountInput): Promise<Connection>;
   /** Silent renewal; throws `AuthError` when a sign-in is needed. */
   renew(account: Account): Promise<Credentials>;
   /** Interactive sign-in for an existing account. */
   signIn(account: Account): Promise<Credentials>;
+  /** Resolves the mailbox address for new OAuth credentials before they replace an existing account. */
+  address?(credentials: Credentials): Promise<string>;
   /** The latest Inbox messages, newest first, and the Inbox unread count. */
   inbox(account: Account, limit: number): Promise<InboxResult>;
+  /** The server folder catalog, loaded only when the folder selector opens. */
+  folders?(account: Account): Promise<MailFolder[]>;
+  /** One page of a selected server folder, loaded only on demand. */
+  folder?(account: Account, id: string, limit: number, cursor: string): Promise<FolderPage>;
   /** Messages of a conversation with bodies, oldest first. */
   thread(account: Account, message: MailMessage): Promise<ThreadMessage[]>;
   /** Applies an action to one message. */
   act(account: Account, message: MailMessage, action: MessageAction): Promise<void>;
   /** Searches all mail of the account, newest first. */
   search(account: Account, query: string, limit: number): Promise<MailMessage[]>;
+  /** One bounded page of server search, with its provider continuation. */
+  searchPage?(account: Account, query: string, limit: number, cursor: string): Promise<SearchMessagePage>;
   /** Sends a plain-text reply to a listed message; without it replies open in the webmail. */
   reply?(account: Account, message: MailMessage, text: string): Promise<void>;
   /** The webmail page for the Inbox or a message. */
@@ -76,7 +89,7 @@ export function decodeEntities(value: string): string {
   });
 }
 
-/** Maximum stored characters of an HTML body (bodies are never persisted). */
+/** Maximum characters of a normalized untrusted HTML body. */
 const MAX_HTML = 2 * 1024 * 1024;
 
 /** Returns a trimmed single-line string of at most [max] characters. */
@@ -130,6 +143,7 @@ export interface RawMessage {
   pinned?: unknown;
   category?: Category;
   attachments?: unknown;
+  folder?: unknown;
 }
 
 /** Returns an HTTPS URL string or empty. */
@@ -163,6 +177,7 @@ export function message(value: RawMessage): MailMessage {
     pinned: Boolean(value.pinned),
     category: value.category || 'people',
     attachments: Boolean(value.attachments),
+    ...(value.folder ? {folder: text(value.folder, 512)} : {}),
   };
 }
 

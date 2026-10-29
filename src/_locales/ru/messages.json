@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · непрочитанных: $1 · ящиков с ошибкой: $2"
   },
+  "bulk_progress": {
+    "message": "Перемещение в корзину: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Выбрано: $1"
+  },
   "busy_archiving": {
     "message": "Архивируем…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "Ящик изменился во время входа. Повторите."
+  },
+  "error_account_mismatch": {
+    "message": "Войдите в подключённый ящик: $1."
   },
   "error_account_missing": {
     "message": "Ящик не найден."
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "Архив"
   },
+  "folder_count_estimated": {
+    "message": "Приблизительно: $1"
+  },
+  "folder_count_partial": {
+    "message": "Количество для части ящиков: $1"
+  },
+  "folder_drafts": {
+    "message": "Черновики"
+  },
+  "folder_empty": {
+    "message": "В этой папке нет писем"
+  },
   "folder_inbox": {
     "message": "Входящие"
   },
+  "folder_loading": {
+    "message": "Загрузка…"
+  },
+  "folder_more": {
+    "message": "Загрузить ещё"
+  },
+  "folder_sent": {
+    "message": "Отправленные"
+  },
+  "folder_spam": {
+    "message": "Спам"
+  },
   "folder_trash": {
     "message": "Корзина"
+  },
+  "folder_unsupported": {
+    "message": "Для этого подключения просмотр папок недоступен. Откройте веб-почту."
   },
   "header_cc": {
     "message": "Копия: $1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "Категории"
   },
+  "label_folders": {
+    "message": "Папки"
+  },
   "label_mailboxes": {
     "message": "Ящики"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "Закреплено"
+  },
+  "label_resize_list": {
+    "message": "Изменить ширину списка писем"
   },
   "label_sections": {
     "message": "Разделы"
@@ -635,6 +677,12 @@
   "search_title": {
     "message": "«$1»"
   },
+  "search_webmail_only": {
+    "message": "Для этих ящиков поиск только по сохранённым отправителю, теме и фрагменту: $1. Вся история — через Gmail API или веб-почту; операторы поиска здесь не поддерживаются."
+  },
+  "search_webmail_title": {
+    "message": "В загруженных письмах не найдено"
+  },
   "section_inbox": {
     "message": "Остальные"
   },
@@ -649,6 +697,15 @@
   },
   "section_pinned": {
     "message": "Закреплённые"
+  },
+  "select_loaded": {
+    "message": "Выбрать все загруженные письма"
+  },
+  "select_message": {
+    "message": "Выбрать $1: $2"
+  },
+  "select_messages": {
+    "message": "Выбрать письма"
   },
   "service_mailru": {
     "message": "Почта Mail.ru"
@@ -724,5 +781,26 @@
   },
   "welcome_title_2": {
     "message": "Сразу"
+  },
+  "cache_title": {
+    "message": "Кеш почты"
+  },
+  "cache_text": {
+    "message": "Открытые письма сохраняются на этом устройстве. Очистка сохраняет ящики и настройки."
+  },
+  "cache_clear": {
+    "message": "Очистить кеш"
+  },
+  "cache_cleared": {
+    "message": "Кеш почты очищен."
+  },
+  "cache_refreshing": {
+    "message": "Сохранённая копия. Проверяем обновления…"
+  },
+  "cache_offline": {
+    "message": "Сохранённая копия. Обновления недоступны."
+  },
+  "search_limit": {
+    "message": "$1: достигнут предел серверного поиска. Уточните запрос."
   }
 }

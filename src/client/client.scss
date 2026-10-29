@@ -37,7 +37,7 @@ html[data-narrow='true'] body {
 
 .app {
   display: grid;
-  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  grid-template-columns: var(--list-width, 340px) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     'top top'
@@ -57,11 +57,41 @@ html[data-narrow='true'] body {
 .reader {
   grid-area: reader;
 }
+.pane-divider {
+  grid-area: list;
+  justify-self: end;
+  position: relative;
+  z-index: 2;
+  width: 9px;
+  margin-right: -4px;
+  cursor: col-resize;
+  touch-action: none;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0 4px;
+  }
+  &:hover::after,
+  &:focus-visible::after,
+  .resizing &::after {
+    background: var(--primary);
+  }
+  &:focus-visible {
+    outline: none;
+  }
+}
+.app.resizing {
+  cursor: col-resize;
+  user-select: none;
+  .mail-frame {
+    pointer-events: none;
+  }
+}
 
 @media (min-width: 1100px) {
   html[data-mode='app'] {
     .app {
-      grid-template-columns: 236px minmax(320px, 400px) minmax(0, 1fr);
+      grid-template-columns: 236px var(--list-width, 400px) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
       grid-template-areas: 'side list reader';
     }
@@ -71,10 +101,16 @@ html[data-narrow='true'] body {
     .sidebar {
       display: flex;
     }
+    .list-title {
+      min-height: 24px;
+    }
   }
 }
 
 @media (max-width: 699px) {
+  .pane-divider {
+    display: none;
+  }
   .app {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
@@ -96,16 +132,13 @@ html[data-narrow='true'] body {
 
 // ---------- Top bar ----------
 
-// The same columns as `.app`: the logo and the switcher sit over the list,
-// lined up with its title and counter; the actions sit over the reader.
+// Fixed columns keep the logo, mailbox switcher and actions in place when the list is resized.
 .topbar {
   display: grid;
   grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
   min-width: 0;
   padding: 9px 0;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 85%, transparent);
-  backdrop-filter: blur(14px);
   // Room for the switcher label; the theme is also set in Settings.
   @media (max-width: 699px) {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -137,7 +170,7 @@ html[data-narrow='true'] body {
 .topbar-actions {
   justify-content: flex-end;
 }
-.round.busy .icon {
+.round.refreshing .icon {
   animation: spin 0.9s linear infinite;
 }
 
@@ -201,6 +234,11 @@ html[data-narrow='true'] body {
   background: var(--surface-solid);
   box-shadow: 0 24px 60px rgb(0 0 0 / 35%);
 }
+.topbar,
+.folder-menu {
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(14px);
+}
 .menu-item {
   display: flex;
   align-items: center;
@@ -232,14 +270,22 @@ html[data-narrow='true'] body {
 
 .sidebar {
   flex-direction: column;
-  gap: 18px;
+  gap: 10px;
   min-height: 0;
-  padding: 16px 12px;
+  padding: 14px 12px;
   overflow-y: auto;
   border-right: 1px solid var(--border);
   .logo {
-    padding: 2px 10px;
-    font-size: 20px;
+    display: flex;
+    align-items: center;
+    flex: none;
+    height: 24px;
+    padding: 0 10px;
+    font-size: 18px;
+    line-height: 1.05;
+  }
+  > .nav {
+    gap: 10px;
   }
   h3 {
     margin: 0 0 6px;
@@ -254,7 +300,7 @@ html[data-narrow='true'] body {
     align-items: center;
     gap: 10px;
     min-width: 0;
-    padding: 7px 10px;
+    padding: 8px 10px;
     border-radius: 10px;
     color: var(--muted);
     font-weight: 600;
@@ -333,6 +379,131 @@ html[data-narrow='true'] body {
     white-space: nowrap;
   }
 }
+.folder-picker {
+  position: relative;
+  min-width: 0;
+  h1 {
+    min-width: 0;
+  }
+}
+.list-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  .round.ghost {
+    width: 24px;
+    height: 24px;
+  }
+}
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 30px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+}
+.bulk-actions,
+.row-check {
+  input[type='checkbox'] {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+}
+.folder-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--muted);
+  }
+}
+.folder-menu {
+  width: min(320px, calc(100vw - 48px));
+  min-width: 0;
+  max-height: min(360px, 60vh);
+  overflow: hidden;
+  .folder-label {
+    display: grid;
+    min-width: 0;
+  }
+  small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    text-overflow: ellipsis;
+  }
+  .menu-count {
+    flex: none;
+    justify-content: center;
+    min-width: 30px;
+    height: 20px;
+    padding: 0 7px;
+    border-color: transparent;
+    background: var(--border);
+    color: var(--text);
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    white-space: nowrap;
+  }
+}
+.folder-menu-items {
+  display: grid;
+  gap: inherit;
+  min-height: 0;
+  overflow-y: auto;
+}
+.folder-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  &.error {
+    color: var(--danger);
+  }
+}
+.folder-more {
+  display: flex;
+  margin: 14px auto;
+}
 .search {
   display: flex;
   align-items: center;
@@ -394,6 +565,7 @@ kbd {
 .row {
   position: relative;
   display: flex;
+  align-items: center;
   gap: 10px;
   width: 100%;
   padding: 9px 10px 9px 16px;
@@ -421,12 +593,17 @@ kbd {
 }
 .unread-dot {
   position: absolute;
-  top: 16px;
+  top: 50%;
   left: 5px;
+  transform: translateY(-50%);
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--primary);
+}
+// The account ring extends 4 px outside the avatar; centre the dot in the remaining 12 px gutter.
+.avatar.ringed + .unread-dot {
+  left: 3px;
 }
 .avatar {
   width: 32px;
@@ -442,6 +619,13 @@ kbd {
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
+}
+.row-check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
 }
 .row-body {
   flex: 1;
@@ -544,9 +728,6 @@ kbd {
       0 4px 0 -1px var(--surface-2),
       0 4px 0 0 var(--border);
   }
-}
-.stack-head {
-  align-items: center;
 }
 .count-badge {
   display: grid;
@@ -753,7 +934,7 @@ kbd {
   align-items: center;
   gap: 8px;
   margin: 0 14px 10px;
-  padding: 7px 10px;
+  padding: 7px 18px;
   border-radius: 10px;
   background: var(--surface-2);
   color: var(--muted);

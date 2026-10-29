@@ -10,7 +10,8 @@
  *
  * @module background/providers/jmap
  */
-import type {Account, MailMessage} from '../../shared/types';
+import type {Account, FolderPage, FolderRole, MailMessage} from '../../shared/types';
+import {FOLDER_ROLES} from '../../shared/folders';
 import {AuthError, requestJSON} from '../http';
 import {addresses, categorize, count, message, replySubject, threadMessage, type Provider} from './message';
 import {t} from '../../shared/i18n';
@@ -27,8 +28,11 @@ type Call = [string, Record<string, unknown>, string];
 /** JMAP mailbox fields used here. */
 interface JMAPMailbox {
   id: string;
+  name?: string;
+  parentId?: string | null;
   role?: string | null;
   unreadEmails?: number;
+  totalEmails?: number;
 }
 
 /** JMAP address. */
@@ -146,9 +150,14 @@ function listMessage(item: JMAPEmail): MailMessage {
 }
 
 /** Queries emails with a filter and returns list messages. */
-async function query(account: Account, filter: Record<string, unknown>, limit: number): Promise<MailMessage[]> {
+async function queryPage(
+  account: Account,
+  filter: Record<string, unknown>,
+  limit: number,
+  position = 0,
+): Promise<FolderPage> {
   const replies = await run(account, [
-    ['Email/query', {filter, sort: [{property: 'receivedAt', isAscending: false}], limit}, 'query'],
+    ['Email/query', {filter, sort: [{property: 'receivedAt', isAscending: false}], limit, position}, 'query'],
     [
       'Email/get',
       {'#ids': {resultOf: 'query', name: 'Email/query', path: '/ids'}, properties: LIST_PROPERTIES},
@@ -156,7 +165,16 @@ async function query(account: Account, filter: Record<string, unknown>, limit: n
     ],
   ]);
   const list: JMAPEmail[] = Array.isArray(replies.emails?.list) ? replies.emails.list : [];
-  return list.slice(0, limit).map(listMessage);
+  const messages = list.slice(0, limit).map(listMessage);
+  const size = Array.isArray(replies.query?.ids) ? Math.min(replies.query.ids.length, limit) : messages.length;
+  const total = replies.query?.total;
+  const more = size > 0 && (Number.isSafeInteger(total) && total >= 0 ? position + size < total : size === limit);
+  return {messages, next: more ? String(position + size) : ''};
+}
+
+/** Queries the first bounded page for Inbox checks and search. */
+async function query(account: Account, filter: Record<string, unknown>, limit: number): Promise<MailMessage[]> {
+  return (await queryPage(account, filter, limit)).messages;
 }
 
 /** Keyword and mailbox patches for each action. */
@@ -174,8 +192,12 @@ async function patch(account: Account, action: string): Promise<Record<string, u
   const roles = await mailboxes(account);
   const target = roles[action === 'archive' ? 'archive' : 'trash'];
   if (!target) throw new Error(t('error_no_folder', t(action === 'archive' ? 'folder_archive' : 'folder_trash')));
+  if (action === 'archive') return {[mailboxPath(roles.inbox.id)]: null, [mailboxPath(target.id)]: true};
   return {mailboxIds: {[target.id]: true}};
 }
+
+/** Returns a JSON Pointer patch path for a mailbox membership. */
+const mailboxPath = (id: string): string => `mailboxIds/${id.replace(/~/g, '~0').replace(/\//g, '~1')}`;
 
 /** JMAP provider. */
 export const jmap: Provider = {
@@ -208,6 +230,34 @@ export const jmap: Provider = {
     const roles = await mailboxes(account);
     const messages = await query(account, {inMailbox: roles.inbox.id}, limit);
     return {unread: count(roles.inbox.unreadEmails, messages.filter(item => item.unread).length), messages};
+  },
+
+  async folders(account) {
+    const replies = await run(account, [
+      [
+        'Mailbox/get',
+        {ids: null, properties: ['id', 'name', 'parentId', 'role', 'totalEmails', 'unreadEmails']},
+        'folders',
+      ],
+    ]);
+    const list: JMAPMailbox[] = Array.isArray(replies.folders?.list) ? replies.folders.list : [];
+    return list
+      .slice(0, 200)
+      .filter(item => item.id)
+      .map(item => ({
+        id: item.id,
+        name: item.name || item.id,
+        parent: item.parentId || undefined,
+        role: FOLDER_ROLES.includes(item.role as FolderRole) ? (item.role as FolderRole) : undefined,
+        total: item.totalEmails,
+        unread: item.unreadEmails,
+      }));
+  },
+
+  async folder(account, id, limit, cursor) {
+    if (cursor && !/^\d{1,7}$/.test(cursor)) throw new Error(t('error_bad_message'));
+    const page = await queryPage(account, {inMailbox: id}, limit, Number(cursor || 0));
+    return {...page, messages: page.messages.map(item => ({...item, folder: id}))};
   },
 
   async thread(account, item) {
@@ -262,10 +312,22 @@ export const jmap: Provider = {
   },
 
   async act(account, item, action) {
-    await run(account, [['Email/set', {update: {[item.id]: await patch(account, action)}}, 'set']]);
+    const replies = await run(account, [['Email/set', {update: {[item.id]: await patch(account, action)}}, 'set']]);
+    const failure = replies.set?.notUpdated?.[item.id];
+    if (
+      Object.hasOwn(replies.set?.notUpdated || {}, item.id) ||
+      !replies.set?.updated ||
+      !Object.hasOwn(replies.set.updated, item.id)
+    )
+      throw new Error(t('error_jmap_generic', String(failure?.description || failure?.type || t('error_generic'))));
   },
 
   search: (account, text, limit) => query(account, {text}, limit),
+
+  async searchPage(account, text, limit, cursor) {
+    if (cursor && !/^\d{1,7}$/.test(cursor)) throw new Error(t('error_bad_message'));
+    return queryPage(account, {text}, limit, Number(cursor || 0));
+  },
 
   webURL: account => account.settings.webURL || new URL(sessionURL(account)).origin,
 
@@ -319,8 +381,8 @@ export const jmap: Provider = {
             create: {send: {identityId: identity.id, emailId: '#draft'}},
             onSuccessUpdateEmail: {
               '#send': {
-                [`mailboxIds/${roles.drafts.id}`]: null,
-                [`mailboxIds/${roles.sent.id}`]: true,
+                [mailboxPath(roles.drafts.id)]: null,
+                [mailboxPath(roles.sent.id)]: true,
                 'keywords/$draft': null,
               },
             },
@@ -330,6 +392,16 @@ export const jmap: Provider = {
       ],
       [...USING, SUBMISSION],
     );
-    if (set.email?.notCreated || set.submission?.notCreated) throw new Error(t('error_jmap_send'));
+    const draftID = set.email?.created?.draft?.id;
+    const submissionID = set.submission?.created?.send?.id;
+    if (
+      Object.hasOwn(set.email?.notCreated || {}, 'draft') ||
+      Object.hasOwn(set.submission?.notCreated || {}, 'send') ||
+      typeof draftID !== 'string' ||
+      !draftID ||
+      typeof submissionID !== 'string' ||
+      !submissionID
+    )
+      throw new Error(t('error_jmap_send'));
   },
 };

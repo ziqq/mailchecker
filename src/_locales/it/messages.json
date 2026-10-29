@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · non letti: $1 · caselle con errori: $2"
   },
+  "bulk_progress": {
+    "message": "Spostamento nel cestino: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Selezionati: $1"
+  },
   "busy_archiving": {
     "message": "Archiviazione…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "La casella è cambiata durante l'accesso. Riprova."
+  },
+  "error_account_mismatch": {
+    "message": "Accedi con la casella collegata: $1."
   },
   "error_account_missing": {
     "message": "Casella non trovata."
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "Archivio"
   },
+  "folder_count_estimated": {
+    "message": "Conteggio stimato: $1"
+  },
+  "folder_count_partial": {
+    "message": "Conteggio per alcune caselle: $1"
+  },
+  "folder_drafts": {
+    "message": "Bozze"
+  },
+  "folder_empty": {
+    "message": "Nessun messaggio in questa cartella"
+  },
   "folder_inbox": {
     "message": "Posta in arrivo"
   },
+  "folder_loading": {
+    "message": "Caricamento…"
+  },
+  "folder_more": {
+    "message": "Carica altri"
+  },
+  "folder_sent": {
+    "message": "Inviati"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Cestino"
+  },
+  "folder_unsupported": {
+    "message": "Questa connessione non consente di consultare le cartelle. Apri la webmail."
   },
   "header_cc": {
     "message": "Cc: $1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "Categorie"
   },
+  "label_folders": {
+    "message": "Cartelle"
+  },
   "label_mailboxes": {
     "message": "Caselle"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "Fissati"
+  },
+  "label_resize_list": {
+    "message": "Ridimensiona l’elenco dei messaggi"
   },
   "label_sections": {
     "message": "Sezioni"
@@ -626,6 +668,12 @@
   "search_title": {
     "message": "«$1»"
   },
+  "search_webmail_only": {
+    "message": "Solo mittente, oggetto e anteprima già caricati per: $1. Per tutta la cronologia usa Gmail API o la posta web; qui gli operatori di ricerca non sono supportati."
+  },
+  "search_webmail_title": {
+    "message": "Nessun risultato nei messaggi caricati"
+  },
   "section_inbox": {
     "message": "Tutto il resto"
   },
@@ -640,6 +688,15 @@
   },
   "section_pinned": {
     "message": "Fissati"
+  },
+  "select_loaded": {
+    "message": "Seleziona tutti i messaggi caricati"
+  },
+  "select_message": {
+    "message": "Seleziona $1: $2"
+  },
+  "select_messages": {
+    "message": "Seleziona messaggi"
   },
   "service_mailru": {
     "message": "Mail.ru"
@@ -712,5 +769,26 @@
   },
   "welcome_title_2": {
     "message": "In un colpo solo"
+  },
+  "cache_title": {
+    "message": "Cache della posta"
+  },
+  "cache_text": {
+    "message": "I messaggi aperti vengono salvati su questo dispositivo. Svuotare la cache conserva account e impostazioni."
+  },
+  "cache_clear": {
+    "message": "Svuota cache"
+  },
+  "cache_cleared": {
+    "message": "Cache della posta svuotata."
+  },
+  "cache_refreshing": {
+    "message": "Copia salvata. Ricerca aggiornamenti…"
+  },
+  "cache_offline": {
+    "message": "Copia salvata. Aggiornamento non disponibile."
+  },
+  "search_limit": {
+    "message": "$1: raggiunto il limite di ricerca del server. Affina la ricerca."
   }
 }

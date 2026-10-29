@@ -80,8 +80,7 @@ function Message(props: {message: ThreadMessage; open: boolean; allowRemote: boo
             >
               {props.message.from.match(/<([^>]+)>/)?.[1] || props.message.from}
               {props.message.to ? ` → ${senderName(props.message.to.split(',')[0])}` : ''}
-              {' · '}
-              {shortDate(props.message.date)}
+              {props.message.date > 0 ? ` · ${shortDate(props.message.date)}` : ''}
             </span>
           </div>
         </header>
@@ -170,9 +169,34 @@ function Composer(props: {entry: Entry}) {
 export function Reader() {
   const [allowed, setAllowed] = createSignal<ReadonlySet<string>>(new Set());
   const [conversation] = createResource(
-    () => store.selected(),
-    selection => store.thread(selection),
+    () => {
+      const selection = store.selected();
+      return selection ? {...selection, version: store.threadVersion()} : null;
+    },
+    async selection => ({selection, messages: await store.thread(selection)}),
   );
+  /** Keeps the loaded body during background refreshes, only for the same selected message. */
+  let visibleKey = '';
+  const visibleMessages = createMemo<ThreadMessage[] | undefined>(previous => {
+    if (conversation.error) return undefined;
+    const value = conversation.latest;
+    const selection = store.selected();
+    const nextKey = selection ? JSON.stringify([selection.account, selection.id, selection.thread]) : '';
+    const unchangedSelection = nextKey === visibleKey;
+    visibleKey = nextKey;
+    if (
+      !value ||
+      !selection ||
+      value.selection.account !== selection.account ||
+      value.selection.id !== selection.id ||
+      value.selection.thread !== selection.thread
+    )
+      return undefined;
+    // Persistent-cache replies are structured clones; equal content must retain its mounted frames.
+    return unchangedSelection && previous && JSON.stringify(previous) === JSON.stringify(value.messages)
+      ? previous
+      : value.messages;
+  });
   const entry = () => store.current();
   const key = () => `${store.selected()?.account}/${store.selected()?.thread || store.selected()?.id}`;
   const accountEmail = createMemo(
@@ -231,6 +255,7 @@ export function Reader() {
                   type="button"
                   title={`${t('action_archive')} · E`}
                   aria-label={t('action_archive')}
+                  disabled={!store.canAct('archive')}
                   onClick={() => act('archive')}
                 >
                   {icon('archive')}
@@ -240,6 +265,7 @@ export function Reader() {
                   type="button"
                   title={`${t('action_delete')} · #`}
                   aria-label={t('action_delete')}
+                  disabled={!store.canAct('trash')}
                   onClick={() => act('trash')}
                 >
                   {icon('trash')}
@@ -269,7 +295,12 @@ export function Reader() {
                   title={t('action_open_webmail')}
                   aria-label={t('action_open_webmail')}
                   onClick={() =>
-                    request({type: 'OPEN', account: current().account, message: current().message.id}).catch(store.fail)
+                    request({
+                      type: 'OPEN',
+                      account: current().account,
+                      message: current().message.id,
+                      entry: current().message,
+                    }).catch(store.fail)
                   }
                 >
                   {icon('external')}
@@ -280,8 +311,14 @@ export function Reader() {
         </div>
 
         <div class="reader-body">
+          <Show when={store.threadCache()?.key === key() && visibleMessages()}>
+            <p class="muted" role="status">
+              {t(store.threadCache()?.refreshing ? 'cache_refreshing' : 'cache_offline')}
+              {store.threadCache()?.error ? ` ${store.threadCache()!.error}` : ''}
+            </p>
+          </Show>
           <Switch>
-            <Match when={conversation.loading}>
+            <Match when={conversation.loading && !visibleMessages()}>
               <div class="thread-title">
                 <div class="skeleton line" />
                 <div class="skeleton title" />
@@ -297,7 +334,7 @@ export function Reader() {
                 <p class="muted">{String((conversation.error as Error)?.message || conversation.error)}</p>
               </div>
             </Match>
-            <Match when={conversation()}>
+            <Match when={visibleMessages()}>
               {messages => (
                 <>
                   <div class="thread-title">

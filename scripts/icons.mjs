@@ -5,7 +5,7 @@
  *
  * Renders the original toolbar icons into `src/icons/` without dependencies.
  *
- * A near-black rounded square with a white rounded envelope and a dark flap,
+ * A full-size blue tile with a bold white envelope and minimal transparent edges,
  * supersampled 4× for anti-aliasing and encoded as RGBA PNG.
  *
  * Usage: `node scripts/icons.mjs`.
@@ -18,10 +18,10 @@ import {deflateSync} from 'node:zlib';
 /** Output directory. */
 const out = resolve(dirname(fileURLToPath(import.meta.url)), '../src/icons');
 
-/** Background, envelope and flap colours. */
-const BG = [11, 11, 13];
-const ENVELOPE = [250, 250, 250];
-const FLAP = [11, 11, 13];
+/** Envelope colours, from its top edge to its bottom edge, and the flap stroke. */
+const TOP = [68, 141, 250];
+const BOTTOM = [35, 95, 228];
+const FLAP = [255, 255, 255];
 
 /** CRC-32 lookup table for PNG chunks. */
 const table = Array.from({length: 256}, (_, n) => {
@@ -47,25 +47,39 @@ function chunk(type, data) {
   return Buffer.concat([length, body, crc]);
 }
 
-/** Returns the colour of a supersample at (x, y) in a canvas of size [n], or null outside the icon. */
+/** Returns the squared distance from a sample to a line segment, including rounded endpoints. */
+function distance(x, y, ax, ay, bx, by) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const position = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
+  return (x - ax - position * dx) ** 2 + (y - ay - position * dy) ** 2;
+}
+
+/** Whether a sample is inside a rounded rectangle. */
+function inside(x, y, left, top, right, bottom, corner) {
+  if (x < left || x > right || y < top || y > bottom) return false;
+  const cx = Math.min(Math.max(x, left + corner), right - corner);
+  const cy = Math.min(Math.max(y, top + corner), bottom - corner);
+  return (x - cx) ** 2 + (y - cy) ** 2 <= corner * corner;
+}
+
+/** Returns the colour of a supersample at (x, y) in a canvas of size [n], or null outside the envelope. */
 function sample(x, y, n) {
-  const r = n * 0.24;
-  const cx = Math.min(Math.max(x, r), n - r);
-  const cy = Math.min(Math.max(y, r), n - r);
-  if ((x - cx) ** 2 + (y - cy) ** 2 > r * r) return null;
-  const left = n * 0.12;
-  const right = n * 0.88;
-  const top = n * 0.24;
-  const bottom = n * 0.76;
-  if (x < left || x > right || y < top || y > bottom) return BG;
-  // Rounded envelope corners.
-  const corner = n * 0.06;
-  const ex = Math.min(Math.max(x, left + corner), right - corner);
-  const ey = Math.min(Math.max(y, top + corner), bottom - corner);
-  if ((x - ex) ** 2 + (y - ey) ** 2 > corner * corner) return BG;
-  const u = (x - left) / (right - left);
-  const flap = top + (bottom - top) * 0.58 * (1 - Math.abs(u * 2 - 1));
-  return Math.abs(y - flap) < Math.max(n * 0.05, 3) ? FLAP : ENVELOPE;
+  const left = n * 0.025;
+  const right = n * 0.975;
+  const top = n * 0.025;
+  const bottom = n * 0.975;
+  if (!inside(x, y, left, top, right, bottom, n * 0.18)) return null;
+  const envelope = inside(x, y, n * 0.12, n * 0.23, n * 0.88, n * 0.77, n * 0.06);
+  if (envelope && !inside(x, y, n * 0.18, n * 0.29, n * 0.82, n * 0.71, n * 0.025)) return FLAP;
+  const stroke = (n * 0.038) ** 2;
+  if (
+    distance(x, y, n * 0.17, n * 0.29, n * 0.5, n * 0.53) <= stroke ||
+    distance(x, y, n * 0.5, n * 0.53, n * 0.83, n * 0.29) <= stroke
+  )
+    return FLAP;
+  const position = (y - top) / (bottom - top);
+  return TOP.map((value, channel) => Math.round(value + (BOTTOM[channel] - value) * position));
 }
 
 /** Renders a PNG of [size] pixels. */

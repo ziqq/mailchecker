@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · okunmamış: $1 · hatalı posta kutusu: $2"
   },
+  "bulk_progress": {
+    "message": "Çöp kutusuna taşınıyor: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Seçilen: $1"
+  },
   "busy_archiving": {
     "message": "Arşivleniyor…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "Oturum açma sırasında posta kutusu değişti. Tekrar deneyin."
+  },
+  "error_account_mismatch": {
+    "message": "Bağlı posta kutusuyla oturum açın: $1."
   },
   "error_account_missing": {
     "message": "Posta kutusu bulunamadı."
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "Arşiv"
   },
+  "folder_count_estimated": {
+    "message": "Tahmini sayı: $1"
+  },
+  "folder_count_partial": {
+    "message": "Bazı posta kutularının sayısı: $1"
+  },
+  "folder_drafts": {
+    "message": "Taslaklar"
+  },
+  "folder_empty": {
+    "message": "Bu klasörde ileti yok"
+  },
   "folder_inbox": {
     "message": "Gelen Kutusu"
   },
+  "folder_loading": {
+    "message": "Yükleniyor…"
+  },
+  "folder_more": {
+    "message": "Daha fazla yükle"
+  },
+  "folder_sent": {
+    "message": "Gönderilenler"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Çöp Kutusu"
+  },
+  "folder_unsupported": {
+    "message": "Bu bağlantıda klasörler görüntülenemiyor. Web postasını açın."
   },
   "header_cc": {
     "message": "Bilgi: $1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "Kategoriler"
   },
+  "label_folders": {
+    "message": "Klasörler"
+  },
   "label_mailboxes": {
     "message": "Posta kutuları"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "Sabitlendi"
+  },
+  "label_resize_list": {
+    "message": "İleti listesinin genişliğini değiştir"
   },
   "label_sections": {
     "message": "Bölümler"
@@ -617,6 +659,12 @@
   "search_title": {
     "message": "“$1”"
   },
+  "search_webmail_only": {
+    "message": "Yalnızca yüklenmiş gönderen, konu ve önizlemelerde arama: $1. Tüm geçmiş için Gmail API veya web postasını kullanın; arama operatörleri burada desteklenmez."
+  },
+  "search_webmail_title": {
+    "message": "Yüklenmiş postalarda sonuç yok"
+  },
   "section_inbox": {
     "message": "Diğerleri"
   },
@@ -631,6 +679,15 @@
   },
   "section_pinned": {
     "message": "Sabitlenenler"
+  },
+  "select_loaded": {
+    "message": "Yüklenen tüm iletileri seç"
+  },
+  "select_message": {
+    "message": "$1: $2 seç"
+  },
+  "select_messages": {
+    "message": "İletileri seç"
   },
   "service_mailru": {
     "message": "Mail.ru"
@@ -700,5 +757,26 @@
   },
   "welcome_title_2": {
     "message": "Tek yerde"
+  },
+  "cache_title": {
+    "message": "Posta önbelleği"
+  },
+  "cache_text": {
+    "message": "Açılan iletiler bu cihazda saklanır. Önbelleği temizlemek hesapları ve ayarları korur."
+  },
+  "cache_clear": {
+    "message": "Önbelleği temizle"
+  },
+  "cache_cleared": {
+    "message": "Posta önbelleği temizlendi."
+  },
+  "cache_refreshing": {
+    "message": "Kaydedilmiş kopya. Güncellemeler denetleniyor…"
+  },
+  "cache_offline": {
+    "message": "Kaydedilmiş kopya. Güncelleme kullanılamıyor."
+  },
+  "search_limit": {
+    "message": "$1: sunucu arama sınırına ulaşıldı. Sorgunuzu daraltın."
   }
 }

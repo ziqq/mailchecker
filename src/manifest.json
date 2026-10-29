@@ -1,15 +1,20 @@
 {
   "manifest_version": 3,
   "name": "mailchecker",
-  "version": "0.0.13",
+  "version": "0.0.50",
   "description": "__MSG_extension_description__",
   "default_locale": "en",
   "minimum_chrome_version": "116",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5fkTQe1OaEeECwQ7YOEj84Lk3J3go/OkajjUdZKT/WLrERyjo2hcnQop5Cv0xsttgwoVHFfncP1ErULRJW303lo3XvZQngMTzP+Jk2NJYxfQ8wfdeJY84FNf4VExhyyP+TC+G7d2m9BmfyLSjlDc/8Dz7YGoZQYCwzt7R2pTZ7QkKBAuJ06SxNn56IzkHSAQnTFAk1TW1UItgGw+6XYvD3ehB8t/Mg/G9NeEfwi6owfUxHa4M48tqhSDbDx5tHZpgg7wS7cgSP4j2V88E00UZNWMWFvg/Yr9y12iPD+j6meTslxx1dZAsxfaCT7zk4JtVOaLqvAneT+LvwaYvpSNOQIDAQAB",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAse7uvE5ftM6M7or+6QS+eXy7Jb14754mjAFu0ko8AW5BqxhQk2uGWA7puBSWe58xe7VClsk7YDu5HCTnVW15BKP9OSXT2ndpCT4jLpjdyRNTDo+JmVY00a3TJwBcP1y7caUbdhNN2EYylP3ugn/FYaWOYLSi/i2CQH15W6Arlq0WiFm2LLXqUQv/mzMp3inp3LC86SYRElU9RA2kU46wEvayTPimaJEarwZCnOvZv+KLes/jBCeCmhR94NJHx8tRPH7FN/KsmRyXHfyNRY6dm58swhwCXoU2pzwODHfWuUI6PF4LOXDKWoBDZMntq/Bg9Mkfgrg4imGvifAZfXub7wIDAQAB",
+  "oauth2": {
+    "client_id": "1014715555178-fvb8f96qqh5aq10qpdg6hnv4isgkj3ph.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/gmail.modify", "https://www.googleapis.com/auth/userinfo.email"]
+  },
   "permissions": ["storage", "alarms", "notifications"],
   "optional_permissions": ["identity", "cookies"],
   "host_permissions": [
     "https://gmail.googleapis.com/*",
+    "https://www.googleapis.com/*",
     "https://graph.microsoft.com/*",
     "https://login.microsoftonline.com/*",
     "https://api.fastmail.com/*"

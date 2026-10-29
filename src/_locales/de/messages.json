@@ -149,6 +149,12 @@
   "badge_title_problems": {
     "message": "mailchecker · ungelesen: $1 · Postfächer mit Fehlern: $2"
   },
+  "bulk_progress": {
+    "message": "In den Papierkorb verschieben: $1/$2"
+  },
+  "bulk_selected": {
+    "message": "Ausgewählt: $1"
+  },
   "busy_archiving": {
     "message": "Wird archiviert…"
   },
@@ -184,6 +190,9 @@
   },
   "error_account_changed": {
     "message": "Das Postfach hat sich während der Anmeldung geändert. Versuchen Sie es erneut."
+  },
+  "error_account_mismatch": {
+    "message": "Melden Sie sich mit dem verbundenen Postfach an: $1."
   },
   "error_account_missing": {
     "message": "Postfach nicht gefunden."
@@ -422,11 +431,38 @@
   "folder_archive": {
     "message": "Archiv"
   },
+  "folder_count_estimated": {
+    "message": "Geschätzte Anzahl: $1"
+  },
+  "folder_count_partial": {
+    "message": "Anzahl für einen Teil der Postfächer: $1"
+  },
+  "folder_drafts": {
+    "message": "Entwürfe"
+  },
+  "folder_empty": {
+    "message": "Keine Nachrichten in diesem Ordner"
+  },
   "folder_inbox": {
     "message": "Posteingang"
   },
+  "folder_loading": {
+    "message": "Wird geladen…"
+  },
+  "folder_more": {
+    "message": "Mehr laden"
+  },
+  "folder_sent": {
+    "message": "Gesendet"
+  },
+  "folder_spam": {
+    "message": "Spam"
+  },
   "folder_trash": {
     "message": "Papierkorb"
+  },
+  "folder_unsupported": {
+    "message": "Für diese Verbindung sind keine Ordner verfügbar. Öffnen Sie das Webmail."
   },
   "header_cc": {
     "message": "Cc: $1"
@@ -470,6 +506,9 @@
   "label_categories": {
     "message": "Kategorien"
   },
+  "label_folders": {
+    "message": "Ordner"
+  },
   "label_mailboxes": {
     "message": "Postfächer"
   },
@@ -484,6 +523,9 @@
   },
   "label_pinned": {
     "message": "Angeheftet"
+  },
+  "label_resize_list": {
+    "message": "Breite der Nachrichtenliste ändern"
   },
   "label_sections": {
     "message": "Bereiche"
@@ -617,6 +659,12 @@
   "search_title": {
     "message": "„$1“"
   },
+  "search_webmail_only": {
+    "message": "Nur geladene Absender, Betreffzeilen und Vorschauen für: $1. Der gesamte Verlauf ist über Gmail API oder Webmail verfügbar; Suchoperatoren werden hier nicht unterstützt."
+  },
+  "search_webmail_title": {
+    "message": "Keine Treffer in geladenen E-Mails"
+  },
   "section_inbox": {
     "message": "Sonstige"
   },
@@ -631,6 +679,15 @@
   },
   "section_pinned": {
     "message": "Angeheftet"
+  },
+  "select_loaded": {
+    "message": "Alle geladenen Nachrichten auswählen"
+  },
+  "select_message": {
+    "message": "$1 auswählen: $2"
+  },
+  "select_messages": {
+    "message": "Nachrichten auswählen"
   },
   "service_mailru": {
     "message": "Mail.ru"
@@ -700,5 +757,26 @@
   },
   "welcome_title_2": {
     "message": "Auf einen Blick"
+  },
+  "cache_title": {
+    "message": "E-Mail-Cache"
+  },
+  "cache_text": {
+    "message": "Geöffnete E-Mails werden auf diesem Gerät gespeichert. Konten und Einstellungen bleiben beim Leeren erhalten."
+  },
+  "cache_clear": {
+    "message": "Cache leeren"
+  },
+  "cache_cleared": {
+    "message": "E-Mail-Cache geleert."
+  },
+  "cache_refreshing": {
+    "message": "Gespeicherte Kopie. Aktualisierungen werden geprüft…"
+  },
+  "cache_offline": {
+    "message": "Gespeicherte Kopie. Aktualisierung nicht verfügbar."
+  },
+  "search_limit": {
+    "message": "$1: Das Limit der Serversuche wurde erreicht. Verfeinern Sie die Suche."
   }
 }

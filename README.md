@@ -10,7 +10,7 @@ A mail client that lives in the browser toolbar, for mailboxes on **any domain**
 | Microsoft Graph | Outlook.com, Hotmail, any domain on Microsoft 365 / Exchange Online | Microsoft sign-in                              |
 | JMAP            | Fastmail (including custom domains), Stalwart, Cyrus and others     | API token                                      |
 
-**Through the browser's sign-in** nothing is registered or stored: the extension reads the Inbox with the session you already have in this browser, the way the webmail itself does (Gmail's unread feed, Yandex's lite web Inbox, Mail.ru's webmail API). It lists the Inbox and unread count, notifies and shows the full text (Gmail's print view, the Yandex lite message page, the Mail.ru API); Mail.ru marks read and deletes, Yandex deletes and marks read on opening; replies and other actions open the webmail. **Google sign-in** (OAuth) gives the full client for Gmail and needs a client ID in the build (see [OAuth setup](docs/OAUTH.md)). iCloud and other IMAP-only services are planned through the Safari containing app (see [Safari](docs/SAFARI.md)).
+**Through the browser's sign-in** no password or API token is entered: the extension reads the Inbox with the session you already have in this browser, the way the webmail itself does (Gmail's unread feed, Yandex's lite web Inbox, Mail.ru's webmail API). It lists the Inbox and unread count, notifies and shows the full text (Gmail's print view, the Yandex lite message page, the Mail.ru API); Mail.ru marks read and deletes, Yandex deletes and marks read on opening; replies and other actions open the webmail. **Google sign-in** (OAuth) gives the full client for Gmail and needs a client ID in the build (see [OAuth setup](docs/OAUTH.md)). iCloud and other IMAP-only services are planned through the Safari containing app (see [Safari](docs/SAFARI.md)).
 
 ## Features
 
@@ -18,7 +18,7 @@ A mail client that lives in the browser toolbar, for mailboxes on **any domain**
 - **Unified Inbox** across all accounts, with an account switcher and a colour you pick per account.
 - **Smart Inbox:** one list newest first with pinned messages on top; «Уведомления» and «Рассылки» filters; repeated notifications (CI failures, alerts) stacked into one `×N` item.
 - **Safe reading:** conversations with collapsed history, sanitized HTML in a script-free sandbox, remote images and trackers blocked until you allow them.
-- **Actions** synced with the provider: archive, trash, read/unread, pin, reply (in the extension, or in the webmail where no send API exists); search across all accounts; keyboard shortcuts.
+- **Actions** synced with the provider: archive, trash, read/unread, pin, reply (in the extension, or in the webmail where no send API exists); paged server search across supported connections; keyboard shortcuts.
 - **Responsive:** three columns in a wide tab, two in the popup, one with back navigation on narrow screens and iPhone.
 - **Badge and notifications** for new mail; theme (auto/light/dark) and palette (black and white graphite by default, or nine accent colours).
 - **13 languages:** English, Russian, Ukrainian, German, French, Spanish, Italian, Portuguese (Brazil), Polish, Turkish, Chinese (Simplified), Japanese and Korean; the browser's language picks one.
@@ -75,7 +75,7 @@ npm run test:sandbox  # Playwright checks of the client in the sandbox
 
 Releases: add a `## X.Y.Z` section to `CHANGELOG.md`, set the version in `package.json` and `src/manifest.json`, then push a `vX.Y.Z` tag (or run **Release mailchecker** by hand with the version). The workflow verifies the source and publishes the ZIP with its checksum as a GitHub Release; with the `CWS_*` secrets it also submits the package to the Chrome Web Store.
 
-Gmail and Outlook need OAuth client IDs: see [OAuth setup](docs/OAUTH.md). See [Architecture](docs/ARCHITECTURE.md), [Safari](docs/SAFARI.md) and [Privacy](PRIVACY.md). Mockups are in `design/`.
+First store submission: [release preparation](docs/CHROME_WEB_STORE.md). Gmail and Outlook need OAuth client IDs: see [OAuth setup](docs/OAUTH.md). See [Architecture](docs/ARCHITECTURE.md), [Safari](docs/SAFARI.md) and [Privacy](PRIVACY.md). Mockups are in `design/`.
 
 ## License
 

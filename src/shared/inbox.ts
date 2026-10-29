@@ -62,6 +62,18 @@ export function merge(accounts: PublicAccount[], mailboxes: Record<string, Mailb
     .sort((a, b) => b.message.date - a.message.date);
 }
 
+/** Matches plain words in already loaded sender, subject and preview text, newest first. */
+export function searchLoaded(messages: MailMessage[], query: string): MailMessage[] {
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  return messages
+    .filter(message => {
+      const text = `${message.from} ${message.subject} ${message.snippet}`.toLowerCase();
+      return words.every(word => text.includes(word));
+    })
+    .sort((a, b) => b.date - a.date || a.id.localeCompare(b.id));
+}
+
 /** Key that groups repeated notifications: same sender and subject. */
 const stackKey = ({account, message}: Entry): string =>
   `${account}\u0000${message.from.toLowerCase()}\u0000${message.subject.toLowerCase().replace(/\s+/g, ' ')}`;

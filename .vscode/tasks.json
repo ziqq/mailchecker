@@ -1,0 +1,74 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: build",
+      "type": "npm",
+      "script": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: build:safari",
+      "type": "npm",
+      "script": "build:safari",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: verify",
+      "type": "npm",
+      "script": "verify",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: test",
+      "type": "npm",
+      "script": "test",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: test:sandbox",
+      "type": "npm",
+      "script": "test:sandbox",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: typecheck",
+      "type": "npm",
+      "script": "typecheck",
+      "group": "build",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "npm: sandbox",
+      "type": "npm",
+      "script": "sandbox",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "mailchecker",
+        "pattern": {
+          "regexp": "^(.+):(\\d+):(\\d+): (.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*$",
+          "endsPattern": "^Sandbox from .* at http://"
+        }
+      }
+    }
+  ]
+}
