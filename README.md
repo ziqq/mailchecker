@@ -75,7 +75,7 @@ npm run test:sandbox  # Playwright checks of the client in the sandbox
 
 Releases: add a `## X.Y.Z` section to `CHANGELOG.md`, set the version in `package.json` and `src/manifest.json`, then push a `vX.Y.Z` tag (or run **Release mailchecker** by hand with the version). The workflow verifies the source and publishes the ZIP with its checksum as a GitHub Release; with the `CWS_*` secrets it also submits the package to the Chrome Web Store.
 
-First store submission: [release preparation](docs/CHROME_WEB_STORE.md). Gmail and Outlook need OAuth client IDs: see [OAuth setup](docs/OAUTH.md). See [Architecture](docs/ARCHITECTURE.md), [Safari](docs/SAFARI.md) and [Privacy](PRIVACY.md). Mockups are in `design/`.
+First store submission: [release preparation](docs/CHROME_WEB_STORE.md) and [store listing](docs/STORE_LISTING.md). Gmail and Outlook need OAuth client IDs: see [OAuth setup](docs/OAUTH.md). See [Architecture](docs/ARCHITECTURE.md), [Safari](docs/SAFARI.md) and [Privacy](PRIVACY.md). Mockups are in `design/`.
 
 ## License
 
