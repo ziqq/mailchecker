@@ -521,6 +521,59 @@ for (const layout of [
   test.describe(`${layout.name} folder audit regressions`, () => {
     test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
 
+    test('search keeps the selected folder heading for matches, empty results and clearing', async ({page}) => {
+      const errors = watchErrors(page);
+      const separator = layout.path.includes('?') ? '&' : '?';
+      await page.goto(`${layout.path}${separator}lang=en`);
+      const title = page.locator('.folder-title');
+      const search = page.getByRole('searchbox');
+      await expect(page.locator('.row[data-id="g1"]')).toBeVisible();
+      await expect(title).toHaveText('Inbox.');
+
+      await search.fill('Kazan');
+      await search.press('Enter');
+      await expect(page.getByText('Search results', {exact: true})).toBeVisible();
+      await expect(page.locator('.row')).toHaveCount(2);
+      await expect(title).toHaveText('Inbox.');
+      await expect(title).toHaveAttribute('aria-label', 'Folders: Inbox');
+      await expect(title).toHaveAttribute('title', 'Inbox');
+      await expect(search).toHaveValue('Kazan');
+
+      await search.fill('absent query');
+      await search.press('Enter');
+      await expect(page.getByRole('heading', {name: 'Nothing found.', exact: true})).toBeVisible();
+      await expect(title).toHaveText('Inbox.');
+      await search.fill('');
+      await search.press('Enter');
+      await expect(page.locator('.row[data-id="g1"]')).toBeVisible();
+      await expect(title).toHaveText('Inbox.');
+
+      await title.click();
+      await page.getByRole('menuitemradio', {name: 'Projects anton@gmail.com 55 messages', exact: true}).click();
+      await expect(page.locator('.row[data-id="gmail-project-0"]')).toBeVisible();
+      await expect(title).toHaveText('Projects.');
+      await search.fill('Kazan');
+      await search.press('Enter');
+      await expect(page.getByText('Search results', {exact: true})).toBeVisible();
+      await expect(page.locator('.row')).toHaveCount(2);
+      await expect(title).toHaveText('Projects.');
+      await expect(title).toHaveAttribute('aria-label', 'Folders: Projects');
+      await expect(title).toHaveAttribute('title', 'Projects');
+      await title.click();
+      await expect(page.getByRole('menuitemradio', {name: 'Projects 55 messages', exact: true})).toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+      await title.click();
+      await search.fill('');
+      await search.press('Enter');
+      await expect(page.locator('.row[data-id="gmail-project-0"]')).toBeVisible();
+      await expect(page.getByText('Search results', {exact: true})).toHaveCount(0);
+      await expect(title).toHaveText('Projects.');
+      await expectNoHorizontalScroll(page);
+      expect(errors).toEqual([]);
+    });
+
     test('CSS-only images expose Show and stay blocked until permission is given', async ({page}) => {
       const separator = layout.path.includes('?') ? '&' : '?';
       await page.goto(`${layout.path}${separator}mail=css-images&theme=dark`);

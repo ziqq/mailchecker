@@ -1,5 +1,7 @@
 # Chrome Web Store images
 
+Release update, **30 October 2026**: the saved gallery is part of the approved **0.0.51** store package, retained by the owner for the first release. It contains dark Inbox, light reader, dark folders and the small promo. The extension is ready to publish but remains unpublished pending Google OAuth. The dated 0.0.48 asset-preparation notes below describe the original capture checkpoint; no new screenshots were taken for the local 0.0.52 search-heading fix.
+
 Prepared on 16 October 2026 from the sandbox in Chromium. All interface text and fictional email data are in English. Screenshots use the bundled Inter fonts at scale 1. These are the prepared English assets for the current **0.0.48** candidate, not new captures of that build or evidence of an upload to the store.
 
 | File                                   | Size     | Content                                                       |
@@ -16,4 +18,4 @@ For the store captures, a separate temporary copy of those fixtures includes onl
 
 The promo uses the existing project artwork and contains only the English brand name. Screenshots demonstrate the interface, not successful live sign-in or server requests. Current Gmail API account selection and the refresh-button fix are not demonstrated by these captures. The maintainer separately confirmed two real Google API accounts working together and after an extension reload on 22 October.
 
-The last confirmed store package is 0.0.41. Only the icon and an older first global screenshot were confirmed uploaded; replacement with these English screenshots, the remaining gallery images and the promo must still be verified in the dashboard. Compare all images with the final release configuration before submission. See [CHROME_WEB_STORE.md](../CHROME_WEB_STORE.md) for the 0.0.48 listing text, disclosures and outstanding release work.
+The confirmed store draft package is **0.0.48**, verified in a newly opened Package tab on 23 October. The icon, three screenshots and small promo tile are saved and verified after reloading. The older first screenshot was removed with explicit owner confirmation. The final gallery order is dark Inbox, **light reader**, then dark folders. Compare all images with the final release configuration before submission. Copy-ready dashboard fields are in [STORE_LISTING.md](../STORE_LISTING.md). See [CHROME_WEB_STORE.md](../CHROME_WEB_STORE.md) for the 0.0.48 disclosures and outstanding release work.

@@ -288,15 +288,7 @@ export function MessageList() {
     <section class="list-pane" aria-label={t('label_messages')}>
       <header class="list-head">
         <div class="list-title">
-          <FolderPicker
-            title={
-              store.results()
-                ? t('search_title', store.query())
-                : store.folder()
-                  ? store.folderLabel(store.folder()!)
-                  : TITLES[store.filter()]
-            }
-          />
+          <FolderPicker title={store.folder() ? store.folderLabel(store.folder()!) : TITLES[store.filter()]} />
           <div class="list-tools">
             <Show when={!store.results() && total()}>
               <span
