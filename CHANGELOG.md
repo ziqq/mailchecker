@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.60
+
+- **CHANGED**: apply the approved solid blue envelope icon with a transparent V-shaped flap gap; retain the native browser unread badge
+
 ## 0.0.50
 
 - **FIXED**: the Settings accent palette keeps its full width beside the description and wraps only when it exceeds the available row width
