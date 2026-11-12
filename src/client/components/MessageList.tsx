@@ -467,7 +467,7 @@ export function MessageList() {
             </div>
           </Match>
           <Match when={!accounts().length}>
-            <div class="empty">
+            <div class="empty welcome">
               <p class="eyebrow">{t('welcome_eyebrow')}</p>
               <h2>
                 {t('welcome_title_1')}

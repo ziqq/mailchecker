@@ -840,6 +840,44 @@ kbd {
     font-size: 34px;
   }
 }
+
+// With no mailboxes, both empty states start below the same list header.
+@supports (grid-template-rows: subgrid) {
+  @media (min-width: 700px) {
+    .app:has(.welcome) {
+      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-areas:
+        'top top'
+        'list .'
+        'list reader';
+
+      .list-pane {
+        display: grid;
+        grid-template-rows: subgrid;
+      }
+      .reader-empty {
+        align-items: start;
+        overflow-y: auto;
+      }
+      .welcome,
+      .reader-empty > .empty {
+        padding-top: 48px;
+      }
+      .reader-empty .empty h2 {
+        font-size: 30px;
+      }
+    }
+  }
+
+  @media (min-width: 1100px) {
+    html[data-mode='app'] .app:has(.welcome) {
+      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-areas:
+        'side list .'
+        'side list reader';
+    }
+  }
+}
 .reader-bar {
   display: flex;
   align-items: center;
