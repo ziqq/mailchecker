@@ -16,6 +16,16 @@ const LAYOUTS = [
   {name: 'phone tab', path: 'app.html', viewport: {width: 390, height: 844}},
 ];
 
+/** Uses a phone-sized screen as well as a phone-sized viewport for mobile emulation. */
+function layoutOptions(layout) {
+  return {
+    viewport: layout.viewport,
+    ...(layout.isMobile && {screen: layout.viewport}),
+    isMobile: layout.isMobile,
+    hasTouch: layout.hasTouch,
+  };
+}
+
 /** Chromium's report that the script-free mail frame refused a script (Playwright probes every frame). */
 const SANDBOXED_FRAME = /^Blocked script execution in 'about:(blank|srcdoc)' because the document's frame is sandboxed/;
 
@@ -37,7 +47,7 @@ async function expectNoHorizontalScroll(page) {
 
 for (const layout of LAYOUTS) {
   test.describe(layout.name, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('renders the inbox and opens a conversation', async ({page}) => {
       const errors = watchErrors(page);
@@ -146,7 +156,7 @@ test.describe('wide tab', () => {
 
 for (const layout of LAYOUTS) {
   test.describe(layout.name, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('fits every category and the mailbox switcher label', async ({page}) => {
       await page.goto(layout.path);
@@ -240,7 +250,7 @@ for (const layout of [
   {name: 'mini popup', path: 'popup.html?popup=mini', viewport: {width: 400, height: 600}},
 ]) {
   test.describe(`${layout.name} audit regressions`, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('empty searches show a message instead of a blank list', async ({page}) => {
       await page.goto(layout.path);
@@ -519,7 +529,7 @@ for (const layout of [
   {name: 'mini popup', path: 'popup.html?popup=mini', viewport: {width: 400, height: 600}},
 ]) {
   test.describe(`${layout.name} folder audit regressions`, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('search keeps the selected folder heading for matches, empty results and clearing', async ({page}) => {
       const errors = watchErrors(page);
@@ -763,7 +773,7 @@ for (const layout of [
   {name: 'mini popup', path: 'popup.html?popup=mini', viewport: {width: 400, height: 600}},
 ]) {
   test.describe(`paged search ${layout.name}`, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('keeps successful accounts, retries a failure and loads every unique server result', async ({page}) => {
       const errors = watchErrors(page);
