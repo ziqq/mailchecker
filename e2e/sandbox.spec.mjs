@@ -16,6 +16,16 @@ const LAYOUTS = [
   {name: 'phone tab', path: 'app.html', viewport: {width: 390, height: 844}},
 ];
 
+/** Uses a phone-sized screen as well as a phone-sized viewport for mobile emulation. */
+function layoutOptions(layout) {
+  return {
+    viewport: layout.viewport,
+    ...(layout.isMobile && {screen: layout.viewport}),
+    isMobile: layout.isMobile,
+    hasTouch: layout.hasTouch,
+  };
+}
+
 /** Chromium's report that the script-free mail frame refused a script (Playwright probes every frame). */
 const SANDBOXED_FRAME = /^Blocked script execution in 'about:(blank|srcdoc)' because the document's frame is sandboxed/;
 
@@ -37,7 +47,7 @@ async function expectNoHorizontalScroll(page) {
 
 for (const layout of LAYOUTS) {
   test.describe(layout.name, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('renders the inbox and opens a conversation', async ({page}) => {
       const errors = watchErrors(page);
@@ -146,7 +156,7 @@ test.describe('wide tab', () => {
 
 for (const layout of LAYOUTS) {
   test.describe(layout.name, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('fits every category and the mailbox switcher label', async ({page}) => {
       await page.goto(layout.path);
@@ -240,7 +250,7 @@ for (const layout of [
   {name: 'mini popup', path: 'popup.html?popup=mini', viewport: {width: 400, height: 600}},
 ]) {
   test.describe(`${layout.name} audit regressions`, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('empty searches show a message instead of a blank list', async ({page}) => {
       await page.goto(layout.path);
@@ -519,7 +529,60 @@ for (const layout of [
   {name: 'mini popup', path: 'popup.html?popup=mini', viewport: {width: 400, height: 600}},
 ]) {
   test.describe(`${layout.name} folder audit regressions`, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
+
+    test('search keeps the selected folder heading for matches, empty results and clearing', async ({page}) => {
+      const errors = watchErrors(page);
+      const separator = layout.path.includes('?') ? '&' : '?';
+      await page.goto(`${layout.path}${separator}lang=en`);
+      const title = page.locator('.folder-title');
+      const search = page.getByRole('searchbox');
+      await expect(page.locator('.row[data-id="g1"]')).toBeVisible();
+      await expect(title).toHaveText('Inbox.');
+
+      await search.fill('Kazan');
+      await search.press('Enter');
+      await expect(page.getByText('Search results', {exact: true})).toBeVisible();
+      await expect(page.locator('.row')).toHaveCount(2);
+      await expect(title).toHaveText('Inbox.');
+      await expect(title).toHaveAttribute('aria-label', 'Folders: Inbox');
+      await expect(title).toHaveAttribute('title', 'Inbox');
+      await expect(search).toHaveValue('Kazan');
+
+      await search.fill('absent query');
+      await search.press('Enter');
+      await expect(page.getByRole('heading', {name: 'Nothing found.', exact: true})).toBeVisible();
+      await expect(title).toHaveText('Inbox.');
+      await search.fill('');
+      await search.press('Enter');
+      await expect(page.locator('.row[data-id="g1"]')).toBeVisible();
+      await expect(title).toHaveText('Inbox.');
+
+      await title.click();
+      await page.getByRole('menuitemradio', {name: 'Projects anton@gmail.com 55 messages', exact: true}).click();
+      await expect(page.locator('.row[data-id="gmail-project-0"]')).toBeVisible();
+      await expect(title).toHaveText('Projects.');
+      await search.fill('Kazan');
+      await search.press('Enter');
+      await expect(page.getByText('Search results', {exact: true})).toBeVisible();
+      await expect(page.locator('.row')).toHaveCount(2);
+      await expect(title).toHaveText('Projects.');
+      await expect(title).toHaveAttribute('aria-label', 'Folders: Projects');
+      await expect(title).toHaveAttribute('title', 'Projects');
+      await title.click();
+      await expect(page.getByRole('menuitemradio', {name: 'Projects 55 messages', exact: true})).toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+      await title.click();
+      await search.fill('');
+      await search.press('Enter');
+      await expect(page.locator('.row[data-id="gmail-project-0"]')).toBeVisible();
+      await expect(page.getByText('Search results', {exact: true})).toHaveCount(0);
+      await expect(title).toHaveText('Projects.');
+      await expectNoHorizontalScroll(page);
+      expect(errors).toEqual([]);
+    });
 
     test('CSS-only images expose Show and stay blocked until permission is given', async ({page}) => {
       const separator = layout.path.includes('?') ? '&' : '?';
@@ -710,7 +773,7 @@ for (const layout of [
   {name: 'mini popup', path: 'popup.html?popup=mini', viewport: {width: 400, height: 600}},
 ]) {
   test.describe(`paged search ${layout.name}`, () => {
-    test.use({viewport: layout.viewport, isMobile: layout.isMobile, hasTouch: layout.hasTouch});
+    test.use(layoutOptions(layout));
 
     test('keeps successful accounts, retries a failure and loads every unique server result', async ({page}) => {
       const errors = watchErrors(page);

@@ -35,7 +35,7 @@
   ],
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@playwright/test": "1.56.1",
+    "@playwright/test": "1.65.0",
     "@types/chrome": "0.3.4",
     "esbuild": "0.28.2",
     "esbuild-plugin-solid": "0.6.0",

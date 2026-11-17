@@ -1,0 +1,113 @@
+<!doctype html>
+<!--
+  https://github.com/ziqq/mailchecker
+  Copyright (C) 2026 Anton Ustinoff
+  https://github.com/ziqq/mailchecker/blob/main/LICENSE
+
+  The Russian translation of the public mailchecker homepage.
+-->
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="mailchecker — почта в браузере: общие входящие, папки, безопасное чтение и уведомления. Без своего сервера, рекламы и аналитики."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>mailchecker — Почта в браузере</title>
+    <link rel="canonical" href="https://mailchecker.ustinoff.dev/ru/" />
+    <link rel="alternate" hreflang="en" href="https://mailchecker.ustinoff.dev/" />
+    <link rel="alternate" hreflang="ru" href="https://mailchecker.ustinoff.dev/ru/" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script src="../site.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="./" aria-label="Главная mailchecker">mailchecker.</a>
+      <nav aria-label="Основная навигация">
+        <a href="privacy.html">Конфиденциальность</a>
+        <a href="https://github.com/ziqq/mailchecker/issues">Поддержка</a>
+        <a href="https://github.com/ziqq/mailchecker">GitHub</a>
+      </nav>
+      <select id="site-language" class="locale-picker" aria-label="Язык">
+        <option value="en">English</option>
+        <option value="ru" selected>Русский</option>
+      </select>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="intro">
+        <p class="eyebrow">Почта в браузере</p>
+        <h1 id="intro">Вся почта.<br />В одном месте.</h1>
+        <p class="lead">
+          Читайте письма и управляйте подключёнными ящиками во всплывающем окне браузера. Нужно больше места — откройте
+          отдельную вкладку.
+        </p>
+        <p>
+          Подключайте Gmail, Яндекс Почту и Mail.ru через вход в почту в этом браузере, а JMAP — по API-токену. Для
+          Gmail также доступно отдельное подключение каждого ящика через Google API.
+        </p>
+        <p class="notice">
+          Первый релиз в Chrome Web Store и публичная верификация Google OAuth готовятся. До завершения проверки Google
+          может показывать предупреждение о непроверенном приложении и ограничивать доступ через Google API. Outlook /
+          Microsoft 365 в этой сборке недоступен.
+        </p>
+        <a class="button" href="https://github.com/ziqq/mailchecker">Открыть проект</a>
+      </section>
+      <figure class="preview">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="../store/inbox-dark-ru.jpg" />
+          <img
+            src="../store/reader-light-ru.jpg"
+            alt="Предпросмотр mailchecker с вымышленными письмами"
+            width="1280"
+            height="800"
+          />
+        </picture>
+        <figcaption>Пример интерфейса с вымышленной почтой. Скриншот следует теме браузера.</figcaption>
+      </figure>
+      <section class="features" aria-label="Возможности">
+        <article>
+          <h2>Общие входящие</h2>
+          <p>Подключённые ящики, папки, счётчики непрочитанных, закреплённые письма и уведомления в одном клиенте.</p>
+        </article>
+        <article>
+          <h2>Чтение и действия</h2>
+          <p>
+            Открывайте переписки, меняйте состояние прочтения, архивируйте или переносите выбранные письма в Корзину.
+          </p>
+        </article>
+        <article>
+          <h2>Поиск по почте</h2>
+          <p>
+            Ищите по истории на сервере для поддерживаемых подключений. Для поиска по истории Gmail нужен Google API;
+            подключение Gmail через браузер не поддерживает встроенный поиск по истории.
+          </p>
+        </article>
+      </section>
+      <section class="data-use" aria-labelledby="data-heading">
+        <p class="eyebrow">Ваши данные</p>
+        <h2 id="data-heading">Напрямую к почтовому сервису.</h2>
+        <p>
+          У mailchecker нет своего сервера, рекламы, аналитики и телеметрии. Запросы идут из браузера напрямую в
+          подключённый почтовый сервис. Настройки, учётные данные и загруженная почта хранятся в профиле браузера. Кеш
+          ускоряет открытие уже загруженных писем, но не скачивает всю историю и не шифрует профиль браузера.
+        </p>
+        <p>
+          Доступ к Google позволяет читать и искать письма Gmail, просматривать папки, менять состояние писем,
+          переносить их в Корзину и отправлять ответы. Каждый Gmail-ящик подключается с отдельным разрешением. Набор
+          действий зависит от провайдера; если ответ не поддерживается, открывается веб-почта.
+        </p>
+        <p>
+          HTML писем очищается и показывается в изолированном окне чтения. Внешние изображения заблокированы, пока вы не
+          разрешите их загрузку. Очистить кеш почты или отключить ящик можно в Настройках.
+        </p>
+        <a href="privacy.html">Политика конфиденциальности →</a>
+      </section>
+    </main>
+    <footer>
+      <p>Разработчик — Антон Устинов. Открытый исходный код, лицензия GPL v3.</p>
+      <p><a href="mailto:a.a.ustinoff@gmail.com">Связаться</a> · <a href="privacy.html">Конфиденциальность</a></p>
+    </footer>
+  </body>
+</html>
