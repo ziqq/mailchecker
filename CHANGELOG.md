@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.60
+
+- **CHANGED**: apply the approved solid blue envelope icon with a transparent V-shaped flap gap; retain the native browser unread badge
+
 ## 0.0.52
 
 - **FIXED**: searching keeps the selected folder in the list heading instead of repeating the query above the search field
